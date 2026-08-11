@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PropertyCard from "@/components/PropertyCard";
-import { properties } from "@/lib/properties";
+import FeaturedIn from "@/components/FeaturedIn";
+import Testimonials from "@/components/Testimonials";
+import { bookableProperties } from "@/lib/properties";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -50,6 +52,8 @@ export default function Home() {
         </div>
       </section>
 
+      <FeaturedIn />
+
       <section className="mx-auto max-w-3xl px-6 py-24 text-center">
         <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
           Your Coastal Hideaway
@@ -95,17 +99,19 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid gap-10 sm:grid-cols-2">
-          {properties.map((property, index) => (
+          {bookableProperties.map((property, index) => (
             <PropertyCard
               key={property.slug}
               name={property.name}
               description={property.description}
-              href={`/properties#${property.slug}`}
+              href={`/properties/${property.slug}`}
               index={index}
             />
           ))}
         </div>
       </section>
+
+      <Testimonials />
 
       <section className="border-t border-border px-6 py-24">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 text-center">

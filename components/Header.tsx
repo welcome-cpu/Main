@@ -3,7 +3,8 @@ import Link from "next/link";
 
 const links = [
   { href: "/properties", label: "Properties" },
-  { href: "/about", label: "The Estate" },
+  { href: "/our-story", label: "Our Story" },
+  { href: "/about", label: "Explore Gamrie" },
   { href: "/gallery", label: "Gallery" },
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },

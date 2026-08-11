@@ -1,39 +1,129 @@
 import type { Metadata } from "next";
+import GalleryTile from "@/components/GalleryTile";
 
 export const metadata: Metadata = {
-  title: "The Estate",
+  title: "Explore Gamrie",
   description:
-    "Gamrie Chalets sits above Gardenstown on Scotland's dramatic Moray Firth coastline.",
+    "Unforgettable experiences on Scotland's Moray Firth coastline — beaches, wildlife, heritage, and whisky, all within easy reach of Gamrie Chalets.",
   alternates: { canonical: "/about" },
 };
 
+const categories = [
+  {
+    title: "Beaches & Coastal Walks",
+    intro:
+      "Clean water and soft sand make this 30-mile coastline a favourite for wild swimming and beach walks.",
+    items: [
+      { name: "Gardenstown Beach", detail: "sandy, and the nearest to the chalets" },
+      { name: "Pennan", detail: "gable-end houses running down to the sea" },
+      { name: "Inverboyndie", detail: "an award-winning sand beach" },
+      { name: "Whitehills", detail: "a rock beach" },
+      { name: "Portsoy", detail: "sand and rock beach" },
+      { name: "Sandend Bay", detail: "sandy, good for families and surfers" },
+    ],
+  },
+  {
+    title: "Wildlife",
+    intro: "Watch from afar, or get up close with the coastline's wildlife.",
+    items: [
+      { name: "Dolphin watching", detail: "on the Moray Firth" },
+      { name: "Fishing trips" },
+      { name: "Bird spotting", detail: "at Troup Head Nature Reserve" },
+    ],
+  },
+  {
+    title: "Heritage & History",
+    intro: "Scandinavian influence runs through the area's history and architecture.",
+    items: [
+      { name: "St John's Church", detail: "Gamrie" },
+      { name: "Banff Castle" },
+      { name: "Duff House", detail: "Banff" },
+      { name: "Slains Castle", detail: "said to have inspired Dracula" },
+      { name: "Findlater Castle", detail: "a clifftop ruin dating to the mid-1200s" },
+    ],
+  },
+  {
+    title: "Harbours & Fishing Ports",
+    items: [
+      { name: "Banff Harbour Marina", detail: "17th century" },
+      { name: "Fraserburgh Harbour", detail: "a working port since the 16th century" },
+      { name: "Peterhead Port Fish Market", detail: "Europe's largest fishing port" },
+    ],
+  },
+  {
+    title: "Whisky Distilleries",
+    intro: "A handful of well-known distilleries within easy driving distance:",
+    items: [
+      { name: "Glenglassaugh", detail: "30 minutes" },
+      { name: "Strathisla", detail: "45 minutes" },
+      { name: "Speyside Cooperage", detail: "1 hour" },
+      { name: "The Macallan Estate", detail: "1 hour 15 minutes" },
+    ],
+  },
+  {
+    title: "Scenic Driving",
+    intro:
+      "The North East 250 route links castles, distilleries, fishing villages, and coastal scenery across the region — one of Scotland's great road trips, right from your door.",
+  },
+  {
+    title: "Hiking & Walking",
+    intro:
+      "Coastal and countryside trails run in every direction. Pack proper footwear — Scottish weather can turn quickly — and the what3words app is handy for pinpointing exact locations along the way.",
+  },
+  {
+    title: "Local Hospitality",
+    intro:
+      "Scottish hospitality is known the world over, and a handful of local pubs and restaurants are within easy reach, some hosting seasonal events throughout the year.",
+  },
+];
+
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-24">
+    <div className="mx-auto max-w-5xl px-6 py-24">
       <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-        The Estate
+        Explore Gamrie
       </p>
-      <h1 className="mt-4 text-4xl font-semibold text-foreground sm:text-5xl">
-        A clifftop above Gardenstown
+      <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-foreground sm:text-5xl">
+        Unforgettable Experiences
       </h1>
-      <div className="mt-10 space-y-6 text-lg leading-relaxed text-muted-foreground">
-        <p>
-          Gamrie Chalets sits on Scotland&apos;s dramatic coastline, above
-          the fishing village of Gardenstown, looking out across the Moray
-          Firth. It&apos;s a place to slow down — to watch the water change
-          colour through the day and disappear into the dark at night.
-        </p>
-        <p>
-          The Firth is home to dolphins, and clear evenings bring a real
-          chance of the Northern Lights — both easily watched from the
-          balcony. By day, the coastline invites wild swimming, dolphin
-          trips, and long walks along the cliffs and beaches below.
-        </p>
-        <p>
-          Each studio chalet is built for comfort: a log burner for cool
-          evenings, and a window on the view that changes with every visit.
-        </p>
+      <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+        Where the Moray Firth meets Banffshire, this stretch of Scotland&apos;s
+        coastline offers fishing villages and farming communities, with
+        nature and heritage to explore in every direction.
+      </p>
+
+      <div className="mt-16 grid gap-x-12 gap-y-14 sm:grid-cols-2">
+        {categories.map((category, index) => (
+          <div key={category.title}>
+            <GalleryTile title="" index={index} />
+            <h2 className="mt-4 text-lg font-semibold text-foreground">
+              {category.title}
+            </h2>
+            {category.intro && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {category.intro}
+              </p>
+            )}
+            {category.items && (
+              <ul className="mt-4 space-y-2 text-sm">
+                {category.items.map((item) => (
+                  <li key={item.name} className="text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {item.name}
+                    </span>
+                    {item.detail && <> — {item.detail}</>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
       </div>
+
+      <p className="mt-16 max-w-2xl border-t border-border pt-10 text-lg leading-relaxed text-muted-foreground">
+        After a day exploring, come back to a warm chalet and a view that
+        changes with every visit.
+      </p>
     </div>
   );
 }

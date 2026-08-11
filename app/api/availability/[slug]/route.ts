@@ -4,9 +4,9 @@ import {
   isLodgifyConfigured,
   normalizeAvailability,
 } from "@/lib/lodgify";
-import { properties } from "@/lib/properties";
+import { bookableProperties } from "@/lib/properties";
 
-const VALID_SLUGS = properties.map((p) => p.slug);
+const VALID_SLUGS = bookableProperties.map((p) => p.slug);
 
 export async function GET(
   request: Request,

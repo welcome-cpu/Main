@@ -14,13 +14,56 @@ export default function Footer() {
             Luxury clifftop chalets above Gardenstown, overlooking the Moray
             Firth.
           </p>
+          <div className="mt-4 flex items-center gap-4">
+            <a
+              href="https://www.instagram.com/gamriechalets/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Gamrie Chalets on Instagram"
+              className="text-muted-foreground transition-colors hover:text-primary"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.75}
+                className="h-5 w-5"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+              </svg>
+            </a>
+            <a
+              href="https://www.facebook.com/p/Gamrie-Chalets-61562292453618/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Gamrie Chalets on Facebook"
+              className="text-muted-foreground transition-colors hover:text-primary"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.75}
+                className="h-5 w-5"
+              >
+                <path d="M14 9h2.5V6H14c-1.93 0-3.5 1.57-3.5 3.5V12H8v3h2.5v6h3v-6h2.3l.7-3h-3v-2.2c0-.44.36-.8.8-.8Z" />
+              </svg>
+            </a>
+          </div>
         </div>
         <nav className="flex flex-col gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase sm:items-end">
           <Link href="/properties" className="hover:text-primary">
             Properties
           </Link>
+          <Link href="/our-story" className="hover:text-primary">
+            Our Story
+          </Link>
           <Link href="/about" className="hover:text-primary">
-            The Estate
+            Explore Gamrie
           </Link>
           <Link href="/gallery" className="hover:text-primary">
             Gallery

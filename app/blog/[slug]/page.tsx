@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { posts } from "@/lib/posts";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export async function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
@@ -45,11 +46,21 @@ export default async function BlogPostPage({
     author: { "@type": "Organization", name: SITE_NAME },
   };
 
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ]);
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-24">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
       />
       <Link
         href="/blog"
