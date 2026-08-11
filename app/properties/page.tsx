@@ -28,6 +28,7 @@ export default function PropertiesPage() {
             href={`/properties/${property.slug}`}
             index={index}
             comingSoon={property.comingSoon}
+            image={property.image}
           />
         ))}
       </div>

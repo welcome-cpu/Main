@@ -4,6 +4,26 @@ const TENANT_ID = process.env.AZURE_TENANT_ID;
 const CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 const MAILBOX = process.env.CONTACT_MAILBOX;
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
+
+async function verifyTurnstile(token: string, remoteIp: string | null) {
+  const res = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: TURNSTILE_SECRET_KEY!,
+        response: token,
+        ...(remoteIp ? { remoteip: remoteIp } : {}),
+      }),
+    }
+  );
+
+  if (!res.ok) return false;
+  const data = (await res.json()) as { success: boolean };
+  return data.success;
+}
 
 async function getAccessToken() {
   const res = await fetch(
@@ -40,12 +60,35 @@ export async function POST(request: Request) {
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const message = typeof body?.message === "string" ? body.message.trim() : "";
+  const turnstileToken =
+    typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
 
   if (!name || !email || !message) {
     return NextResponse.json(
       { error: "Name, email, and message are required." },
       { status: 400 }
     );
+  }
+
+  if (TURNSTILE_SECRET_KEY) {
+    if (!turnstileToken) {
+      return NextResponse.json(
+        { error: "Please complete the verification check." },
+        { status: 400 }
+      );
+    }
+
+    const remoteIp = request.headers.get("x-forwarded-for");
+    const verified = await verifyTurnstile(turnstileToken, remoteIp).catch(
+      () => false
+    );
+
+    if (!verified) {
+      return NextResponse.json(
+        { error: "Verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
   }
 
   try {

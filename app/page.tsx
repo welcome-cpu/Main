@@ -106,6 +106,7 @@ export default function Home() {
               description={property.description}
               href={`/properties/${property.slug}`}
               index={index}
+              image={property.image}
             />
           ))}
         </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import GalleryTile from "@/components/GalleryTile";
+import PropertyMedia from "@/components/PropertyMedia";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
@@ -57,7 +57,12 @@ export default async function PropertyPage({
       </Link>
 
       <div className="mt-8 grid gap-10 sm:grid-cols-2 sm:items-start">
-        <GalleryTile title="" index={properties.indexOf(property)} />
+        <PropertyMedia
+          image={property.image}
+          name={property.name}
+          index={properties.indexOf(property)}
+          overlayLabel={property.comingSoon ? "Coming Soon" : undefined}
+        />
         <div>
           {property.comingSoon && (
             <span className="inline-block rounded-full bg-oak/30 px-3 py-1 text-xs font-semibold tracking-wide text-foreground uppercase">

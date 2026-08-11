@@ -1,5 +1,5 @@
 import Link from "next/link";
-import GalleryTile from "@/components/GalleryTile";
+import PropertyMedia from "@/components/PropertyMedia";
 
 export default function PropertyCard({
   name,
@@ -7,16 +7,23 @@ export default function PropertyCard({
   href,
   index = 0,
   comingSoon = false,
+  image,
 }: {
   name: string;
   description: string;
   href: string;
   index?: number;
   comingSoon?: boolean;
+  image?: { src: string; width: number; height: number };
 }) {
   return (
     <Link href={href} className="group block">
-      <GalleryTile title="" index={index} />
+      <PropertyMedia
+        image={image}
+        name={name}
+        index={index}
+        overlayLabel={comingSoon ? "Coming Soon" : undefined}
+      />
       <div className="mt-4">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold text-foreground">{name}</h3>

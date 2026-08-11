@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import Turnstile from "@/components/Turnstile";
 
 type Status = "idle" | "sending" | "success" | "error";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+
+  const handleVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,7 +28,7 @@ export default function ContactForm() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, turnstileToken }),
       });
 
       const data = await res.json().catch(() => null);
@@ -33,6 +41,7 @@ export default function ContactForm() {
       setName("");
       setEmail("");
       setMessage("");
+      setTurnstileToken("");
     } catch (err) {
       setStatus("error");
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -88,12 +97,17 @@ export default function ContactForm() {
           className="mt-1.5 w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
         />
       </div>
+      {TURNSTILE_SITE_KEY && (
+        <Turnstile siteKey={TURNSTILE_SITE_KEY} onVerify={handleVerify} />
+      )}
       {status === "error" && (
         <p className="text-sm text-red-700">{error}</p>
       )}
       <button
         type="submit"
-        disabled={status === "sending"}
+        disabled={
+          status === "sending" || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)
+        }
         className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
       >
         {status === "sending" ? "Sending…" : "Send Message"}
