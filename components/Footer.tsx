@@ -11,8 +11,7 @@ export default function Footer() {
             Gamrie Chalets
           </span>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-            Luxury clifftop chalets above Gardenstown, overlooking the Moray
-            Firth.
+            Escape. Unwind. Recharge.
           </p>
           <div className="mt-4 flex items-center gap-4">
             <a
@@ -83,7 +82,11 @@ export default function Footer() {
         </nav>
       </div>
       <div className="border-t border-border px-6 py-4 text-center text-xs text-muted-foreground">
-        © {year} Gamrie Chalets. All rights reserved.
+        <p>© {year} Gamrie Chalets Limited. All rights reserved.</p>
+        <p className="mt-1">
+          Registered in Scotland no. SC786644. Registered address: Gf, 3
+          Raeburn Street, Edinburgh, Scotland, EH4 1HY.
+        </p>
       </div>
     </footer>
   );

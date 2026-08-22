@@ -5,7 +5,7 @@ import { properties } from "@/lib/properties";
 export const metadata: Metadata = {
   title: "Properties",
   description:
-    "Muckle View and Murray Cottage — two clifftop studio chalets overlooking the Moray Firth. Mohr Rest joining soon.",
+    "Muckle View, a dog-friendly studio chalet, and Murray Cottage, a three-bedroom family home — both overlooking the Moray Firth. Mohr Rest joining soon.",
   alternates: { canonical: "/properties" },
 };
 
@@ -16,7 +16,9 @@ export default function PropertiesPage() {
         The Chalets
       </p>
       <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-foreground sm:text-5xl">
-        Clifftop chalets on a dramatic coastline
+        Two Properties,
+        <br />
+        One Extraordinary Spot
       </h1>
 
       <div className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">

@@ -83,13 +83,26 @@ export default function AboutPage() {
       <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
         Explore Gamrie
       </p>
-      <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-foreground sm:text-5xl">
-        Unforgettable Experiences
+      <h1 className="mt-4 text-4xl font-semibold text-foreground sm:text-5xl">
+        A Setting That Speaks for Itself
       </h1>
-      <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-        Where the Moray Firth meets Banffshire, this stretch of Scotland&apos;s
-        coastline offers fishing villages and farming communities, with
-        nature and heritage to explore in every direction.
+      <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+        Gardenstown is one of those rare places that lives up to every
+        photograph. Stone cottages step down the cliff face toward a working
+        harbour, and high above it all sits Gamrie Chalets, with
+        uninterrupted views across the full sweep of the Moray Firth.
+      </p>
+      <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+        From your balcony, bottlenose dolphins roll through the water below.
+        On clear winter nights, the Northern Lights shimmer green along the
+        horizon. There&apos;s no better seat in the house than your own with
+        binoculars in hand, coffee going cold, time slowing right down.
+      </p>
+      <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+        Coastal walks begin at your doorstep. Cafés and restaurants wait a
+        short stroll away in the village. And when you&apos;re ready to roam
+        further, the Malt Whisky Trail and the wider North East Coast 250 are
+        yours to explore at whatever pace suits you.
       </p>
 
       <div className="mt-16 grid gap-x-12 gap-y-14 sm:grid-cols-2">
@@ -120,7 +133,7 @@ export default function AboutPage() {
         ))}
       </div>
 
-      <p className="mt-16 max-w-2xl border-t border-border pt-10 text-lg leading-relaxed text-muted-foreground">
+      <p className="mt-16 border-t border-border pt-10 text-lg leading-relaxed text-muted-foreground">
         After a day exploring, come back to a warm chalet and a view that
         changes with every visit.
       </p>

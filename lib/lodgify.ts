@@ -1,29 +1,22 @@
 const LODGIFY_API_KEY = process.env.LODGIFY_API_KEY;
 const LODGIFY_BASE_URL = "https://api.lodgify.com";
 
-const PROPERTY_IDS: Record<string, string | undefined> = {
-  "muckle-view": process.env.LODGIFY_PROPERTY_ID_MUCKLE_VIEW,
-  "murray-cottage": process.env.LODGIFY_PROPERTY_ID_MURRAY_COTTAGE,
-};
-
-export function isLodgifyConfigured(slug: string) {
-  return Boolean(LODGIFY_API_KEY && PROPERTY_IDS[slug]);
+export function isLodgifyConfigured() {
+  return Boolean(LODGIFY_API_KEY);
 }
 
-export type AvailabilityPeriod = {
+type AvailabilityPeriod = {
   start: string;
   end: string;
   available: boolean;
 };
 
 /**
- * Lodgify's /v2/availability/{propertyId} response shape is unverified against
- * live data (their docs site blocked automated access during research). This
- * assumes an array of { periods: [{ start, end, available }] } entries, which
- * is the common shape for this class of PMS API. Confirm and adjust once a
- * real API key is available.
+ * Verified against live data: Lodgify's /v2/availability/{propertyId} returns
+ * an array of room-type entries, each with periods: [{ start, end, available }],
+ * where available is 0 or 1.
  */
-export function normalizeAvailability(raw: unknown): AvailabilityPeriod[] {
+function normalizeAvailability(raw: unknown): AvailabilityPeriod[] {
   if (!Array.isArray(raw)) return [];
 
   const periods: AvailabilityPeriod[] = [];
@@ -47,13 +40,12 @@ export function normalizeAvailability(raw: unknown): AvailabilityPeriod[] {
   return periods;
 }
 
-export async function fetchAvailability(slug: string, start: string, end: string) {
-  const propertyId = PROPERTY_IDS[slug];
-  if (!LODGIFY_API_KEY || !propertyId) {
-    throw new Error("Lodgify is not configured for this property.");
+async function fetchAvailability(rentalId: string, start: string, end: string) {
+  if (!LODGIFY_API_KEY) {
+    throw new Error("Lodgify is not configured.");
   }
 
-  const url = new URL(`${LODGIFY_BASE_URL}/v2/availability/${propertyId}`);
+  const url = new URL(`${LODGIFY_BASE_URL}/v2/availability/${rentalId}`);
   url.searchParams.set("start", start);
   url.searchParams.set("end", end);
 
@@ -65,5 +57,26 @@ export async function fetchAvailability(slug: string, start: string, end: string
     throw new Error(`Lodgify request failed (${res.status})`);
   }
 
-  return res.json();
+  return normalizeAvailability(await res.json());
+}
+
+/**
+ * A stay is available only if every night in [start, end) falls inside a
+ * period Lodgify marked available, with no unavailable period overlapping it.
+ */
+export async function isRangeAvailable(
+  rentalId: string,
+  start: string,
+  end: string
+) {
+  const periods = await fetchAvailability(rentalId, start, end);
+  const rangeStart = new Date(start);
+  const rangeEnd = new Date(end);
+
+  return !periods.some((period) => {
+    if (period.available) return false;
+    const periodStart = new Date(period.start);
+    const periodEnd = new Date(period.end);
+    return periodStart < rangeEnd && periodEnd > rangeStart;
+  });
 }

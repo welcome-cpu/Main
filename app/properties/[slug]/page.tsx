@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PropertyMedia from "@/components/PropertyMedia";
-import AvailabilityCalendar from "@/components/AvailabilityCalendar";
+import LodgifyBookingWidget from "@/components/LodgifyBookingWidget";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
@@ -69,38 +69,65 @@ export default async function PropertyPage({
               Coming Soon
             </span>
           )}
-          <h1 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">
+          {property.tagline && (
+            <p className="mt-4 text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+              {property.tagline}
+            </p>
+          )}
+          <h1 className="mt-2 text-3xl font-semibold text-foreground sm:text-4xl">
             {property.name}
           </h1>
-          <p className="mt-4 leading-relaxed text-muted-foreground">
-            {property.description}
-          </p>
+          {(property.longDescription ?? [property.description]).map((paragraph) => (
+            <p key={paragraph} className="mt-4 leading-relaxed text-muted-foreground">
+              {paragraph}
+            </p>
+          ))}
 
-          {property.comingSoon ? (
-            <div className="mt-8 rounded-xl border border-border bg-muted px-5 py-4 text-sm text-muted-foreground">
-              {property.name} isn&apos;t open for booking yet.{" "}
-              <Link
-                href="/contact"
-                className="font-semibold text-primary hover:underline"
-              >
-                Get in touch
-              </Link>{" "}
-              to be the first to know when it&apos;s ready.
-            </div>
-          ) : (
-            <div className="mt-8">
-              <AvailabilityCalendar propertySlug={property.slug} />
-            </div>
+          {property.features && (
+            <ul className="mt-6 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+              {property.features.map((feature) => (
+                <li
+                  key={feature}
+                  className="flex gap-2 text-sm leading-relaxed text-muted-foreground"
+                >
+                  <span className="text-accent">•</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
           )}
 
-          <Link
-            href="/contact"
-            className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            {property.comingSoon
-              ? `Register Interest in ${property.name}`
-              : `Enquire about ${property.name}`}
-          </Link>
+          {property.comingSoon ? (
+            <>
+              <div className="mt-8 rounded-xl border border-border bg-muted px-5 py-4 text-sm text-muted-foreground">
+                {property.name} isn&apos;t open for booking yet.{" "}
+                <Link
+                  href="/contact"
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Get in touch
+                </Link>{" "}
+                to be the first to know when it&apos;s ready.
+              </div>
+              <Link
+                href="/contact"
+                className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                {`Register Interest in ${property.name}`}
+              </Link>
+            </>
+          ) : property.lodgifyRentalId ? (
+            <div className="mt-8">
+              <LodgifyBookingWidget rentalId={property.lodgifyRentalId} />
+            </div>
+          ) : (
+            <Link
+              href="/contact"
+              className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {`Enquire about ${property.name}`}
+            </Link>
+          )}
         </div>
       </div>
     </div>

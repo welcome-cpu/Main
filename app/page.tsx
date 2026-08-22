@@ -3,6 +3,7 @@ import Link from "next/link";
 import PropertyCard from "@/components/PropertyCard";
 import FeaturedIn from "@/components/FeaturedIn";
 import Testimonials from "@/components/Testimonials";
+import AvailabilitySearch from "@/components/AvailabilitySearch";
 import { bookableProperties } from "@/lib/properties";
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function Home() {
             Escape. Unwind. Recharge.
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
-            Luxury Clifftop Chalets with Panoramic Views of the Moray Firth
+            Luxury Self-Catering on the Aberdeenshire Coast
           </h1>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
@@ -42,27 +43,39 @@ export default function Home() {
             >
               Discover Gamrie Chalets
             </Link>
-            <Link
-              href="/contact"
-              className="rounded-full border border-primary-foreground/50 px-7 py-3 text-sm font-semibold transition-colors hover:bg-primary-foreground/10"
-            >
-              Check Availability
-            </Link>
+          </div>
+          <div className="mt-8 max-w-3xl">
+            <AvailabilitySearch />
           </div>
         </div>
       </section>
 
       <FeaturedIn />
 
-      <section className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+      <section className="mx-auto max-w-3xl px-6 py-24">
+        <h2 className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
           Your Coastal Hideaway
         </h2>
-        <p className="mt-6 text-2xl leading-relaxed text-foreground sm:text-3xl">
-          Your perfect retreat on Scotland&apos;s dramatic coastline. Set
-          above Gardenstown, our contemporary studio chalets look out across
-          the Moray Firth — a quiet base for dolphin watching, coastal walks,
-          and doing very little at all.
+        <p className="mt-6 text-lg leading-relaxed text-foreground">
+          Some places you visit. Others stay with you long after
+          you&apos;ve driven home. Gamrie Chalets is luxury self-catering in
+          Aberdeenshire, perched high on the clifftop above the fishing
+          village of Gardenstown, where the Moray Firth opens out beneath
+          you - silver at dawn, gold at dusk, and never quite the same view
+          twice.
+        </p>
+        <p className="mt-6 text-lg leading-relaxed text-foreground">
+          This is coastal accommodation with a genuine sense of place. Two
+          ways to stay, both built around the setting: intimate,
+          dog-friendly studio chalets for couples, and a generous family
+          home with room for everyone to breathe.
+        </p>
+        <p className="mt-6 text-lg leading-relaxed text-foreground">
+          We sit right on the North East Coast 250, with the sea at your
+          doorstep and some of Scotland&apos;s finest coastline unfolding in
+          every direction. Come for a long weekend or settle in for a
+          slower week - either way, this is the kind of stay that&apos;s
+          worth the journey north.
         </p>
       </section>
 
