@@ -7,6 +7,36 @@ type GalleryImage = { src: string; width: number; height: number };
 
 const ROTATE_MS = 5000;
 
+function ChevronLeft({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      className={className}
+    >
+      <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronRight({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      className={className}
+    >
+      <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function PropertyGallery({
   images,
   name,
@@ -17,16 +47,34 @@ export default function PropertyGallery({
   overlayLabel?: string;
 }) {
   const [index, setIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    if (images.length <= 1) return;
+    if (images.length <= 1 || isFullscreen) return;
     // Re-armed on every index change, so a manual prev/next click resets
-    // the countdown instead of fighting the auto-advance.
+    // the countdown instead of fighting the auto-advance. Paused while
+    // the fullscreen viewer is open.
     const timer = setTimeout(() => {
       setIndex((i) => (i + 1) % images.length);
     }, ROTATE_MS);
     return () => clearTimeout(timer);
-  }, [index, images.length]);
+  }, [index, images.length, isFullscreen]);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    document.body.style.overflow = "hidden";
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsFullscreen(false);
+      if (e.key === "ArrowLeft") goToPrev();
+      if (e.key === "ArrowRight") goToNext();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFullscreen, images.length]);
 
   const goToPrev = () =>
     setIndex((i) => (i - 1 + images.length) % images.length);
@@ -56,6 +104,27 @@ export default function PropertyGallery({
           </span>
         </div>
       )}
+      <button
+        type="button"
+        aria-label="View fullscreen"
+        onClick={() => setIsFullscreen(true)}
+        className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          className="h-5 w-5"
+        >
+          <path
+            d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
       {images.length > 1 && (
         <>
           <button
@@ -64,16 +133,7 @@ export default function PropertyGallery({
             onClick={goToPrev}
             className="absolute top-1/2 left-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="h-5 w-5"
-            >
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             type="button"
@@ -81,16 +141,7 @@ export default function PropertyGallery({
             onClick={goToNext}
             className="absolute top-1/2 right-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="h-5 w-5"
-            >
-              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronRight className="h-5 w-5" />
           </button>
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
             {images.map((image, i) => (
@@ -106,6 +157,63 @@ export default function PropertyGallery({
             ))}
           </div>
         </>
+      )}
+
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4">
+          <button
+            type="button"
+            aria-label="Close fullscreen"
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-6 w-6"
+            >
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {images.length > 1 && (
+            <p className="absolute top-4 left-1/2 -translate-x-1/2 text-sm text-white/70">
+              {index + 1} / {images.length}
+            </p>
+          )}
+
+          <Image
+            src={images[index].src}
+            alt={name}
+            width={images[index].width}
+            height={images[index].height}
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+          />
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous photo"
+                onClick={goToPrev}
+                className="absolute top-1/2 left-4 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              >
+                <ChevronLeft className="h-7 w-7" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next photo"
+                onClick={goToNext}
+                className="absolute top-1/2 right-4 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              >
+                <ChevronRight className="h-7 w-7" />
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

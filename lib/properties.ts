@@ -23,6 +23,7 @@ export const properties = [
       "Wheelchair accessible",
     ],
     comingSoon: false,
+    location: { lat: 57.670563223386880, lng: -2.337134626983644 },
     image: { src: "/7907_Gamrie_High_158.jpg", width: 7871, height: 5249 },
     gallery: [
       { src: "/Muckle View/1.jpg", width: 1920, height: 1280 },
@@ -90,6 +91,7 @@ export const properties = [
       "Wi-fi",
     ],
     comingSoon: false,
+    location: { lat: 57.671059600000000, lng: -2.333991600000000 },
     image: { src: "/78491_Murray-002.jpg", width: 4999, height: 3333 },
     gallery: [
       { src: "/Murray Cottage/1.jpg", width: 1920, height: 1280 },
@@ -151,6 +153,7 @@ export const properties = [
       "Wheelchair accessible",
     ],
     comingSoon: true,
+    location: { lat: 57.670563223386880, lng: -2.337134626983644 },
     image: { src: "/Mohr Rest - Coming Soon.jpeg", width: 1920, height: 1440 },
   },
 ];
