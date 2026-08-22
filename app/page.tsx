@@ -4,6 +4,7 @@ import PropertyCard from "@/components/PropertyCard";
 import FeaturedIn from "@/components/FeaturedIn";
 import Testimonials from "@/components/Testimonials";
 import AvailabilitySearch from "@/components/AvailabilitySearch";
+import BackgroundVideo from "@/components/BackgroundVideo";
 import { bookableProperties } from "@/lib/properties";
 
 export const metadata: Metadata = {
@@ -28,8 +29,16 @@ const comforts = [
 export default function Home() {
   return (
     <>
-      <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-gradient-to-br from-primary via-primary to-accent/60 px-6 pb-16 text-primary-foreground">
-        <div className="mx-auto w-full max-w-6xl">
+      <section className="relative flex min-h-[85vh] items-end overflow-hidden px-6 pb-16 text-primary-foreground">
+        <BackgroundVideo
+          sources={[
+            "/sceneinvideo_-_muckle_view,_high_green_gardenstown,_ab45_3yn (720p).mp4",
+            "/sceneinvideo_-_murray_cottage,_7_garden_crescent,_gardenstown,_ab45_3zj (720p).mp4",
+          ]}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/70 to-accent/60" />
+        <div className="relative z-10 mx-auto w-full max-w-6xl">
           <p className="text-xs font-semibold tracking-[0.3em] uppercase text-primary-foreground/70">
             Escape. Unwind. Recharge.
           </p>
