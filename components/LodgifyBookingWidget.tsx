@@ -13,14 +13,18 @@ export default function LodgifyBookingWidget({
   rentalId: string;
 }) {
   useEffect(() => {
+    // Lodgify's widget bundles its own React and watches the DOM for
+    // #lodgify-book-now-box elements, so the loader script must run at
+    // most once per page load. Re-injecting it on every mount (e.g. when
+    // navigating between property pages) re-executes the whole bundle
+    // and corrupts its React internals (invalid hook call / error #321).
+    if (document.querySelector(`script[src="${SCRIPT_SRC}"]`)) return;
+
     const script = document.createElement("script");
     script.src = SCRIPT_SRC;
     script.defer = true;
     document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, [rentalId]);
+  }, []);
 
   return (
     <div>
