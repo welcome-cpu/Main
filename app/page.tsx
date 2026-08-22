@@ -36,15 +36,7 @@ export default function Home() {
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
             Luxury Self-Catering on the Aberdeenshire Coast
           </h1>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/properties"
-              className="rounded-full bg-background px-7 py-3 text-sm font-semibold text-primary transition-colors hover:bg-background/90"
-            >
-              Discover Gamrie Chalets
-            </Link>
-          </div>
-          <div className="mt-8 max-w-3xl">
+          <div className="mt-8 w-full">
             <AvailabilitySearch />
           </div>
         </div>
@@ -126,24 +118,6 @@ export default function Home() {
       </section>
 
       <Testimonials />
-
-      <section className="border-t border-border px-6 py-24">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 text-center">
-          <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-            Ready to plan your escape?
-          </h2>
-          <p className="max-w-md text-muted-foreground">
-            Get in touch and we&apos;ll help you find the right chalet for
-            your dates.
-          </p>
-          <Link
-            href="/contact"
-            className="mt-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Contact Us
-          </Link>
-        </div>
-      </section>
     </>
   );
 }

@@ -37,65 +37,69 @@ const reasons = [
 
 export default function OurStoryPage() {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-24">
-      <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-        Our Story
-      </p>
-      <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-foreground sm:text-5xl">
-        A Home from Home in Gardenstown
-      </h1>
+    <>
+      <div className="mx-auto max-w-6xl px-6 py-24">
+        <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+          Our Story
+        </p>
+        <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-foreground sm:text-5xl">
+          A Home from Home in Gardenstown
+        </h1>
 
-      <div className="mt-12 grid gap-10 sm:grid-cols-2 sm:items-start">
-        <div className="overflow-hidden rounded-2xl border border-border">
-          <Image
-            src="/7907_Gamrie_High_140.jpg"
-            alt="View from Gamrie Chalets over Gardenstown and the Moray Firth"
-            width={7927}
-            height={5288}
-            className="aspect-[4/3] w-full object-cover"
-          />
-        </div>
-        <div className="space-y-6 text-lg leading-relaxed text-muted-foreground">
-          <p>
-            Welcome to Gardenstown — known as Gamrie (pronounced
-            &ldquo;Gay-m-rie&rdquo;) by the locals. It&apos;s a historic
-            fishing village on the beautiful Moray Firth, its captivating
-            coastline unchanged over the centuries.
-          </p>
-          <p>
-            I was born and raised here, and my family has lived in the
-            village since it was founded in 1720. With deep roots in the
-            community and a genuine love for the area, I enjoy helping
-            guests discover the charm, history, and natural beauty that
-            make Gardenstown so special.
-          </p>
-          <p>
-            I look forward to making your stay comfortable and memorable —
-            a home from home, with modern comforts designed to let you
-            relax and recharge while enjoying the views in every season
-            and weather condition.
-          </p>
-          <p className="font-medium text-foreground">— Shaun Donaldson</p>
+        <div className="mt-12 grid gap-10 sm:grid-cols-2 sm:items-start">
+          <div className="overflow-hidden rounded-2xl border border-border">
+            <Image
+              src="/7907_Gamrie_High_140.jpg"
+              alt="View from Gamrie Chalets over Gardenstown and the Moray Firth"
+              width={7927}
+              height={5288}
+              className="aspect-[4/3] w-full object-cover"
+            />
+          </div>
+          <div className="space-y-6 text-lg leading-relaxed text-muted-foreground">
+            <p>
+              Welcome to Gardenstown — known as Gamrie (pronounced
+              &ldquo;Gay-m-rie&rdquo;) by the locals. It&apos;s a historic
+              fishing village on the beautiful Moray Firth, its captivating
+              coastline unchanged over the centuries.
+            </p>
+            <p>
+              I was born and raised here, and my family has lived in the
+              village since it was founded in 1720. With deep roots in the
+              community and a genuine love for the area, I enjoy helping
+              guests discover the charm, history, and natural beauty that
+              make Gardenstown so special.
+            </p>
+            <p>
+              I look forward to making your stay comfortable and memorable —
+              a home from home, with modern comforts designed to let you
+              relax and recharge while enjoying the views in every season
+              and weather condition.
+            </p>
+            <p className="font-medium text-foreground">— Shaun Donaldson</p>
+          </div>
         </div>
       </div>
 
-      <div className="mt-24">
-        <h2 className="max-w-2xl text-3xl font-semibold text-foreground sm:text-4xl">
-          Why Guests Keep Coming Back
-        </h2>
-        <div className="mt-10 grid gap-x-12 gap-y-10 sm:grid-cols-2">
-          {reasons.map((reason) => (
-            <div key={reason.title}>
-              <h3 className="text-lg font-semibold text-foreground">
-                {reason.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {reason.body}
-              </p>
-            </div>
-          ))}
+      <section className="bg-muted px-6 py-24">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="max-w-2xl text-3xl font-semibold text-foreground sm:text-4xl">
+            Why Guests Keep Coming Back
+          </h2>
+          <div className="mt-10 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+            {reasons.map((reason) => (
+              <div key={reason.title}>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {reason.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {reason.body}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }
