@@ -59,6 +59,7 @@ export default async function PropertyPage({
       <div className="mt-8 grid gap-10 sm:grid-cols-2 sm:items-start">
         <PropertyMedia
           image={property.image}
+          gallery={property.gallery}
           name={property.name}
           index={properties.indexOf(property)}
           overlayLabel={property.comingSoon ? "Coming Soon" : undefined}

@@ -50,6 +50,11 @@ export default function LodgifyBookingWidget({
         #lodgify-book-now-box {
           width: 100%;
         }
+        /* Lodgify hardcodes this card to width: 330px with no CSS
+           variable for it, so override it directly by its test id. */
+        #lodgify-book-now-box [data-testid="book-now-box"] {
+          width: 100% !important;
+        }
       `}</style>
       <div
         id="lodgify-book-now-box"

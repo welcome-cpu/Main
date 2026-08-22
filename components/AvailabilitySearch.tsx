@@ -124,12 +124,15 @@ export default function AvailabilitySearch() {
                 </span>
               </span>
               {result.available ? (
-                <Link
+                // A plain <a> forces a full page load into the property
+                // page, so the Lodgify booking widget script (which only
+                // scans the DOM for its target element once) runs fresh.
+                <a
                   href={`/properties/${result.slug}`}
                   className="font-semibold text-primary hover:underline"
                 >
                   View &amp; Book →
-                </Link>
+                </a>
               ) : (
                 <span className="text-muted-foreground">Not available</span>
               )}

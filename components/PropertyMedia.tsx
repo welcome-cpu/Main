@@ -1,17 +1,26 @@
 import Image from "next/image";
 import GalleryTile from "@/components/GalleryTile";
+import PropertyGallery from "@/components/PropertyGallery";
 
 export default function PropertyMedia({
   image,
+  gallery,
   name,
   index = 0,
   overlayLabel,
 }: {
   image?: { src: string; width: number; height: number };
+  gallery?: { src: string; width: number; height: number }[];
   name: string;
   index?: number;
   overlayLabel?: string;
 }) {
+  if (gallery && gallery.length > 0) {
+    return (
+      <PropertyGallery images={gallery} name={name} overlayLabel={overlayLabel} />
+    );
+  }
+
   if (!image) {
     return <GalleryTile title="" index={index} />;
   }

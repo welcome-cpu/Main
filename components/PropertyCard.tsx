@@ -1,4 +1,3 @@
-import Link from "next/link";
 import PropertyMedia from "@/components/PropertyMedia";
 
 export default function PropertyCard({
@@ -17,7 +16,11 @@ export default function PropertyCard({
   image?: { src: string; width: number; height: number };
 }) {
   return (
-    <Link href={href} className="group block">
+    // A plain <a> (not next/link) forces a full page load, so the
+    // Lodgify booking widget's script — which only scans the DOM for
+    // its target element once, on script load — always runs fresh
+    // against exactly one instance of that element.
+    <a href={href} className="group block">
       <PropertyMedia
         image={image}
         name={name}
@@ -40,6 +43,6 @@ export default function PropertyCard({
           {comingSoon ? `Learn more` : `Discover ${name}`} →
         </span>
       </div>
-    </Link>
+    </a>
   );
 }
