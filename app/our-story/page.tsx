@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Dancing_Script } from "next/font/google";
+
+const signatureFont = Dancing_Script({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Our Story",
@@ -46,8 +49,8 @@ export default function OurStoryPage() {
           A Home from Home in Gardenstown
         </h1>
 
-        <div className="mt-12 grid gap-10 sm:grid-cols-2 sm:items-start">
-          <div className="overflow-hidden rounded-2xl border border-border">
+        <div className="mt-12 overflow-hidden">
+          <div className="float-left mr-8 mb-4 w-64 overflow-hidden rounded-2xl border border-border sm:w-80">
             <Image
               src="/7907_Gamrie_High_140.jpg"
               alt="View from Gamrie Chalets over Gardenstown and the Moray Firth"
@@ -58,25 +61,47 @@ export default function OurStoryPage() {
           </div>
           <div className="space-y-6 text-lg leading-relaxed text-muted-foreground">
             <p>
-              Welcome to Gardenstown — known as Gamrie (pronounced
-              &ldquo;Gay-m-rie&rdquo;) by the locals. It&apos;s a historic
-              fishing village on the beautiful Moray Firth, its captivating
-              coastline unchanged over the centuries.
+              The story of Gamrie Chalets is also tied to the history of the
+              village itself.
             </p>
             <p>
-              I was born and raised here, and my family has lived in the
-              village since it was founded in 1720. With deep roots in the
-              community and a genuine love for the area, I enjoy helping
-              guests discover the charm, history, and natural beauty that
-              make Gardenstown so special.
+              I bought the site from the local laird when it was little more
+              than a row of derelict clifftop garages dating from the 1940s.
+              In their working days, they had been used for mending and
+              storing fishing nets — part of an industry that shaped
+              generations of life in Gamrie. As the fishing industry changed
+              and declined through the 20th century, the garages gradually
+              fell out of use and were left to the elements.
             </p>
             <p>
-              I look forward to making your stay comfortable and memorable —
-              a home from home, with modern comforts designed to let you
-              relax and recharge while enjoying the views in every season
-              and weather condition.
+              At first glance, there wasn&apos;t much to see beyond a row of
+              old garages. But the location was extraordinary.
             </p>
-            <p className="font-medium text-foreground">— Shaun Donaldson</p>
+            <p>
+              Perhaps I needed to move away from Gamrie for a while to truly
+              appreciate what I had grown up with — the peace, the slower
+              pace of life, the character of the village and, of course,
+              that incredible view across Gardenstown and the Moray Firth.
+            </p>
+            <p>
+              When I looked at the old garages, I began to see what they
+              could become. Perched high above the village, with the sea
+              stretching out in front of them, there was an opportunity to
+              give this forgotten little corner of Gamrie a new life.
+            </p>
+            <p>
+              That idea eventually became Gamrie Chalets — transforming a
+              site once connected to the village&apos;s fishing past into a
+              place where people can come to slow down, relax and experience
+              the beauty of Gamrie for themselves.
+            </p>
+            <p>
+              The buildings may have a very different purpose today, but the
+              view remains the same.
+            </p>
+            <p className={`${signatureFont.className} text-4xl text-foreground`}>
+              Shaun W A Donaldson
+            </p>
           </div>
         </div>
       </div>

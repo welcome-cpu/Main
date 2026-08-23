@@ -127,6 +127,26 @@ export default function Home() {
       </section>
 
       <Testimonials />
+
+      <section className="bg-muted px-6 py-24">
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
+          <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+            Your Clifftop Stay Is Waiting
+          </h2>
+          <p className="text-muted-foreground">
+            Two special properties. One unforgettable setting above the
+            Moray Firth. Whether it&apos;s a couple&apos;s escape with the
+            dog or a family gathering by the sea, your dates are the only
+            thing standing between you and the coast.
+          </p>
+          <Link
+            href="/properties"
+            className="mt-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            View Properties
+          </Link>
+        </div>
+      </section>
     </>
   );
 }

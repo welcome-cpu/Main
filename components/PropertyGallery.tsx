@@ -60,6 +60,10 @@ export default function PropertyGallery({
     return () => clearTimeout(timer);
   }, [index, images.length, isFullscreen]);
 
+  const goToPrev = () =>
+    setIndex((i) => (i - 1 + images.length) % images.length);
+  const goToNext = () => setIndex((i) => (i + 1) % images.length);
+
   useEffect(() => {
     if (!isFullscreen) return;
     document.body.style.overflow = "hidden";
@@ -75,10 +79,6 @@ export default function PropertyGallery({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFullscreen, images.length]);
-
-  const goToPrev = () =>
-    setIndex((i) => (i - 1 + images.length) % images.length);
-  const goToNext = () => setIndex((i) => (i + 1) % images.length);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border">
