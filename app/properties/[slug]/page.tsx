@@ -152,7 +152,7 @@ export default async function PropertyPage({
               </li>
               <li className="flex gap-2">
                 <span className="text-accent">•</span>
-                <span>40 minutes from Inverness Airport</span>
+                <span>2 hours from Inverness Airport</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-accent">•</span>

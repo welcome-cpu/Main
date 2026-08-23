@@ -14,76 +14,145 @@ const categories = [
     title: "Beaches & Coastal Walks",
     image: { src: "/7907_Gamrie_High_190.jpg", width: 7790, height: 5195 },
     intro:
-      "Clean water and soft sand make this 30-mile coastline a favourite for wild swimming and beach walks.",
+      "Beaches and coastal walks are some of the main attractions along the 30 mile coastline. Clean water and soft sand make these spots popular for wild swimming and body boarding.",
     items: [
-      { name: "Gardenstown Beach", detail: "sandy, and the nearest to the chalets" },
-      { name: "Pennan", detail: "gable-end houses running down to the sea" },
-      { name: "Inverboyndie", detail: "an award-winning sand beach" },
-      { name: "Whitehills", detail: "a rock beach" },
-      { name: "Portsoy", detail: "sand and rock beach" },
-      { name: "Sandend Bay", detail: "sandy, good for families and surfers" },
+      { name: "Gardenstown Beach", detail: "nearest to the chalets, sandy, accessible with a gentle curve" },
+      { name: "Pennan Village", detail: "a rugged village with houses built gable-end to the sea" },
+      { name: "Inverboyndie", detail: "a sand beach with access via a path, recognized for its Keep Scotland Beautiful Seaside award" },
+      { name: "Whitehills", detail: "a rock beach, accessible via a path" },
+      { name: "Portsoy", detail: "a popular sand and rock beach, accessible from the Portsoy Caravan car park" },
+      { name: "Sandend Bay", detail: "a popular sandy beach, accessible via a path and boardwalk, suitable for families and surfers" },
     ],
   },
   {
     title: "Wildlife",
     image: { src: "/7907_Gamrie_High_083.jpg", width: 7983, height: 5325 },
-    intro: "Watch from afar, or get up close with the coastline's wildlife.",
+    intro:
+      "With such a range of natural wildlife on land, in the sea and in the air, visitors can choose to watch from afar or get up close.",
     items: [
-      { name: "Dolphin watching", detail: "on the Moray Firth" },
       { name: "Fishing trips" },
-      { name: "Bird spotting", detail: "at Troup Head Nature Reserve" },
+      { name: "Dolphin watching" },
+      { name: "Bird spotting", detail: "Troup Head Nature Reserve" },
     ],
   },
   {
     title: "Heritage & History",
     image: { src: "/Duff_House.jpg", width: 992, height: 828 },
-    intro: "Scandinavian influence runs through the area's history and architecture.",
+    intro:
+      "The proximity of Scotland's northern coastline to the Scandinavian countries means our heritage over the many centuries has been influenced by these neighbours.",
     items: [
-      { name: "St John's Church", detail: "Gamrie" },
-      { name: "Banff Castle" },
-      { name: "Duff House", detail: "Banff" },
-      { name: "Slains Castle", detail: "said to have inspired Dracula" },
-      { name: "Findlater Castle", detail: "a clifftop ruin dating to the mid-1200s" },
+      {
+        name: "St John's Church, Gamrie",
+        detail:
+          "commemorates the Scots' victory over the Danes at the Battle of the Bloody Pits in the 10th century",
+      },
+      {
+        name: "Banff Castle",
+        detail:
+          "transitioned from a 12th-century motte-and-bailey fortress to the stunning Georgian mansion designed by John Adam in 1750",
+      },
+      {
+        name: "Duff House, Banff",
+        detail:
+          "one of the largest and finest stately homes in the area, was designed by renowned architect Robert Adam and is now cared for by Historic Scotland",
+      },
+      {
+        name: "Slains Castle",
+        detail:
+          "the inspiration for Bram Stoker's Dracula, is free to those wanting to enjoy its spooky remains",
+      },
+      {
+        name: "Findlater Castle",
+        detail:
+          "built in the mid-1200s, this clifftop ruin reflects Scotland's need for strong coastal defences. Strengthened by King Alexander III ahead of a planned invasion by King Håkon IV of Norway, it marks another link to the area's Danish and Norse past",
+      },
     ],
   },
   {
     title: "Harbours & Fishing Ports",
     image: { src: "/7907_Gamrie_High_186.jpg", width: 8027, height: 5354 },
     items: [
-      { name: "Gardenstown Harbour" },
-      { name: "Banff Harbour Marina", detail: "17th century" },
-      { name: "Fraserburgh Harbour", detail: "a working port since the 16th century" },
-      { name: "Peterhead Port Fish Market", detail: "Europe's largest fishing port" },
+      {
+        name: "Gardenstown Harbour",
+        detail:
+          "a small, working harbour right below the chalets, still used by local fishing boats and lobster creels",
+      },
+      {
+        name: "Banff Harbour Marina",
+        detail:
+          "a historic harbour dating back to the 17th century, now home to a mix of small working fishing boats and leisure craft",
+      },
+      {
+        name: "Fraserburgh Harbour",
+        detail:
+          "one of the area's largest working fishing ports, dating back to the 16th century and still supporting a busy fishing fleet today",
+      },
+      {
+        name: "Peterhead Port Fish Market",
+        detail:
+          "home to Europe's largest fishing port and the UK's busiest whitefish market, where millions of pounds of fresh seafood are landed and traded daily",
+      },
     ],
   },
   {
     title: "Whisky Distilleries",
     image: { src: "/7907_Gamrie_High_267.jpg", width: 7911, height: 5277 },
-    intro: "A handful of well-known distilleries within easy driving distance:",
+    intro:
+      "Speyside is home to some of Scotland's finest malt and blended whisky. Nearby distilleries offer tours of their operations, including tasting experiences and that all-important gift shop.",
     items: [
-      { name: "Glenglassaugh", detail: "30 minutes" },
-      { name: "Strathisla", detail: "45 minutes" },
-      { name: "Speyside Cooperage", detail: "1 hour" },
-      { name: "The Macallan Estate", detail: "1 hour 15 minutes" },
+      {
+        name: "Glenglassaugh Distillery",
+        detail:
+          "roughly 30 minutes from Gardenstown, this distillery was built in 1875 near the Glassaugh Spring, known for its pure water supply",
+      },
+      {
+        name: "Strathisla Distillery",
+        detail:
+          "45 minutes from Gardenstown, this distillery is known for producing the Chivas Regal brand",
+      },
+      {
+        name: "Speyside Cooperage Visitor Attraction",
+        detail:
+          "roughly an hour by car from Gardenstown, this facility shows where whisky barrels are made and repaired",
+      },
+      {
+        name: "The Macallan Estate",
+        detail:
+          "a 1 hour 15 minute drive from Gardenstown, this distillery has a new visitor centre",
+      },
     ],
   },
   {
     title: "Scenic Driving",
     image: { src: "/NE250.png", width: 417, height: 259, fit: "contain" as const },
     intro:
-      "The North East 250 route links castles, distilleries, fishing villages, and coastal scenery across the region — one of Scotland's great road trips, right from your door.",
+      "North East 250 Route – the NE250 Trail – takes cars around the scenic coast from the road, exploring six of Scotland's most inspiring regions. Drivers and passengers will see a range of castles and ruins, whisky distilleries, and fishing villages as you travel between coastal villages and beaches and mountain roads.",
   },
   {
     title: "Hiking & Walking",
     image: { src: "/7907_Gamrie_High_109.jpg", width: 8192, height: 5464 },
     intro:
-      "Coastal and countryside trails run in every direction. Pack proper footwear — Scottish weather can turn quickly — and the what3words app is handy for pinpointing exact locations along the way.",
+      "Whether you want a brisk hike or a casual wander, the surrounding area offers many options. Some will require suitable footwear and for the Scottish weather, we always recommend being prepared for sudden changes to the forecast. Walkers may want to use the what3words app to geo locate their movements. Here's a selection of nearby options.",
+    items: [
+      { name: "Gardenstown to Crovie Viewpoint" },
+      { name: "Crovie, Gamrie, and St John's Kirk" },
+      { name: "Gardenstown, Crovie, and 5 Farms" },
+      { name: "Duff House and Montcoffer Wood" },
+      { name: "Banff Harbour and Whitehills" },
+      { name: "Cullen and Findlater Castle" },
+      { name: "Bin of Cullen" },
+    ],
   },
   {
     title: "Local Hospitality",
     image: { src: "/7907_Gamrie_High_197.jpg", width: 5373, height: 8056 },
     intro:
-      "Scottish hospitality is known the world over, and a handful of local pubs and restaurants are within easy reach, some hosting seasonal events throughout the year.",
+      "Scottish hospitality is known throughout the world, and local venues here offer a range of seasonal events.",
+    items: [
+      { name: "The Garden Arms", detail: "walkable" },
+      { name: "The Knowes Hotel and Restaurant, MacDuff", detail: "10 minute drive" },
+      { name: "The Pennan Inn", detail: "10 minute drive" },
+    ],
   },
 ];
 
