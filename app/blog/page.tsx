@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import GalleryTile from "@/components/GalleryTile";
 import { posts } from "@/lib/posts";
@@ -22,7 +23,19 @@ export default function BlogPage() {
       <div className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post, index) => (
           <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
-            <GalleryTile title="" index={index} />
+            {post.image ? (
+              <div className="overflow-hidden rounded-2xl border border-border">
+                <Image
+                  src={post.image.src}
+                  alt={post.title}
+                  width={post.image.width}
+                  height={post.image.height}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </div>
+            ) : (
+              <GalleryTile title="" index={index} />
+            )}
             <div className="mt-4">
               <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {new Date(post.date).toLocaleDateString("en-GB", {
