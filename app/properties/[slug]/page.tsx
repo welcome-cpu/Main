@@ -44,19 +44,21 @@ export default async function PropertyPage({
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-24">
+    <div className="pb-24">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Link
-        href="/properties"
-        className="text-xs font-medium tracking-wide text-primary uppercase hover:underline"
-      >
-        ← All Properties
-      </Link>
+      <div className="mx-auto max-w-6xl px-6 pt-8">
+        <Link
+          href="/properties"
+          className="text-xs font-medium tracking-wide text-primary uppercase hover:underline"
+        >
+          ← All Properties
+        </Link>
+      </div>
 
-      <div className="mt-8 grid gap-10 sm:grid-cols-2 sm:items-start">
+      <div className="mt-6">
         <PropertyMedia
           image={property.image}
           gallery={property.gallery}
@@ -64,7 +66,10 @@ export default async function PropertyPage({
           index={properties.indexOf(property)}
           overlayLabel={property.comingSoon ? "Coming Soon" : undefined}
         />
-        <div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="mt-10">
           {property.comingSoon && (
             <span className="inline-block rounded-full bg-oak/30 px-3 py-1 text-xs font-semibold tracking-wide text-foreground uppercase">
               Coming Soon
@@ -130,53 +135,54 @@ export default async function PropertyPage({
             </Link>
           )}
         </div>
-      </div>
 
-      {property.location && (
-        <div className="mt-16 rounded-2xl border border-border bg-muted px-6 py-8 shadow-lg sm:px-10 sm:py-10">
-          <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-            Where to Find Us
-          </h2>
-          <p className="mt-4 leading-relaxed text-muted-foreground">
-            Gamrie Chalets sits above Gardenstown on the Aberdeenshire coast,
-            roughly:
-          </p>
-          <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted-foreground">
-            <li className="flex gap-2">
-              <span className="text-accent">•</span>
-              <span>1 hour from Aberdeen</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-accent">•</span>
-              <span>40 minutes from Inverness Airport</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-accent">•</span>
-              <span>20 minutes from Banff and Macduff</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-accent">•</span>
-              <span>On the North East Coast 250 scenic route</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-accent">•</span>
-              <span>On the Malt Whisky Trail</span>
-            </li>
-          </ul>
-          <p className="mt-4 leading-relaxed text-muted-foreground">
-            Coastal walks, dolphin watching, distillery visits, and historic
-            fishing villages are all within a short drive or an easy stroll.
-          </p>
-          <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${property.location.lat},${property.location.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Get Directions
-          </a>
-        </div>
-      )}
+        {property.location && (
+          <div className="mt-16 rounded-2xl border border-border bg-muted px-6 py-8 shadow-lg sm:px-10 sm:py-10">
+            <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+              Where to Find Us
+            </h2>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Gamrie Chalets sits above Gardenstown on the Aberdeenshire
+              coast, roughly:
+            </p>
+            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted-foreground">
+              <li className="flex gap-2">
+                <span className="text-accent">•</span>
+                <span>1 hour from Aberdeen</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-accent">•</span>
+                <span>40 minutes from Inverness Airport</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-accent">•</span>
+                <span>20 minutes from Banff and Macduff</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-accent">•</span>
+                <span>On the North East Coast 250 scenic route</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-accent">•</span>
+                <span>On the Malt Whisky Trail</span>
+              </li>
+            </ul>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Coastal walks, dolphin watching, distillery visits, and
+              historic fishing villages are all within a short drive or an
+              easy stroll.
+            </p>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${property.location.lat},${property.location.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get Directions
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

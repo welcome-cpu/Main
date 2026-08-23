@@ -81,82 +81,100 @@ export default function PropertyGallery({
   }, [isFullscreen, images.length]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border">
-      <div className="aspect-[4/3] w-full">
-        {images.map((image, i) => (
-          <Image
-            key={image.src}
-            src={image.src}
-            alt={name}
-            width={image.width}
-            height={image.height}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
-              i === index ? "opacity-100" : "opacity-0"
-            }`}
-            priority={i === 0}
-          />
-        ))}
-      </div>
-      {overlayLabel && (
-        <div className="absolute inset-0 flex items-center justify-center bg-foreground/50">
-          <span className="text-lg font-semibold tracking-[0.2em] text-background uppercase">
-            {overlayLabel}
-          </span>
+    <div className="w-full">
+      <div className="relative w-full overflow-hidden bg-muted">
+        <div className="h-[45vh] w-full sm:h-[60vh] lg:h-[70vh]">
+          {images.map((image, i) => (
+            <Image
+              key={image.src}
+              src={image.src}
+              alt={name}
+              width={image.width}
+              height={image.height}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+                i === index ? "opacity-100" : "opacity-0"
+              }`}
+              priority={i === 0}
+            />
+          ))}
         </div>
-      )}
-      <button
-        type="button"
-        aria-label="View fullscreen"
-        onClick={() => setIsFullscreen(true)}
-        className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          className="h-5 w-5"
-        >
-          <path
-            d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      {images.length > 1 && (
-        <>
-          <button
-            type="button"
-            aria-label="Previous photo"
-            onClick={goToPrev}
-            className="absolute top-1/2 left-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Next photo"
-            onClick={goToNext}
-            className="absolute top-1/2 right-3 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-            {images.map((image, i) => (
-              <button
-                key={image.src}
-                type="button"
-                aria-label={`Show photo ${i + 1}`}
-                onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-5 bg-background" : "w-1.5 bg-background/50"
-                }`}
-              />
-            ))}
+        {overlayLabel && (
+          <div className="absolute inset-0 flex items-center justify-center bg-foreground/50">
+            <span className="text-lg font-semibold tracking-[0.2em] text-background uppercase">
+              {overlayLabel}
+            </span>
           </div>
-        </>
+        )}
+        <button
+          type="button"
+          aria-label="View fullscreen"
+          onClick={() => setIsFullscreen(true)}
+          className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="h-5 w-5"
+          >
+            <path
+              d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous photo"
+              onClick={goToPrev}
+              className="absolute top-1/2 left-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next photo"
+              onClick={goToNext}
+              className="absolute top-1/2 right-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-foreground/40 px-3 py-1 text-xs font-medium text-background">
+              {index + 1} / {images.length}
+            </p>
+          </>
+        )}
+      </div>
+
+      {images.length > 1 && (
+        <div className="scrollbar-thin flex gap-2 overflow-x-auto px-6 py-4 sm:px-10">
+          {images.map((image, i) => (
+            <button
+              key={image.src}
+              type="button"
+              aria-label={`Show photo ${i + 1}`}
+              onClick={() => setIndex(i)}
+              className={`relative h-16 w-24 flex-none overflow-hidden rounded-lg ring-2 transition-all sm:h-20 sm:w-28 ${
+                i === index
+                  ? "ring-primary"
+                  : "opacity-70 ring-transparent hover:opacity-100"
+              }`}
+            >
+              <Image
+                src={image.src}
+                alt=""
+                fill
+                sizes="112px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
       )}
 
       {isFullscreen && (
