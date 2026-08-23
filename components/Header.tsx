@@ -7,6 +7,7 @@ const links = [
   { href: "/about", label: "Explore Gamrie" },
   { href: "/gallery", label: "Gallery" },
   { href: "/blog", label: "Blog" },
+  { href: "/faqs", label: "FAQs" },
   { href: "/contact", label: "Contact" },
 ];
 
