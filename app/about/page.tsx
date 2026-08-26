@@ -186,7 +186,10 @@ export default function AboutPage() {
 
       <div className="mt-16 grid gap-x-12 gap-y-14 sm:grid-cols-2">
         {categories.map((category, index) => (
-          <div key={category.title}>
+          <div
+            key={category.title}
+            id={category.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}
+          >
             {category.image ? (
               <div
                 className={`aspect-[4/3] overflow-hidden rounded-2xl border border-border ${

@@ -18,7 +18,7 @@ export default function Testimonials() {
     <section className="bg-muted px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <p className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-          Guest Reviews
+          What Our Guests Say
         </p>
         <div className="mt-10 grid gap-8 sm:grid-cols-2">
           {reviews.map((review) => (

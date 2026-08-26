@@ -1,30 +1,97 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PropertyCard from "@/components/PropertyCard";
+import PropertyMedia from "@/components/PropertyMedia";
 import FeaturedIn from "@/components/FeaturedIn";
 import Testimonials from "@/components/Testimonials";
 import AvailabilitySearch from "@/components/AvailabilitySearch";
 import BackgroundVideo from "@/components/BackgroundVideo";
+import ScrollToSection from "@/components/ScrollToSection";
 import { bookableProperties } from "@/lib/properties";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const comforts = [
+const whyStay = [
   {
-    title: "Log Burner",
-    description: "Warm, wood-lit evenings after a day on the coast.",
+    text: "Clifftop Moray Firth views from every studio chalet, ever-changing through the day",
+    link: { word: "studio chalet", href: "/properties/muckle-view" },
   },
   {
-    title: "Window With a View",
-    description: "Panoramic Moray Firth views from every studio chalet.",
+    text: "Warm, wood-lit evenings by the log burner after a day on the coast",
   },
   {
-    title: "Balcony Binoculars",
-    description: "Watch for dolphins by day, the Northern Lights by night.",
+    text: "Dolphins by day, the Northern Lights by night, watched from your own balcony",
+  },
+  {
+    text: "On-site EV charging, so the drive north is easy on an electric car",
+  },
+  {
+    text: "A walkable village and open coast, with trails beginning right outside the door",
   },
 ];
+
+const fromYourDoorstep = [
+  {
+    title: "Coastal walks",
+    text: "Cliff paths begin steps from the door, winding toward hidden coves and the tiny gable-end village of Crovie.",
+  },
+  {
+    title: "Dolphin watching",
+    text: "The Moray Firth holds one of Europe's largest populations of bottlenose dolphins — often visible right from the balcony.",
+  },
+  {
+    title: "Beaches",
+    text: "Sandy Gardenstown Beach is nearest, with Sandend Bay, Inverboyndie, and more along the wider coast.",
+  },
+  {
+    title: "The North East 250",
+    text: "One of Scotland's great scenic drives runs right past, threading castles, villages, and sea views together.",
+  },
+  {
+    title: "The whisky trail",
+    text: "Speyside's storied distilleries sit within an easy drive, from Glenglassaugh to the wider Malt Whisky Trail.",
+  },
+];
+
+const homeFaqs = [
+  {
+    question: "Are dogs welcome?",
+    answer:
+      "Yes. Our studio chalets are dog-friendly, with coastal walks starting right outside the door and dog-welcoming cafés in the village below.",
+  },
+  {
+    question: "Is there EV charging?",
+    answer:
+      "Yes, at Muckle View. On-site EV charging is ready and waiting, so you can plug in the moment you arrive.",
+  },
+  {
+    question: "How close is Gardenstown?",
+    answer:
+      "We sit on the clifftop directly above Gardenstown. The village, its working harbour, and its cafés are a short, scenic walk away — no car needed.",
+  },
+  {
+    question: "Can I book a short break?",
+    answer:
+      "Absolutely. Come for a long weekend or settle in for a slower week — both work beautifully here.",
+  },
+];
+
+const homeFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: homeFaqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: { "@type": "Answer", text: faq.answer },
+  })),
+};
+
+const muckleView = bookableProperties.find((p) => p.slug === "muckle-view")!;
+const murrayCottage = bookableProperties.find(
+  (p) => p.slug === "murray-cottage"
+)!;
 
 export default function Home() {
   return (
@@ -45,88 +112,299 @@ export default function Home() {
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
             Luxury Self-Catering on the Aberdeenshire Coast
           </h1>
-          <div className="mt-8 w-full">
-            <AvailabilitySearch />
-          </div>
+        </div>
+      </section>
+
+      <section
+        id="availability"
+        className="flex min-h-[20vh] items-center bg-primary px-6 py-12"
+      >
+        <div className="mx-auto w-full max-w-6xl">
+          <AvailabilitySearch />
+        </div>
+      </section>
+
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">
+            Luxury Dog-Friendly Self-Catering on the Aberdeenshire Coast
+          </h2>
+          <p className="mt-3 text-lg font-medium text-foreground">
+            Clifftop chalets above Gardenstown, with the Moray Firth at your
+            feet and your dog by your side.
+          </p>
+          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+            Some places you visit. Others stay with you long after
+            you&apos;ve driven home. Perched high above the fishing village of
+            Gardenstown, Gamrie Chalets pairs sweeping sea views with a warm,
+            wood-lit welcome for you and your dog.
+          </p>
+          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+            This is coastal accommodation with a genuine sense of place. Two
+            ways to stay, both built around the setting: intimate,
+            dog-friendly studio chalets for couples, and a generous family
+            home with room for everyone to breathe.
+          </p>
+          <ScrollToSection
+            targetId="availability"
+            className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Check Availability
+          </ScrollToSection>
+        </div>
+      </section>
+
+      <section className="bg-muted px-6 py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+            Why Stay on the Aberdeenshire Coast
+          </h2>
+          <p className="mt-6 text-lg leading-relaxed text-foreground">
+            We sit right on the{" "}
+            <Link
+              href="/about"
+              className="font-semibold text-primary hover:underline"
+            >
+              North East 250
+            </Link>
+            , with the sea at your doorstep and some of Scotland&apos;s
+            finest coastline unfolding in every direction. Come for a long
+            weekend or settle in for a slower week — either way, this is the
+            kind of stay that&apos;s worth the journey north.
+          </p>
+          <p className="mt-6 font-medium text-foreground">
+            Here&apos;s what makes a stay here different:
+          </p>
+          <ul className="mt-4 space-y-3 text-base">
+            {whyStay.map((item) => {
+              const linkIndex = item.link
+                ? item.text.indexOf(item.link.word)
+                : -1;
+              return (
+                <li key={item.text} className="flex gap-2">
+                  <span className="text-accent">•</span>
+                  <span className="text-muted-foreground">
+                    {item.link && linkIndex !== -1 ? (
+                      <>
+                        {item.text.slice(0, linkIndex)}
+                        <a
+                          href={item.link.href}
+                          className="font-semibold text-primary hover:underline"
+                        >
+                          {item.link.word}
+                        </a>
+                        {item.text.slice(linkIndex + item.link.word.length)}
+                      </>
+                    ) : (
+                      item.text
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+            Dog-Friendly Stays Above Gardenstown
+          </h2>
+          <p className="mt-6 text-lg leading-relaxed text-foreground">
+            Your dog isn&apos;t merely permitted here - they&apos;re expected,
+            welcome, and every bit as much a part of the trip as you are. The
+            coastline is generous with space: wide, quiet{" "}
+            <Link
+              href="/about#hiking-walking"
+              className="font-semibold text-primary hover:underline"
+            >
+              cliff paths
+            </Link>
+            , soft sand, and shingle beaches where a spaniel can run itself
+            happy.
+          </p>
+          <p className="mt-6 text-lg leading-relaxed text-foreground">
+            You won&apos;t spend the weekend planning around your dog. The
+            whole coast already has them in mind, from the trails at your
+            door to the harbour cafés that greet a well-mannered companion
+            with a smile.
+          </p>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+          <a
+            href="/properties/muckle-view"
+            className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Explore the Chalets
+          </a>
+        </div>
+      </section>
+
+      <section className="bg-muted px-6 py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+            Family Accommodation by the Sea
+          </h2>
+          <p className="mt-6 text-lg leading-relaxed text-foreground">
+            For families and longer stays, Murray Cottage is the home above
+            Gardenstown. Three bedrooms, sweeping Moray Firth views, and
+            room for everyone to settle in, whether that&apos;s a family
+            gathering, a group of friends, or a slow week away from it all.
+          </p>
+          <p className="mt-6 text-lg leading-relaxed text-foreground">
+            It&apos;s the same clifftop setting, the same open coast, with
+            space to spread out and gather back together at the end of each
+            day.
+          </p>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+          <a
+            href="/properties/murray-cottage"
+            className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            View the Family Home
+          </a>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+          Choose Your Stay
+        </h2>
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-foreground">
+          Two special properties. One unforgettable setting above the Moray
+          Firth. Here&apos;s how to pick the one that suits you.
+        </p>
+        <div className="mt-10 grid gap-10 sm:grid-cols-2">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+          <a href="/properties/muckle-view" className="group block">
+            <PropertyMedia
+              image={muckleView.image}
+              name={muckleView.name}
+              index={0}
+            />
+            <div className="mt-4">
+              <p className="text-xs font-semibold tracking-wide text-accent uppercase">
+                For couples and dogs
+              </p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">
+                Muckle View
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                A contemporary studio chalet perched on the clifftop, with
+                panoramic views across the Moray Firth and a log burner for
+                cosy evenings in. Intimate, dog-friendly, and built for two
+                — the ideal couple&apos;s escape with the dog in tow.
+              </p>
+              <span className="mt-3 inline-block text-xs font-medium tracking-wide text-primary uppercase group-hover:underline">
+                Discover Muckle View →
+              </span>
+            </div>
+          </a>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+          <a href="/properties/murray-cottage" className="group block">
+            <PropertyMedia
+              image={murrayCottage.image}
+              name={murrayCottage.name}
+              index={1}
+            />
+            <div className="mt-4">
+              <p className="text-xs font-semibold tracking-wide text-accent uppercase">
+                For families and groups
+              </p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">
+                Murray Cottage
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                The family home above Gardenstown, with three bedrooms,
+                sweeping views, and room for everyone to breathe. Perfect
+                for family holidays, group getaways, and slower weeks by the
+                sea.
+              </p>
+              <span className="mt-3 inline-block text-xs font-medium tracking-wide text-primary uppercase group-hover:underline">
+                Discover Murray Cottage →
+              </span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <section className="bg-muted px-6 py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+            From Your Doorstep
+          </h2>
+          <p className="mt-6 text-lg leading-relaxed text-foreground">
+            The setting earns its keep the moment you step outside.
+            Here&apos;s a taste of what&apos;s within easy reach.
+          </p>
+          <ul className="mt-6 space-y-4 text-base">
+            {fromYourDoorstep.map((item) => (
+              <li key={item.title} className="flex gap-2">
+                <span className="text-accent">•</span>
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    {item.title}:
+                  </span>{" "}
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/about"
+            className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Explore the Experiences
+          </Link>
         </div>
       </section>
 
       <FeaturedIn />
 
-      <section className="mx-auto max-w-3xl px-6 py-24">
-        <h2 className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-          Your Coastal Hideaway
-        </h2>
-        <p className="mt-6 text-lg leading-relaxed text-foreground">
-          Some places you visit. Others stay with you long after
-          you&apos;ve driven home. Gamrie Chalets is luxury self-catering in
-          Aberdeenshire, perched high on the clifftop above the fishing
-          village of Gardenstown, where the Moray Firth opens out beneath
-          you - silver at dawn, gold at dusk, and never quite the same view
-          twice.
-        </p>
-        <p className="mt-6 text-lg leading-relaxed text-foreground">
-          This is coastal accommodation with a genuine sense of place. Two
-          ways to stay, both built around the setting: intimate,
-          dog-friendly studio chalets for couples, and a generous family
-          home with room for everyone to breathe.
-        </p>
-        <p className="mt-6 text-lg leading-relaxed text-foreground">
-          We sit right on the North East Coast 250, with the sea at your
-          doorstep and some of Scotland&apos;s finest coastline unfolding in
-          every direction. Come for a long weekend or settle in for a
-          slower week - either way, this is the kind of stay that&apos;s
-          worth the journey north.
-        </p>
-      </section>
+      <Testimonials />
 
-      <section className="bg-muted px-6 py-24">
-        <div className="mx-auto max-w-6xl">
+      <section className="px-6 py-24">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqJsonLd) }}
+        />
+        <div className="mx-auto max-w-3xl">
           <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-            Relax in Comfort
+            Planning Your Stay
           </h2>
-          <div className="mt-8 grid gap-10 sm:grid-cols-3">
-            {comforts.map((item) => (
-              <div key={item.title}>
-                <h3 className="text-lg font-semibold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {item.description}
+          <p className="mt-4 text-lg leading-relaxed text-foreground">
+            A few quick answers before you book.
+          </p>
+          <div className="mt-8 divide-y divide-border rounded-2xl border border-border">
+            {homeFaqs.map((faq) => (
+              <details key={faq.question} className="group px-6 py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-foreground marker:content-none">
+                  {faq.question}
+                  <span
+                    aria-hidden
+                    className="shrink-0 text-lg text-muted-foreground transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 leading-relaxed text-muted-foreground">
+                  {faq.answer}
                 </p>
-              </div>
+              </details>
             ))}
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            More questions?{" "}
+            <a
+              href={`${SITE_URL}/faqs`}
+              className="font-semibold text-primary hover:underline"
+            >
+              See all FAQs
+            </a>
+            .
+          </p>
         </div>
       </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-          <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-            The Chalets
-          </h2>
-          <Link
-            href="/properties"
-            className="text-xs font-medium tracking-wide text-primary uppercase hover:underline"
-          >
-            View all properties →
-          </Link>
-        </div>
-        <div className="grid gap-10 sm:grid-cols-2">
-          {bookableProperties.map((property, index) => (
-            <PropertyCard
-              key={property.slug}
-              name={property.name}
-              description={property.description}
-              href={`/properties/${property.slug}`}
-              index={index}
-              image={property.image}
-            />
-          ))}
-        </div>
-      </section>
-
-      <Testimonials />
 
       <section className="bg-muted px-6 py-24">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
@@ -134,17 +412,25 @@ export default function Home() {
             Your Clifftop Stay Is Waiting
           </h2>
           <p className="text-muted-foreground">
-            Two special properties. One unforgettable setting above the
-            Moray Firth. Whether it&apos;s a couple&apos;s escape with the
-            dog or a family gathering by the sea, your dates are the only
-            thing standing between you and the coast.
+            Whether it&apos;s a couple&apos;s escape with the dog or a
+            family gathering by the sea, your dates are the only thing
+            standing between you and the coast. The view is ready whenever
+            you are.
           </p>
-          <Link
-            href="/properties"
-            className="mt-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            View Properties
-          </Link>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-4">
+            <ScrollToSection
+              targetId="availability"
+              className="rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+            >
+              Book Your Stay
+            </ScrollToSection>
+            <Link
+              href="/properties"
+              className="rounded-full border border-primary px-7 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              View Properties
+            </Link>
+          </div>
         </div>
       </section>
     </>

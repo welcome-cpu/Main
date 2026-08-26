@@ -19,7 +19,7 @@ const mentions = [
 
 export default function FeaturedIn() {
   return (
-    <section className="border-y border-border bg-muted px-6 py-16">
+    <section className="border-y border-border bg-surface px-6 py-16">
       <div className="mx-auto max-w-6xl text-center">
         <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
           As Featured In

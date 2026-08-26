@@ -32,7 +32,7 @@ const faqs = [
   {
     question: "Do you have an electric car charger?",
     answer:
-      "Gamrie Chalets offers guests complimentary untethered EV charging for one car per booking. Charging points are limited in the area, so we ensure your electric vehicle is ready for your next adventure. Please remember to bring your own cable.",
+      "Yes, at Muckle View. We offer guests complimentary untethered EV charging for one car per booking. Charging points are limited in the area, so we ensure your electric vehicle is ready for your next adventure. Please remember to bring your own cable.",
   },
   {
     question: "What is your cancellation policy?",
