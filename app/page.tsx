@@ -98,10 +98,7 @@ export default function Home() {
     <>
       <section className="relative flex min-h-[85vh] items-end overflow-hidden px-6 pb-16 text-primary-foreground">
         <BackgroundVideo
-          sources={[
-            "/sceneinvideo_-_muckle_view,_high_green_gardenstown,_ab45_3yn (720p).mp4",
-            "/sceneinvideo_-_murray_cottage,_7_garden_crescent,_gardenstown,_ab45_3zj (720p).mp4",
-          ]}
+          src="/HeroVideo.mp4"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/70 to-accent/60" />
