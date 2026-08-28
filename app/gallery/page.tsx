@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import GalleryTile from "@/components/GalleryTile";
+import GalleryCategoryTile from "@/components/GalleryCategoryTile";
 
 export const metadata: Metadata = {
   title: "Gallery",
@@ -8,47 +7,290 @@ export const metadata: Metadata = {
   alternates: { canonical: "/gallery" },
 };
 
-const photos = [
+const categories = [
   {
-    title: "Clifftop View",
-    image: { src: "/7907_Gamrie_High_272.jpg", width: 7874, height: 5253 },
+    title: "Views",
+    photos: [
+      {
+        src: "/7907_Gamrie_High_058.jpg",
+        width: 8099,
+        height: 5402,
+        alt: "The Moray Firth at dusk",
+      },
+      {
+        src: "/7907_Gamrie_High_272.jpg",
+        width: 7874,
+        height: 5253,
+        alt: "Clifftop view over the Moray Firth",
+      },
+      {
+        src: "/Muckle View/12.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Sunset silhouette over the coast",
+      },
+      {
+        src: "/Muckle View/13.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Gardenstown and the bay from Muckle View",
+      },
+      {
+        src: "/Muckle View/22.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Twilight sea view through the gable window",
+      },
+      {
+        src: "/Murray Cottage/1.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Coastal view from the lounge at Murray Cottage",
+      },
+      {
+        src: "/Murray Cottage/5.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Headland view with seabirds overhead",
+      },
+      {
+        src: "/Murray Cottage/6.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "The rugged coastline near Gardenstown",
+      },
+      {
+        src: "/Murray Cottage/7.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "A fishing boat working the bay",
+      },
+      {
+        src: "/Murray Cottage/10.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Sunset over the headland",
+      },
+      {
+        src: "/Murray Cottage/17.jpg",
+        width: 1920,
+        height: 1284,
+        alt: "Sea view through the bedroom window",
+      },
+    ],
   },
   {
-    title: "Moray Firth at Dusk",
-    image: { src: "/7907_Gamrie_High_058.jpg", width: 8099, height: 5402 },
+    title: "Interiors",
+    photos: [
+      {
+        src: "/7907_Gamrie_High_063.jpg",
+        width: 8192,
+        height: 5464,
+        alt: "Studio chalet interior",
+      },
+      {
+        src: "/7907_Gamrie_High_116.jpg",
+        width: 7790,
+        height: 5195,
+        alt: "Log burner on a cosy evening",
+      },
+      {
+        src: "/7907_Gamrie_High_138.jpg",
+        width: 7983,
+        height: 5325,
+        alt: "Binoculars ready for the balcony",
+      },
+      {
+        src: "/7907_Gamrie_High_228.jpg",
+        width: 8158,
+        height: 5441,
+        alt: "The resident dog by the log burner",
+      },
+      {
+        src: "/Muckle View/23.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Bedroom with sea-view windows",
+      },
+      {
+        src: "/Muckle View/25.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Reading chair with a tartan throw",
+      },
+      {
+        src: "/Muckle View/26.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Bed linen and cushions",
+      },
+      {
+        src: "/Muckle View/28.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Reflection of the vaulted ceiling",
+      },
+      {
+        src: "/Muckle View/29.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "The statement pendant light",
+      },
+      {
+        src: "/Muckle View/30.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Bedside lighting detail",
+      },
+      {
+        src: "/Muckle View/31.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Bedside table with a book",
+      },
+      {
+        src: "/Muckle View/35.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Log burner and armchair",
+      },
+      {
+        src: "/Muckle View/40.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Coffee machine detail",
+      },
+      {
+        src: "/Muckle View/42.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Bathroom toiletries detail",
+      },
+      {
+        src: "/Murray Cottage/12.jpg",
+        width: 1920,
+        height: 2880,
+        alt: "Reading corner by the log burner",
+      },
+      {
+        src: "/Murray Cottage/13.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Dining table at Murray Cottage",
+      },
+      {
+        src: "/Murray Cottage/20.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Living room at Murray Cottage",
+      },
+      {
+        src: "/Murray Cottage/23.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Kitchen at Murray Cottage",
+      },
+      {
+        src: "/Murray Cottage/24.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Hallway with a sea view beyond",
+      },
+      {
+        src: "/Murray Cottage/30.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Bedroom with a clifftop view",
+      },
+    ],
   },
   {
-    title: "Studio Interior",
-    image: { src: "/7907_Gamrie_High_063.jpg", width: 8192, height: 5464 },
+    title: "External",
+    photos: [
+      {
+        src: "/7907_Gamrie_High_158.jpg",
+        width: 7871,
+        height: 5249,
+        alt: "Muckle View exterior",
+      },
+      {
+        src: "/78491_Murray-002.jpg",
+        width: 4999,
+        height: 3333,
+        alt: "Murray Cottage exterior",
+      },
+      {
+        src: "/Muckle View/2.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Muckle View among the village rooftops",
+      },
+      {
+        src: "/Muckle View/4.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "The clifftop terrace at Muckle View",
+      },
+      {
+        src: "/Muckle View/10.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "Sunset from the balcony",
+      },
+      {
+        src: "/Muckle View/19.jpg",
+        width: 1668,
+        height: 2500,
+        alt: "Gamrie Chalets gin on the terrace",
+      },
+      {
+        src: "/Murray Cottage/3.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "The Murray Cottage nameplate",
+      },
+    ],
   },
   {
-    title: "Log Burner",
-    image: { src: "/7907_Gamrie_High_116.jpg", width: 7790, height: 5195 },
-  },
-  {
-    title: "Balcony Binoculars",
-    image: { src: "/7907_Gamrie_High_078.jpg", width: 7901, height: 5270 },
-  },
-  {
-    title: "Coastal Path",
-    image: { src: "/7907_Gamrie_High_106.jpg", width: 8192, height: 5464 },
-  },
-  {
-    title: "Gardenstown Harbour",
-    image: { src: "/7907_Gamrie_High_177.jpg", width: 8192, height: 5464 },
-  },
-  {
-    title: "Dolphin Watching",
-    image: { src: "/7907_Gamrie_High_138.jpg", width: 7983, height: 5325 },
-  },
-  {
-    title: "Northern Lights",
-    credit: "Richard Scott Photography",
-    image: {
-      src: "/RichardScottPhotographyRSP_website.jpg",
-      width: 8256,
-      height: 5504,
-    },
+    title: "Area",
+    photos: [
+      {
+        src: "/7907_Gamrie_High_177.jpg",
+        width: 8192,
+        height: 5464,
+        alt: "Gardenstown Harbour",
+      },
+      {
+        src: "/7907_Gamrie_High_186.jpg",
+        width: 8027,
+        height: 5354,
+        alt: "Harbours and fishing ports along the coast",
+      },
+      {
+        src: "/7907_Gamrie_High_190.jpg",
+        width: 7790,
+        height: 5195,
+        alt: "Sandy beaches along the coast",
+      },
+      {
+        src: "/7907_Gamrie_High_197.jpg",
+        width: 5373,
+        height: 8056,
+        alt: "Local hospitality in the village",
+      },
+      {
+        src: "/7907_Gamrie_High_203.jpg",
+        width: 7983,
+        height: 5325,
+        alt: "Coastal scenery near Gardenstown",
+      },
+      {
+        src: "/Muckle View/11.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "The Northern Lights over Gardenstown",
+      },
+    ],
   },
 ];
 
@@ -63,37 +305,16 @@ export default function GalleryPage() {
       </h1>
       <p className="mt-4 max-w-xl text-muted-foreground">
         A look inside the chalets and around Gardenstown, from the clifftop
-        to the harbour.
+        to the harbour. Select a tile to browse the full set.
       </p>
-      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {photos.map((photo, index) =>
-          photo.image ? (
-            <figure
-              key={photo.title}
-              className="overflow-hidden rounded-2xl border border-border bg-surface"
-            >
-              <Image
-                src={photo.image.src}
-                alt={photo.title}
-                width={photo.image.width}
-                height={photo.image.height}
-                className="aspect-[4/3] w-full object-cover"
-              />
-              <figcaption className="px-4 py-3">
-                <span className="text-sm font-medium text-foreground">
-                  {photo.title}
-                </span>
-                {photo.credit && (
-                  <span className="block text-xs text-muted-foreground">
-                    Photo: {photo.credit}
-                  </span>
-                )}
-              </figcaption>
-            </figure>
-          ) : (
-            <GalleryTile key={photo.title} title={photo.title} index={index} />
-          )
-        )}
+      <div className="mt-12 grid gap-6 sm:grid-cols-2">
+        {categories.map((category) => (
+          <GalleryCategoryTile
+            key={category.title}
+            title={category.title}
+            photos={category.photos}
+          />
+        ))}
       </div>
     </div>
   );
