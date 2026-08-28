@@ -6,7 +6,7 @@ const mentions = [
     src: "/Scottish_Field_Logo_2 - Edited.png",
     width: 2123,
     height: 741,
-    href: "https://www.scottishfield.co.uk/competitions/win-a-luxurious-one-night-stay-for-two-at-gamrie-chalets/",
+    href: "https://www.scottishfield.co.uk/reviews/review-muckle-view-gardenstown/",
   },
   {
     name: "The Scotsman",
