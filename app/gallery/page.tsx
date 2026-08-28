@@ -71,12 +71,6 @@ const categories = [
         height: 1280,
         alt: "Sunset over the headland",
       },
-      {
-        src: "/Murray Cottage/17.jpg",
-        width: 1920,
-        height: 1284,
-        alt: "Sea view through the bedroom window",
-      },
     ],
   },
   {
