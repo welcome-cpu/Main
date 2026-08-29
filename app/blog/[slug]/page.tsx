@@ -31,17 +31,19 @@ export async function generateMetadata({
       title,
       description: post.excerpt,
       url,
+      siteName: SITE_NAME,
+      locale: "en_GB",
       type: "article",
       publishedTime: post.date,
       images: post.image
         ? [{ url: post.image.src, width: post.image.width, height: post.image.height }]
-        : undefined,
+        : [{ url: "/opengraph-image", width: 1200, height: 630 }],
     },
     twitter: {
-      card: post.image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description: post.excerpt,
-      images: post.image ? [post.image.src] : undefined,
+      images: [post.image ? post.image.src : "/opengraph-image"],
     },
   };
 }

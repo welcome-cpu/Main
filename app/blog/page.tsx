@@ -3,11 +3,18 @@ import Image from "next/image";
 import Link from "next/link";
 import GalleryTile from "@/components/GalleryTile";
 import { posts } from "@/lib/posts";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const title = "Blog";
+const description =
+  "Travel guides and itineraries for a dog-friendly, self-catering escape to Gardenstown and the Aberdeenshire coast.";
 
 export const metadata: Metadata = {
-  title: "Blog",
-  description: "Notes from the Aberdeenshire coast, from Gamrie Chalets.",
+  title,
+  description,
   alternates: { canonical: "/blog" },
+  openGraph: pageOpenGraph({ title, description, path: "/blog" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 export default function BlogPage() {

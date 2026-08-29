@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Dancing_Script } from "next/font/google";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const signatureFont = Dancing_Script({ subsets: ["latin"] });
 
+const title = "Our Story";
+const description =
+  "Born and raised in Gardenstown, Shaun's family has lived in the village since it was founded in 1720 — the story behind Gamrie Chalets.";
+
 export const metadata: Metadata = {
-  title: "Our Story",
-  description:
-    "Born and raised in Gardenstown, Shaun's family has lived in the village since it was founded in 1720 — the story behind Gamrie Chalets.",
+  title,
+  description,
   alternates: { canonical: "/our-story" },
+  openGraph: pageOpenGraph({ title, description, path: "/our-story" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 const reasons = [

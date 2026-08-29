@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Gamrie Chalets — Luxury Clifftop Chalets on the Moray Firth";
+export const alt = "Gamrie Chalets — Luxury Dog-Friendly Self-Catering, Aberdeenshire";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -41,7 +41,7 @@ export default function Image() {
             display: "flex",
           }}
         >
-          Luxury Clifftop Chalets on the Moray Firth
+          Luxury Dog-Friendly Self-Catering, Aberdeenshire
         </div>
         <div
           style={{

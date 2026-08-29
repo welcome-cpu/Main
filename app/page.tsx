@@ -99,6 +99,7 @@ export default function Home() {
       <section className="relative flex min-h-[85vh] items-end overflow-hidden px-6 pb-16 text-primary-foreground">
         <BackgroundVideo
           src="/Hero Video Final.mp4"
+          poster={{ src: "/7907_Gamrie_High_058.jpg", width: 8099, height: 5402 }}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/70 to-accent/60" />

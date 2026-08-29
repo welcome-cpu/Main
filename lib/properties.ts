@@ -3,6 +3,11 @@ export const properties = [
     slug: "muckle-view",
     name: "Muckle View",
     lodgifyRentalId: "646178",
+    // Listed nightly rate range from Lodgify (original_min/max_price, not
+    // the guest-facing price with booking-engine markup) — a rough band
+    // for schema.org priceRange, checked 2026-08-29. Update if rates shift
+    // materially.
+    priceRange: "£165–£295",
     sleeps: 2,
     description:
       "A contemporary studio chalet perched on the clifftop, with panoramic views across the Moray Firth and a log burner for cosy evenings in.",
@@ -75,6 +80,7 @@ export const properties = [
     slug: "murray-cottage",
     name: "Murray Cottage",
     lodgifyRentalId: "794951",
+    priceRange: "£104–£262",
     sleeps: 6,
     description:
       "The family home above Gardenstown, with three bedrooms, sweeping views of the Moray Firth, and room for everyone to settle in.",

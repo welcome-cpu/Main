@@ -5,6 +5,8 @@ import PropertyMedia from "@/components/PropertyMedia";
 import LodgifyBookingWidget from "@/components/LodgifyBookingWidget";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+import { SITE_URL } from "@/lib/site";
 
 export async function generateStaticParams() {
   return properties.map((property) => ({ slug: property.slug }));
@@ -20,10 +22,27 @@ export async function generateMetadata({
     return {};
   }
 
+  const title = property.comingSoon
+    ? `${property.name} (Coming Soon)`
+    : property.name;
+  const { description } = property;
+
   return {
-    title: property.comingSoon ? `${property.name} (Coming Soon)` : property.name,
-    description: property.description,
+    title,
+    description,
     alternates: { canonical: `/properties/${property.slug}` },
+    // Coming-soon properties have no real content yet — keep them out of
+    // search results until the listing actually launches.
+    ...(property.comingSoon && { robots: { index: false, follow: true } }),
+    openGraph: pageOpenGraph({
+      title,
+      description,
+      path: `/properties/${property.slug}`,
+      images: [
+        { url: property.image.src, width: property.image.width, height: property.image.height },
+      ],
+    }),
+    twitter: pageTwitter({ title, description, images: [property.image.src] }),
   };
 }
 
@@ -43,11 +62,42 @@ export default async function PropertyPage({
     { name: property.name, path: `/properties/${property.slug}` },
   ]);
 
+  const vacationRentalJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "VacationRental",
+    name: property.name,
+    description: property.description,
+    url: `${SITE_URL}/properties/${property.slug}`,
+    image: [`${SITE_URL}${property.image.src}`],
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Gardenstown",
+      addressRegion: "Aberdeenshire",
+      addressCountry: "GB",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: property.location.lat,
+      longitude: property.location.lng,
+    },
+    occupancy: { "@type": "QuantitativeValue", maxValue: property.sleeps },
+    ...(property.priceRange && { priceRange: property.priceRange }),
+    petsAllowed: property.features.some((feature) => /dog/i.test(feature)),
+    amenityFeature: property.features.map((feature) => ({
+      "@type": "LocationFeatureSpecification",
+      name: feature,
+    })),
+  };
+
   return (
     <div className="pb-24">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(vacationRentalJsonLd) }}
       />
       <div className="mx-auto max-w-6xl px-6 pt-8">
         <Link

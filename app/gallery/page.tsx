@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import GalleryCategoryTile from "@/components/GalleryCategoryTile";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const title = "Gallery";
+const description =
+  "Real photos from Gamrie Chalets — clifftop views, cosy interiors, chalet exteriors, and the Gardenstown coastline.";
 
 export const metadata: Metadata = {
-  title: "Gallery",
-  description: "A look inside and around Gamrie Chalets.",
+  title,
+  description,
   alternates: { canonical: "/gallery" },
+  openGraph: pageOpenGraph({ title, description, path: "/gallery" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 const categories = [

@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import GalleryTile from "@/components/GalleryTile";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const title = "Explore Gamrie";
+const description =
+  "Unforgettable experiences on Scotland's Moray Firth coastline — beaches, wildlife, heritage, and whisky, all within easy reach of Gamrie Chalets.";
 
 export const metadata: Metadata = {
-  title: "Explore Gamrie",
-  description:
-    "Unforgettable experiences on Scotland's Moray Firth coastline — beaches, wildlife, heritage, and whisky, all within easy reach of Gamrie Chalets.",
+  title,
+  description,
   alternates: { canonical: "/about" },
+  openGraph: pageOpenGraph({ title, description, path: "/about" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 const categories = [

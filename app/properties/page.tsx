@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import PropertyCard from "@/components/PropertyCard";
 import { properties } from "@/lib/properties";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const title = "Properties";
+const description =
+  "Muckle View, a dog-friendly studio chalet, and Murray Cottage, a three-bedroom family home — both overlooking the Moray Firth. Mohr Rest joining soon.";
 
 export const metadata: Metadata = {
-  title: "Properties",
-  description:
-    "Muckle View, a dog-friendly studio chalet, and Murray Cottage, a three-bedroom family home — both overlooking the Moray Firth. Mohr Rest joining soon.",
+  title,
+  description,
   alternates: { canonical: "/properties" },
+  openGraph: pageOpenGraph({ title, description, path: "/properties" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 export default function PropertiesPage() {

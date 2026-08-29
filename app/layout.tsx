@@ -18,12 +18,12 @@ const geistMono = Geist_Mono({
 });
 
 const title = {
-  default: "Gamrie Chalets — Luxury Clifftop Chalets on the Moray Firth",
+  default: "Luxury Dog-Friendly Self-Catering, Aberdeenshire | Gamrie Chalets",
   template: "%s | Gamrie Chalets",
 };
 
 const description =
-  "Luxury clifftop chalets above Gardenstown with panoramic views of the Moray Firth. Escape. Unwind. Recharge.";
+  "Luxury clifftop chalets above Gardenstown, Aberdeenshire. Panoramic Moray Firth views, log burners & dog-friendly stays on Scotland's NE250 coastal route.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -57,6 +57,24 @@ const lodgingBusinessJsonLd = {
     addressRegion: "Aberdeenshire",
     addressCountry: "GB",
   },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 57.670563223386880,
+    longitude: -2.337134626983644,
+  },
+  // Listed nightly rate range across both bookable chalets (Lodgify
+  // original_min/max_price, checked 2026-08-29).
+  priceRange: "£104–£295",
+  image: [
+    `${SITE_URL}/7907_Gamrie_High_158.jpg`,
+    `${SITE_URL}/78491_Murray-002.jpg`,
+  ],
+  amenityFeature: [
+    { "@type": "LocationFeatureSpecification", name: "Dog-Friendly" },
+    { "@type": "LocationFeatureSpecification", name: "Log Burner" },
+    { "@type": "LocationFeatureSpecification", name: "On-Site EV Charging" },
+    { "@type": "LocationFeatureSpecification", name: "Clifftop Sea Views" },
+  ],
   subjectOf: [
     {
       "@type": "CreativeWork",

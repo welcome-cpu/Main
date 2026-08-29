@@ -6,7 +6,7 @@
   --muted: #eae5dc; /* Pale Sand */
   --foreground: #242321; /* Soft Black */
   --foreground-strong: #171716; /* Logo Black */
-  --muted-foreground: #77736b; /* Warm Grey */
+  --muted-foreground: #5f5952; /* Warm Grey (darkened for WCAG AA contrast) */
   --border: #cec8be; /* Pale Stone */
   --primary: #374238; /* Deep Moss */
   --primary-foreground: #f5f2ec; /* Warm Ivory */

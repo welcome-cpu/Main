@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const title = "Contact";
+const description =
+  "Questions about your stay at Gamrie Chalets? Email us or send a message and we'll get back to you.";
 
 export const metadata: Metadata = {
-  title: "Contact",
-  description: "Get in touch with Gamrie Chalets.",
+  title,
+  description,
   alternates: { canonical: "/contact" },
+  openGraph: pageOpenGraph({ title, description, path: "/contact" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 export default function ContactPage() {

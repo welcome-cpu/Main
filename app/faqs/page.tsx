@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/site";
+import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const title = "FAQs";
+const description =
+  "Answers to common questions about staying at Gamrie Chalets — pets, wi-fi, EV charging, check-in times, cancellations, and more.";
 
 export const metadata: Metadata = {
-  title: "FAQs",
-  description:
-    "Answers to common questions about staying at Gamrie Chalets — pets, wi-fi, EV charging, check-in times, cancellations, and more.",
+  title,
+  description,
   alternates: { canonical: "/faqs" },
+  openGraph: pageOpenGraph({ title, description, path: "/faqs" }),
+  twitter: pageTwitter({ title, description }),
 };
 
 const faqs = [

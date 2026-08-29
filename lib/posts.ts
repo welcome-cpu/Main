@@ -19,7 +19,7 @@ export const posts: Post[] = [
   {
     slug: "family-friendly-3-day-aberdeenshire-coast-itinerary",
     title: "A Family-Friendly 3-Day Aberdeenshire Coast Itinerary from Gamrie Chalets",
-    metaTitle: "Family Holiday Aberdeenshire | 3-Day Coast Itinerary",
+    metaTitle: "3-Day Family Coast Itinerary, Aberdeenshire",
     date: "2026-08-15",
     excerpt:
       "A family-friendly 3-day Aberdeenshire coast itinerary: beaches, dolphins, castles, and cliff walks from your clifftop base. Book your stay at Gamrie Chalets.",
@@ -150,10 +150,10 @@ export const posts: Post[] = [
     slug: "dog-friendly-weekend-gardenstown",
     title:
       "A Dog-Friendly Weekend in Gardenstown: Coastal Walks, Whisky, and Clifftop Stays",
-    metaTitle: "Dog-Friendly Weekend in Gardenstown, Aberdeenshire",
+    metaTitle: "Dog-Friendly Weekend in Gardenstown",
     date: "2025-10-20",
     excerpt:
-      "Dog-Friendly Weekend in Gardenstown, Aberdeenshire — a 3-day coastal itinerary with clifftop self-catering at Gamrie Chalets, off-lead walks, harbour lunch, and a Strathisla Distillery visit.",
+      "A 3-day dog-friendly itinerary in Gardenstown: clifftop self-catering, off-lead coastal walks, a harbour lunch, and a whisky distillery visit.",
     image: { src: "/7907_Gamrie_High_228.jpg", width: 8158, height: 5441 },
     content: [
       {
