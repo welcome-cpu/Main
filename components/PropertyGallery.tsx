@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-type GalleryImage = { src: string; width: number; height: number };
+type GalleryImage = { src: string; width: number; height: number; alt: string };
 
 const ROTATE_MS = 5000;
 
@@ -39,11 +39,9 @@ function ChevronRight({ className }: { className?: string }) {
 
 export default function PropertyGallery({
   images,
-  name,
   overlayLabel,
 }: {
   images: GalleryImage[];
-  name: string;
   overlayLabel?: string;
 }) {
   const [index, setIndex] = useState(0);
@@ -88,7 +86,7 @@ export default function PropertyGallery({
             <Image
               key={image.src}
               src={image.src}
-              alt={name}
+              alt={image.alt}
               width={image.width}
               height={image.height}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
@@ -109,7 +107,7 @@ export default function PropertyGallery({
           type="button"
           aria-label="View fullscreen"
           onClick={() => setIsFullscreen(true)}
-          className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+          className="absolute top-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +130,7 @@ export default function PropertyGallery({
               type="button"
               aria-label="Previous photo"
               onClick={goToPrev}
-              className="absolute top-1/2 left-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+              className="absolute top-1/2 left-4 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -140,7 +138,7 @@ export default function PropertyGallery({
               type="button"
               aria-label="Next photo"
               onClick={goToNext}
-              className="absolute top-1/2 right-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+              className="absolute top-1/2 right-4 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -183,7 +181,7 @@ export default function PropertyGallery({
             type="button"
             aria-label="Close fullscreen"
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            className="absolute top-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -205,7 +203,7 @@ export default function PropertyGallery({
 
           <Image
             src={images[index].src}
-            alt={name}
+            alt={images[index].alt}
             width={images[index].width}
             height={images[index].height}
             className="max-h-[90vh] max-w-[90vw] object-contain"

@@ -56,7 +56,7 @@ export default function AvailabilitySearch() {
             required
             value={checkIn}
             onChange={(e) => setCheckIn(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-background px-3 py-3 text-sm"
           />
         </label>
         <label className="text-sm">
@@ -69,7 +69,7 @@ export default function AvailabilitySearch() {
             value={checkOut}
             min={checkIn || undefined}
             onChange={(e) => setCheckOut(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-background px-3 py-3 text-sm"
           />
         </label>
         <label className="text-sm">
@@ -82,13 +82,13 @@ export default function AvailabilitySearch() {
             max={6}
             value={guests}
             onChange={(e) => setGuests(Number(e.target.value))}
-            className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-20 rounded-lg border border-border bg-background px-3 py-3 text-sm"
           />
         </label>
         <button
           type="submit"
           disabled={status === "loading"}
-          className="self-end rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+          className="self-end rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
           {status === "loading" ? "Searching…" : "Search"}
         </button>

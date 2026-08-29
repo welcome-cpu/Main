@@ -10,15 +10,13 @@ export default function PropertyMedia({
   overlayLabel,
 }: {
   image?: { src: string; width: number; height: number };
-  gallery?: { src: string; width: number; height: number }[];
+  gallery?: { src: string; width: number; height: number; alt: string }[];
   name: string;
   index?: number;
   overlayLabel?: string;
 }) {
   if (gallery && gallery.length > 0) {
-    return (
-      <PropertyGallery images={gallery} name={name} overlayLabel={overlayLabel} />
-    );
+    return <PropertyGallery images={gallery} overlayLabel={overlayLabel} />;
   }
 
   if (!image) {

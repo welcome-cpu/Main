@@ -27,7 +27,10 @@ export default function PropertiesPage() {
         One Extraordinary Spot
       </h1>
 
-      <div className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      <h2 className="mt-16 text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+        Choose Your Stay
+      </h2>
+      <div className="mt-8 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
         {properties.map((property, index) => (
           <PropertyCard
             key={property.slug}

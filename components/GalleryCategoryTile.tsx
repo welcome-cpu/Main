@@ -132,7 +132,7 @@ export default function GalleryCategoryTile({
                 e.stopPropagation();
                 goToPrev();
               }}
-              className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+              className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -143,7 +143,7 @@ export default function GalleryCategoryTile({
                 e.stopPropagation();
                 goToNext();
               }}
-              className="absolute top-1/2 right-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
+              className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/40 text-background transition-colors hover:bg-foreground/60"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
