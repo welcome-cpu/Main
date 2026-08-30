@@ -17,11 +17,16 @@ export type WelcomeGuide = {
     checkInTime: string;
     checkInNotes: string[];
     lockInstructions?: Instruction[];
+    parkingNote?: string;
     checkOutTime: string;
     checkOutNotes: string[];
     departureTasks: string[];
   };
   evCharging?: {
+    intro: string;
+    instructions: Instruction[];
+  };
+  heating?: {
     intro: string;
     instructions: Instruction[];
   };
@@ -210,6 +215,7 @@ export const welcomeGuides: WelcomeGuide[] = [
     propertyName: "Murray Cottage",
     hostName: "Shaun Donaldson",
     hostPhone: "07989 225 390",
+    wifi: { network: "Murray Cottage", password: "GamrieStay#4321" },
     overview: [
       "Sleeps six adults across 2 king-size and 2 single beds",
       "Well-behaved pets welcome",
@@ -226,6 +232,15 @@ export const welcomeGuides: WelcomeGuide[] = [
         "Early check-in may be available on request, subject to availability.",
         "If you experience any issues accessing the property, please contact us straight away.",
       ],
+      lockInstructions: [
+        {
+          title: "Front door lock (Nuki Smart Lock Go with keypad)",
+          steps:
+            "Enter your access code on the keypad by the front door, then press the confirm button to unlock. To lock up, press the button on the back of the keypad while the door is unlocked, or use the button on the Nuki lock itself from inside.",
+        },
+      ],
+      parkingNote:
+        "Park in front of the garage one door down from the cottage — the two garages furthest away, which can fit four cars between them.",
       checkOutTime: "By 11:00am",
       checkOutNotes: [
         "Please ensure the property is securely locked when you leave.",
@@ -238,27 +253,62 @@ export const welcomeGuides: WelcomeGuide[] = [
         "Close and secure all windows and doors",
       ],
     },
+    heating: {
+      intro:
+        "The cottage is heated by an air source heat pump, controlled through the Hive thermostat.",
+      instructions: [
+        {
+          title: "Hive thermostat",
+          steps:
+            "Wake the thermostat by pushing the dial, then follow the on-screen guide — press Menu, turn the dial to select Heat, and push the dial to confirm. The screen will walk you through adjusting the temperature from there.",
+          manualUrl: "https://www.hivehome.com/guides/hive-heating",
+        },
+      ],
+    },
     kitchen: {
       intro:
         "A fully equipped kitchen, ideal for cooking for the whole family or a group of friends.",
       equipment: [
         "Nespresso coffee machine with complimentary pods",
         "Kettle, toaster, microwave",
-        "Bosch Serie 2 single oven",
-        "Four-zone induction hob",
-        "Fridge with freezer",
+        "Beko built-in single multifunction oven",
+        "Cooke & Lewis 4-zone induction hob",
+        "Beko 70:30 integrated frost-free fridge freezer",
+        "Candy 8kg washing machine",
+        "Beko integrated slimline dishwasher",
         "Pots, pans, cutlery, cooking utensils, tumblers, wine glasses, and champagne glasses",
       ],
       instructions: [
         {
-          title: "Oven (Bosch Serie 2)",
+          title: "Oven (Beko BBQE22300X)",
           steps:
-            "The oven is controlled by two dials. Select a cooking function using the left dial and set the temperature with the right. The fan setting is best for most cooking.",
+            "This multifunction oven uses AeroPerfect fan technology for even cooking. Turn the function dial to select a cooking mode, then use the temperature dial to set the temperature.",
+          manualUrl: "https://bekoplc.blob.core.windows.net/bekoupload/manuals/BBQE22300X.pdf",
         },
         {
-          title: "Induction hob",
+          title: "Fridge freezer (Beko BCFD473)",
           steps:
-            "Press and hold the power button, place a pan on the chosen zone, then select the zone and adjust the heat using the controls.",
+            "This is a frost-free 70:30 fridge freezer, so there's no need to defrost it. The fridge compartment is on top with a large salad crisper drawer, and the freezer is below.",
+          manualUrl: "https://bekoplc.blob.core.windows.net/bekoupload/manuals/BCFD473.pdf",
+        },
+        {
+          title: "Induction hob (Cooke & Lewis CLIND60, 59cm)",
+          steps:
+            "This is a touch-control hob — there are no physical dials. Touch and hold the power button to switch it on, then select a cooking zone and use the touch controls to set a power level from 1 to 9. Each zone has an automatic switch-off timer as a safety feature.",
+          manualUrl: "/Cooke%20%26%20Lewis%20CLIND60.pdf",
+        },
+        {
+          title: "Washing machine (Candy CBW 48D1W4-80, 8kg, 1400rpm)",
+          steps:
+            "Load your washing, add detergent to the drawer, then choose a programme using the dial and press start. There's no need to select a spin speed separately — it's set automatically for each programme.",
+          manualUrl:
+            "https://d15v10x8t3bz3x.cloudfront.net/Libretti/2022/1/16418083/41054342%20cbw%20d%20e%2021%20uk",
+        },
+        {
+          title: "Dishwasher (Beko DIS15020)",
+          steps:
+            "Load your dishes, add detergent to the dispenser in the door, then select a programme with the button on the front and press start. The dishwasher is fully integrated behind the cabinet door, so open that first to access it.",
+          manualUrl: "https://storage.beko.co.uk/bekoupload/manuals/DIS15020.pdf",
         },
       ],
     },

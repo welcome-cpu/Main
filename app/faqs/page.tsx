@@ -48,7 +48,7 @@ const faqs = [
   {
     question: "Are there drying or laundry facilities in the chalet?",
     answer:
-      "We don't provide a washing machine or tumble dryer, as part of our commitment to keeping the chalets sustainable. For smaller items, you're welcome to use the bathroom to hang things, and boots or walking shoes can be stored in the porch area.",
+      "Murray Cottage has a washing machine. Muckle View doesn't have a washing machine or tumble dryer, as part of our commitment to keeping the studio chalets sustainable — for smaller items there, you're welcome to use the bathroom to hang things, and boots or walking shoes can be stored in the porch area.",
   },
   {
     question: "Are you using local suppliers?",

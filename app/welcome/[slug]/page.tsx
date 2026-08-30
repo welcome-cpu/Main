@@ -96,6 +96,15 @@ function LockIcon({ className }: IconProps) {
   );
 }
 
+function ThermometerIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="M14 4a2 2 0 0 0-4 0v10.5a4 4 0 1 0 4 0V4z" />
+      <path d="M12 12v4" />
+    </Icon>
+  );
+}
+
 function BoltIcon({ className }: IconProps) {
   return (
     <Icon className={className}>
@@ -242,6 +251,9 @@ export default async function WelcomeGuidePage({
     ...(guide.arrival.lockInstructions
       ? [{ id: "front-door-lock", label: "Front Door Lock", icon: <LockIcon className="h-4 w-4" /> }]
       : []),
+    ...(guide.heating
+      ? [{ id: "heating", label: "Heating", icon: <ThermometerIcon className="h-4 w-4" /> }]
+      : []),
     ...(guide.evCharging
       ? [{ id: "ev-charging", label: "EV Charging", icon: <BoltIcon className="h-4 w-4" /> }]
       : []),
@@ -370,7 +382,29 @@ export default async function WelcomeGuidePage({
         <div className="mt-2">
           <FeatureList items={guide.arrival.departureTasks} />
         </div>
+
+        {guide.arrival.parkingNote && (
+          <>
+            <p className="mt-6 text-sm font-semibold text-foreground">
+              Parking
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {guide.arrival.parkingNote}
+            </p>
+          </>
+        )}
       </Section>
+
+      {guide.heating && (
+        <Section id="heating" icon={<ThermometerIcon className="h-5 w-5" />} title="Heating">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {guide.heating.intro}
+          </p>
+          {guide.heating.instructions.map((instruction) => (
+            <InstructionCard key={instruction.title} {...instruction} />
+          ))}
+        </Section>
+      )}
 
       {guide.evCharging && (
         <Section id="ev-charging" icon={<BoltIcon className="h-5 w-5" />} title="EV Charging">

@@ -93,7 +93,7 @@ export const properties = [
       "Dog-friendly throughout",
       "Sea views over the Moray Firth",
       "Log burner",
-      "Kitchen with coffee machine, dishwasher, stove, microwave, oven, refrigerator, toaster, vacuum cleaner",
+      "Kitchen with coffee machine, dishwasher, washing machine, stove, microwave, oven, refrigerator, toaster, vacuum cleaner",
       "Luxury bathroom with power shower",
       "Wi-fi",
     ],
