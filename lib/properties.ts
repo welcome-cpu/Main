@@ -90,6 +90,7 @@ export const properties = [
     ],
     features: [
       "Ideal for families and larger groups – 3 bedrooms (4 beds) – Sleeps 6",
+      "Dog-friendly throughout",
       "Sea views over the Moray Firth",
       "Log burner",
       "Kitchen with coffee machine, dishwasher, stove, microwave, oven, refrigerator, toaster, vacuum cleaner",

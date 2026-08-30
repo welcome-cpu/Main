@@ -133,6 +133,15 @@ function SunIcon({ className }: IconProps) {
   );
 }
 
+function LeafIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="M11 20A7 7 0 0 1 4 13c0-4 3-9 9-11 1 4 3 6 5 8a7 7 0 0 1-7 10z" />
+      <path d="M11 20c3-4 6-8 9-15" />
+    </Icon>
+  );
+}
+
 function DropletIcon({ className }: IconProps) {
   return (
     <Icon className={className}>
@@ -238,7 +247,12 @@ export default async function WelcomeGuidePage({
       : []),
     { id: "kitchen", label: "Kitchen", icon: <UtensilsIcon className="h-4 w-4" /> },
     { id: "living-area", label: "Living & Sleeping", icon: <BedIcon className="h-4 w-4" /> },
-    { id: "balcony", label: "Balcony", icon: <SunIcon className="h-4 w-4" /> },
+    ...(guide.balcony
+      ? [{ id: "balcony", label: "Balcony", icon: <SunIcon className="h-4 w-4" /> }]
+      : []),
+    ...(guide.garden
+      ? [{ id: "garden", label: "Garden", icon: <LeafIcon className="h-4 w-4" /> }]
+      : []),
     { id: "shower-room", label: "Shower Room", icon: <DropletIcon className="h-4 w-4" /> },
     { id: "connect", label: "Stay Connected", icon: <HeartIcon className="h-4 w-4" /> },
   ];
@@ -288,18 +302,20 @@ export default async function WelcomeGuidePage({
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl border border-border bg-background px-5 py-4 shadow-sm">
-        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.2em] text-accent uppercase">
-          <WifiIcon className="h-4 w-4" />
-          Wi-Fi
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Network: <span className="font-semibold text-foreground">{guide.wifi.network}</span>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Password: <span className="font-semibold text-foreground">{guide.wifi.password}</span>
-        </p>
-      </div>
+      {guide.wifi && (
+        <div className="mt-4 rounded-xl border border-border bg-background px-5 py-4 shadow-sm">
+          <p className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.2em] text-accent uppercase">
+            <WifiIcon className="h-4 w-4" />
+            Wi-Fi
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Network: <span className="font-semibold text-foreground">{guide.wifi.network}</span>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Password: <span className="font-semibold text-foreground">{guide.wifi.password}</span>
+          </p>
+        </div>
+      )}
 
       <nav aria-label="Guide sections" className="mt-8 flex flex-wrap gap-2">
         {navItems.map((item) => (
@@ -391,17 +407,33 @@ export default async function WelcomeGuidePage({
         ))}
       </Section>
 
-      <Section id="balcony" icon={<SunIcon className="h-5 w-5" />} title="Balcony">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          {guide.balcony.intro}
-        </p>
-        <div className="mt-4">
-          <FeatureList items={guide.balcony.features} />
-        </div>
-        {guide.balcony.instructions.map((instruction) => (
-          <InstructionCard key={instruction.title} {...instruction} />
-        ))}
-      </Section>
+      {guide.balcony && (
+        <Section id="balcony" icon={<SunIcon className="h-5 w-5" />} title="Balcony">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {guide.balcony.intro}
+          </p>
+          <div className="mt-4">
+            <FeatureList items={guide.balcony.features} />
+          </div>
+          {guide.balcony.instructions.map((instruction) => (
+            <InstructionCard key={instruction.title} {...instruction} />
+          ))}
+        </Section>
+      )}
+
+      {guide.garden && (
+        <Section id="garden" icon={<LeafIcon className="h-5 w-5" />} title="Garden">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {guide.garden.intro}
+          </p>
+          <div className="mt-4">
+            <FeatureList items={guide.garden.features} />
+          </div>
+          {guide.garden.instructions.map((instruction) => (
+            <InstructionCard key={instruction.title} {...instruction} />
+          ))}
+        </Section>
+      )}
 
       <Section id="shower-room" icon={<DropletIcon className="h-5 w-5" />} title="Shower Room">
         <p className="text-sm leading-relaxed text-muted-foreground">

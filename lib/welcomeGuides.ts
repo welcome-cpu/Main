@@ -11,7 +11,7 @@ export type WelcomeGuide = {
   propertyName: string;
   hostName: string;
   hostPhone: string;
-  wifi: { network: string; password: string };
+  wifi?: { network: string; password: string };
   overview: string[];
   arrival: {
     checkInTime: string;
@@ -35,7 +35,12 @@ export type WelcomeGuide = {
     features: string[];
     instructions: Instruction[];
   };
-  balcony: {
+  balcony?: {
+    intro: string;
+    features: string[];
+    instructions: Instruction[];
+  };
+  garden?: {
     intro: string;
     features: string[];
     instructions: Instruction[];
@@ -182,6 +187,107 @@ export const welcomeGuides: WelcomeGuide[] = [
     bathroom: {
       intro:
         "The chalet has a modern shower room fitted with an electric shower for comfort and ease of use.",
+      amenities: [
+        "Fresh towels provided",
+        "Complimentary toiletries",
+        "Two luxury robes",
+      ],
+      instructions: [
+        {
+          title: "Electric shower (AQUAS Indulge Touch Flex Smart 9.5kW)",
+          steps:
+            "First turn the temperature control fully down to 0. Then press the power button to switch the shower on. Next, press the button with the two lines and allow the water to run for a few seconds. Slowly increase the temperature until you reach your desired level. Electric showers take a short time to stabilise, so gradual adjustments work best.",
+          manualUrl:
+            "https://aquasshower.co.uk/download/264/AI0061_-_9.5kw_Instruction_rev02.pdf",
+        },
+      ],
+      disposalNote:
+        "We kindly ask that wipes, sanitary items, and food waste are not flushed.",
+    },
+  },
+  {
+    slug: "murray-cottage",
+    propertyName: "Murray Cottage",
+    hostName: "Shaun Donaldson",
+    hostPhone: "07989 225 390",
+    overview: [
+      "Sleeps six adults across 2 king-size and 2 single beds",
+      "Well-behaved pets welcome",
+      "Fully equipped kitchen",
+      "Shower room",
+      "Lounge with a sun lounge area",
+      "Front and rear gardens",
+      "Parking nearby",
+    ],
+    arrival: {
+      checkInTime: "From 3:00pm",
+      checkInNotes: [
+        "Your access code will be sent by message one day before arrival.",
+        "Early check-in may be available on request, subject to availability.",
+        "If you experience any issues accessing the property, please contact us straight away.",
+      ],
+      checkOutTime: "By 11:00am",
+      checkOutNotes: [
+        "Please ensure the property is securely locked when you leave.",
+        "Late check-out may incur an additional charge unless agreed in advance.",
+      ],
+      departureTasks: [
+        "Wash and put away any used dishes",
+        "Place all rubbish in the bin under the sink",
+        "Switch off lights and small appliances",
+        "Close and secure all windows and doors",
+      ],
+    },
+    kitchen: {
+      intro:
+        "A fully equipped kitchen, ideal for cooking for the whole family or a group of friends.",
+      equipment: [
+        "Nespresso coffee machine with complimentary pods",
+        "Kettle, toaster, microwave",
+        "Bosch Serie 2 single oven",
+        "Four-zone induction hob",
+        "Fridge with freezer",
+        "Pots, pans, cutlery, cooking utensils, tumblers, wine glasses, and champagne glasses",
+      ],
+      instructions: [
+        {
+          title: "Oven (Bosch Serie 2)",
+          steps:
+            "The oven is controlled by two dials. Select a cooking function using the left dial and set the temperature with the right. The fan setting is best for most cooking.",
+        },
+        {
+          title: "Induction hob",
+          steps:
+            "Press and hold the power button, place a pan on the chosen zone, then select the zone and adjust the heat using the controls.",
+        },
+      ],
+    },
+    livingArea: {
+      intro:
+        "The lounge and sun lounge area are designed for the whole group to relax together.",
+      features: ["Log burner with supplied logs", "Log basket"],
+      instructions: [
+        {
+          title: "Lighting the log burner",
+          steps:
+            "Open the air vents fully and place a firelighter with kindling in the centre of the burner. Light the firelighter and once the kindling is burning well, add a small log. When the fire is established, adjust the air vents to control the heat.",
+        },
+        {
+          title: "Fire safety",
+          steps:
+            "Please use only the logs provided and do not overload the burner. Never leave the fire unattended and ensure it is fully extinguished before going to bed or leaving the chalet. Keep furniture, soft furnishings, and clothing well clear of the fire at all times.",
+        },
+      ],
+    },
+    garden: {
+      intro:
+        "Front and rear gardens give everyone room to spread out, on top of the sun lounge area indoors.",
+      features: ["Front garden", "Rear garden"],
+      instructions: [],
+    },
+    bathroom: {
+      intro:
+        "The cottage has a modern shower room fitted with an electric shower for comfort and ease of use.",
       amenities: [
         "Fresh towels provided",
         "Complimentary toiletries",
