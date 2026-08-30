@@ -293,6 +293,65 @@ const categories = [
       },
     ],
   },
+  {
+    title: "Gamrie Through the Years",
+    photos: [
+      {
+        src: "/Historic_Photos/0E74BD65-ABB2-439C-8112-25E58B16E9CC_1_105_c.jpeg",
+        width: 1024,
+        height: 769,
+        alt: "Fisherwomen carrying creels along the shore path, historic photo",
+      },
+      {
+        src: "/Historic_Photos/293AA2E8-CCAC-44A8-A132-B4C93406C653_1_105_c.jpeg",
+        width: 1017,
+        height: 772,
+        alt: "A fishing fleet crowds Gardenstown harbour, historic photo",
+      },
+      {
+        src: "/Historic_Photos/2CF8DF77-9D2E-4CD9-A989-2ABB11BDE19C_1_105_c.jpeg",
+        width: 1029,
+        height: 763,
+        alt: "Villagers gathered by the harbour wall, historic photo",
+      },
+      {
+        src: "/Historic_Photos/43EF3008-A32A-4C6E-A968-DB39057E3D13_1_105_c.jpeg",
+        width: 1165,
+        height: 675,
+        alt: "Boats moored either side of the harbour breakwater, historic photo",
+      },
+      {
+        src: "/Historic_Photos/7D78596A-01EB-48E7-BA2B-A7BBA8F79570_1_105_c.jpeg",
+        width: 1089,
+        height: 722,
+        alt: "A painted view of the village and shore beneath the cliffs",
+      },
+      {
+        src: "/Historic_Photos/9FD14984-6079-432F-A7C0-2C207411F2E4_1_105_c.jpeg",
+        width: 1529,
+        height: 514,
+        alt: "Panoramic view of steam drifters crowding the harbour, historic photo",
+      },
+      {
+        src: "/Historic_Photos/A421B559-8469-4516-9145-32E16C546492_1_105_c.jpeg",
+        width: 1000,
+        height: 786,
+        alt: "The old kirk and graveyard overlooking the bay, historic photo",
+      },
+      {
+        src: "/Historic_Photos/CCI10212024.jpg",
+        width: 3436,
+        height: 2479,
+        alt: "Sepia panorama of the terraced cottages beneath the cliffs, historic photo",
+      },
+      {
+        src: "/Historic_Photos/DB0A7A98-CBC0-4E70-ADA2-873E6CA304A2_1_105_c.jpeg",
+        width: 1032,
+        height: 762,
+        alt: "An old view of the bay and village beneath the headland, historic photo",
+      },
+    ],
+  },
 ];
 
 export default function GalleryPage() {
@@ -309,13 +368,18 @@ export default function GalleryPage() {
         to the harbour. Select a tile to browse the full set.
       </p>
       <div className="mt-12 grid gap-6 sm:grid-cols-2">
-        {categories.map((category) => (
-          <GalleryCategoryTile
-            key={category.title}
-            title={category.title}
-            photos={category.photos}
-          />
-        ))}
+        {categories.map((category, index) => {
+          const isTrailingOdd =
+            categories.length % 2 !== 0 && index === categories.length - 1;
+          return (
+            <div
+              key={category.title}
+              className={isTrailingOdd ? "sm:col-span-2 sm:mx-auto sm:w-1/2" : undefined}
+            >
+              <GalleryCategoryTile title={category.title} photos={category.photos} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

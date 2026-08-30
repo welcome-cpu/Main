@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { welcomeGuides } from "@/lib/welcomeGuides";
+import { properties } from "@/lib/properties";
 
 export async function generateStaticParams() {
   return welcomeGuides.map((guide) => ({ slug: guide.slug }));
@@ -159,6 +160,15 @@ function DropletIcon({ className }: IconProps) {
   );
 }
 
+function MapPinIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </Icon>
+  );
+}
+
 function HeartIcon({ className }: IconProps) {
   return (
     <Icon className={className}>
@@ -240,6 +250,7 @@ export default async function WelcomeGuidePage({
 }: PageProps<"/welcome/[slug]">) {
   const { slug } = await params;
   const guide = welcomeGuides.find((g) => g.slug === slug);
+  const property = properties.find((p) => p.slug === slug);
 
   if (!guide) {
     notFound();
@@ -266,6 +277,9 @@ export default async function WelcomeGuidePage({
       ? [{ id: "garden", label: "Garden", icon: <LeafIcon className="h-4 w-4" /> }]
       : []),
     { id: "shower-room", label: "Shower Room", icon: <DropletIcon className="h-4 w-4" /> },
+    ...(property
+      ? [{ id: "find-us", label: "How to Find Us", icon: <MapPinIcon className="h-4 w-4" /> }]
+      : []),
     { id: "connect", label: "Stay Connected", icon: <HeartIcon className="h-4 w-4" /> },
   ];
 
@@ -391,6 +405,15 @@ export default async function WelcomeGuidePage({
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {guide.arrival.parkingNote}
             </p>
+            {guide.arrival.parkingImage && (
+              <Image
+                src={guide.arrival.parkingImage.src}
+                alt="Parking spaces at the garages"
+                width={guide.arrival.parkingImage.width}
+                height={guide.arrival.parkingImage.height}
+                className="mt-4 w-full max-w-sm rounded-xl border border-border object-cover"
+              />
+            )}
           </>
         )}
       </Section>
@@ -483,6 +506,25 @@ export default async function WelcomeGuidePage({
           {guide.bathroom.disposalNote}
         </p>
       </Section>
+
+      {property && (
+        <Section id="find-us" icon={<MapPinIcon className="h-5 w-5" />} title="How to Find Us">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Need directions on the day? Tap below to open the way to {property.name} in Google
+            Maps.
+          </p>
+          <div className="mt-4">
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${property.location.lat},${property.location.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get Directions
+            </a>
+          </div>
+        </Section>
+      )}
 
       <Section id="connect" icon={<HeartIcon className="h-5 w-5" />} title="Stay Connected">
         <p className="text-sm leading-relaxed text-muted-foreground">

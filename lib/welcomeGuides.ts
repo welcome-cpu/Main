@@ -18,6 +18,7 @@ export type WelcomeGuide = {
     checkInNotes: string[];
     lockInstructions?: Instruction[];
     parkingNote?: string;
+    parkingImage?: { src: string; width: number; height: number };
     checkOutTime: string;
     checkOutNotes: string[];
     departureTasks: string[];
@@ -241,6 +242,11 @@ export const welcomeGuides: WelcomeGuide[] = [
       ],
       parkingNote:
         "Park in front of the garage one door down from the cottage — the two garages furthest away, which can fit four cars between them.",
+      parkingImage: {
+        src: "/Murray_Cottage_Garages.jpeg",
+        width: 1440,
+        height: 1920,
+      },
       checkOutTime: "By 11:00am",
       checkOutNotes: [
         "Please ensure the property is securely locked when you leave.",
