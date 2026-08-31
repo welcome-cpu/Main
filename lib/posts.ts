@@ -266,6 +266,7 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "By lunchtime, you and your dog will have earned something good. Head back to Gardenstown and make for Bumble & Brae, the family-run café tucked into the village.",
+        links: [{ word: "Bumble & Brae", href: "https://bumbleandbrae.co.uk/" }],
       },
       {
         type: "paragraph",
@@ -288,6 +289,9 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "Drive inland to Keith, about 45 minutes south of Gardenstown, and visit Strathisla Distillery. Founded in 1786, it's Scotland's oldest continuously operating distillery and the spiritual home of Chivas Regal. The distillery sits beside a mill stream with twin pagoda roofs that look exactly as a Speyside distillery should look.",
+        links: [
+          { word: "Strathisla Distillery", href: "https://www.maltwhiskydistilleries.com/strathisla/direct" },
+        ],
       },
       {
         type: "paragraph",
@@ -306,6 +310,7 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "If you'd like to finish Sunday evening with a meal out, The Pennan Inn is 20 minutes east of Gardenstown along the coast road. The inn holds an AA Rosette and serves Scottish seafood landed daily from Peterhead, Fraserburgh, and Macduff. Pennan itself is the village made famous by the 1983 Bill Forsyth film Local Hero — and yes, the red phone box is still there.",
+        links: [{ word: "The Pennan Inn", href: "https://thepennaninn.co.uk/" }],
       },
       {
         type: "paragraph",
