@@ -3,9 +3,7 @@ import Link from "next/link";
 import PropertyMedia from "@/components/PropertyMedia";
 import FeaturedIn from "@/components/FeaturedIn";
 import Testimonials from "@/components/Testimonials";
-import AvailabilitySearch from "@/components/AvailabilitySearch";
 import BackgroundVideo from "@/components/BackgroundVideo";
-import ScrollToSection from "@/components/ScrollToSection";
 import { bookableProperties } from "@/lib/properties";
 import { SITE_URL } from "@/lib/site";
 
@@ -113,15 +111,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section
-        id="availability"
-        className="flex min-h-[20vh] items-center bg-primary px-6 py-12"
-      >
-        <div className="mx-auto w-full max-w-6xl">
-          <AvailabilitySearch />
-        </div>
-      </section>
-
       <section className="px-6 py-24">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">
@@ -143,12 +132,12 @@ export default function Home() {
             dog-friendly studio chalets for couples, and a generous family
             home with room for everyone to breathe.
           </p>
-          <ScrollToSection
-            targetId="availability"
+          <Link
+            href="/properties#availability"
             className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Check Availability
-          </ScrollToSection>
+          </Link>
         </div>
       </section>
 
@@ -416,12 +405,12 @@ export default function Home() {
             you are.
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-4">
-            <ScrollToSection
-              targetId="availability"
+            <Link
+              href="/properties#availability"
               className="rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
             >
               Book Your Stay
-            </ScrollToSection>
+            </Link>
             <Link
               href="/properties"
               className="rounded-full border border-primary px-7 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PropertyCard from "@/components/PropertyCard";
+import AvailabilitySearch from "@/components/AvailabilitySearch";
 import { properties } from "@/lib/properties";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
@@ -26,6 +27,10 @@ export default function PropertiesPage() {
         <br />
         One Extraordinary Spot
       </h1>
+
+      <div id="availability" className="mt-12 scroll-mt-24">
+        <AvailabilitySearch />
+      </div>
 
       <h2 className="mt-16 text-xs font-semibold tracking-[0.3em] text-accent uppercase">
         Choose Your Stay
