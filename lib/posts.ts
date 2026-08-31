@@ -1,5 +1,5 @@
 export type ContentBlock =
-  | { type: "paragraph"; text: string; link?: { word: string; href: string } }
+  | { type: "paragraph"; text: string; links?: { word: string; href: string }[] }
   | { type: "heading"; level: 2 | 3; text: string }
   | { type: "list"; items: string[] }
   | { type: "cta"; label: string; href: string }
@@ -49,7 +49,7 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "When you're ready to stretch further, wander into Gardenstown itself. The village steps down the cliff face in tight rows of stone cottages toward a working harbour. Children love the tumbledown geometry of it — the steep lanes, the bobbing boats, the smell of salt and seaweed.",
-        link: { word: "Gardenstown", href: "/about" },
+        links: [{ word: "Gardenstown", href: "/about" }],
       },
       {
         type: "paragraph",
@@ -59,12 +59,23 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "For your first evening, you don't even need the car. The Garden Arms is an easy walk from the village and a relaxed spot for a family dinner, with the boats bobbing nearby. Then it's back up to the chalet to light the log burner and let the day wind down. There's something about a fire and a big view that settles a family. A gentle start, and a good one.",
+        links: [{ word: "The Garden Arms", href: "https://thegardenarms.com/" }],
       },
       { type: "heading", level: 2, text: "Day 2: Coastal Walks and Wildlife on the Doorstep" },
       { type: "heading", level: 3, text: "Morning on the Cliff Paths" },
       {
         type: "paragraph",
         text: "This is the day the setting truly earns its keep. The coastal walks begin steps from the door, and two routes suit families especially well. The Gardenstown to Crovie Viewpoint trail is a manageable there-and-back with a huge payoff in a clifftop view over the tiny gable-end village of Crovie below. For a slightly longer loop with a dose of history, the Crovie, Gamrie, and St John's Kirk circular threads coast and countryside together.",
+        links: [
+          {
+            word: "Gardenstown to Crovie Viewpoint trail",
+            href: "https://www.alltrails.com/en-gb/trail/scotland/aberdeenshire/gardenstown-to-crovie-viewpoint",
+          },
+          {
+            word: "Crovie, Gamrie, and St John's Kirk circular",
+            href: "https://www.alltrails.com/en-gb/trail/scotland/aberdeenshire/crovie-gamrie-and-st-john-s-kirk-circular",
+          },
+        ],
       },
       {
         type: "paragraph",
@@ -78,6 +89,9 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "For an unforgettable morning, drive a few minutes to Troup Head Nature Reserve, Scotland's only mainland gannet colony. Thousands of seabirds wheel and dive along the cliffs here, and it's a proper spectacle for wildlife-mad kids. If you've a keen young angler in the family, local fishing trips run from nearby harbours too.",
+        links: [
+          { word: "Troup Head Nature Reserve", href: "https://www.rspb.org.uk/days-out/reserves/troup-head" },
+        ],
       },
       { type: "heading", level: 3, text: "Lunch in the Village" },
       {
@@ -88,17 +102,29 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "Spend the afternoon back at the beach, building whatever the tide allows. For dinner, it's worth the short hop to The Knowes Hotel and Restaurant in MacDuff, around ten minutes away, for a warm welcome and a proper coastal menu. Bring a couple of towels — between the sea spray and every irresistible rock pool, a damp child or two is more or less guaranteed.",
+        links: [
+          { word: "The Knowes Hotel and Restaurant", href: "https://knoweshotelandrestaurant.co.uk/" },
+        ],
       },
       { type: "heading", level: 2, text: "Day 3: Castles, Beaches, and the North East 250" },
       { type: "heading", level: 3, text: "Take to the Scenic Route" },
       {
         type: "paragraph",
         text: "Save your third day for going a little further afield. Gamrie Chalets sits directly on the North East 250, one of Scotland's great scenic drives, so the whole region unfolds straight from your doorstep. Pack the car and set off along the coast at your own pace.",
+        links: [{ word: "North East 250", href: "https://www.northeast250.com/see-the-route/" }],
       },
       { type: "heading", level: 3, text: "A Morning of Heritage" },
       {
         type: "paragraph",
         text: "This coast wears its history openly, and much of it is right up a child's street. Just along the way, Duff House in Banff is one of the finest stately homes in the area, designed by Robert Adam and set in walkable grounds. Nearby Banff Castle traces a story from 12th-century fortress to Georgian mansion. And back closer to home, St John's Church, Gamrie marks a Scots victory over the Danes in the 10th century. It's the kind of gory-sounding tale that keeps young imaginations busy.",
+        links: [
+          { word: "Duff House", href: "https://www.visitscotland.com/info/see-do/duff-house-p246341" },
+          { word: "Banff Castle", href: "https://banffcastle.co.uk/about/" },
+          {
+            word: "St John's Church, Gamrie",
+            href: "https://en.wikipedia.org/wiki/St_John%27s_Church,_Gamrie",
+          },
+        ],
       },
       { type: "heading", level: 3, text: "Beaches for Every Mood" },
       {
@@ -109,11 +135,13 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "For the adults, a distillery stop slots neatly into the drive. Glenglassaugh, roughly thirty minutes from Gardenstown, was built in 1875 beside the pure Glassaugh Spring and offers tours and tastings. One parent can enjoy a dram while the other explores the grounds with the children — a little something for everyone, without anyone feeling left out.",
+        links: [{ word: "Glenglassaugh", href: "https://www.glenglassaugh.com/" }],
       },
       { type: "heading", level: 3, text: "One Last Evening by the Fire" },
       {
         type: "paragraph",
         text: "Come back as the light softens, and if it's an early-dinner sort of evening, The Pennan Inn is a characterful ten-minute drive away in its famous cliff-hugging village. Then kick off your boots and settle in for a final evening around the log burner. On a clear winter night, this north-facing coast even offers a chance at the Northern Lights — a green shimmer along the horizon that turns an ordinary evening into one nobody forgets.",
+        links: [{ word: "The Pennan Inn", href: "https://thepennaninn.co.uk/" }],
       },
       {
         type: "paragraph",

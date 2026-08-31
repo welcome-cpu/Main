@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -122,24 +123,38 @@ export default async function BlogPostPage({
         {post.content.map((block, index) => {
           switch (block.type) {
             case "paragraph": {
-              if (!block.link) {
+              const matches = (block.links ?? [])
+                .map((link) => {
+                  const start = block.text.indexOf(link.word);
+                  return start === -1 ? null : { ...link, start, end: start + link.word.length };
+                })
+                .filter((match): match is NonNullable<typeof match> => match !== null)
+                .sort((a, b) => a.start - b.start);
+
+              if (matches.length === 0) {
                 return <p key={index}>{block.text}</p>;
               }
-              const linkIndex = block.text.indexOf(block.link.word);
-              if (linkIndex === -1) {
-                return <p key={index}>{block.text}</p>;
-              }
-              const before = block.text.slice(0, linkIndex);
-              const after = block.text.slice(linkIndex + block.link.word.length);
-              return (
-                <p key={index}>
-                  {before}
-                  <a href={block.link.href} className="font-semibold text-primary hover:underline">
-                    {block.link.word}
+
+              const nodes: ReactNode[] = [];
+              let cursor = 0;
+              matches.forEach((match, matchIndex) => {
+                const isExternal = match.href.startsWith("http");
+                nodes.push(block.text.slice(cursor, match.start));
+                nodes.push(
+                  <a
+                    key={matchIndex}
+                    href={match.href}
+                    {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    {match.word}
                   </a>
-                  {after}
-                </p>
-              );
+                );
+                cursor = match.end;
+              });
+              nodes.push(block.text.slice(cursor));
+
+              return <p key={index}>{nodes}</p>;
             }
             case "heading": {
               const Tag = block.level === 2 ? "h2" : "h3";
