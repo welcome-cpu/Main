@@ -7,6 +7,21 @@ import { SITE_NAME } from "./site";
 
 const DEFAULT_IMAGE = { url: "/opengraph-image", width: 1200, height: 630 };
 
+// Raw property/blog photos run 4-20MB+ at full resolution — far past what
+// Facebook, Twitter, and other crawlers reliably fetch for a link preview.
+// Route through the image optimizer so social platforms get a small,
+// properly-sized rendition instead of the original file.
+export function socialImage(
+  image: { src: string; width: number; height: number },
+  targetWidth = 1200
+) {
+  return {
+    url: `/_next/image?url=${encodeURIComponent(image.src)}&w=${targetWidth}&q=75`,
+    width: targetWidth,
+    height: Math.round((targetWidth * image.height) / image.width),
+  };
+}
+
 export function pageOpenGraph({
   title,
   description,

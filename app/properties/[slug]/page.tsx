@@ -5,7 +5,7 @@ import PropertyMedia from "@/components/PropertyMedia";
 import LodgifyBookingWidget from "@/components/LodgifyBookingWidget";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
-import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+import { pageOpenGraph, pageTwitter, socialImage } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
 
 export async function generateStaticParams() {
@@ -38,11 +38,9 @@ export async function generateMetadata({
       title,
       description,
       path: `/properties/${property.slug}`,
-      images: [
-        { url: property.image.src, width: property.image.width, height: property.image.height },
-      ],
+      images: [socialImage(property.image)],
     }),
-    twitter: pageTwitter({ title, description, images: [property.image.src] }),
+    twitter: pageTwitter({ title, description, images: [socialImage(property.image).url] }),
   };
 }
 

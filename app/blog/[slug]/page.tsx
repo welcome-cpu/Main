@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { posts } from "@/lib/posts";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
+import { socialImage } from "@/lib/metadata";
 
 export async function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
@@ -23,6 +24,9 @@ export async function generateMetadata({
 
   const title = post.metaTitle ?? post.title;
   const url = `${SITE_URL}/blog/${post.slug}`;
+  const image = post.image
+    ? socialImage(post.image)
+    : { url: "/opengraph-image", width: 1200, height: 630 };
 
   return {
     title,
@@ -36,15 +40,13 @@ export async function generateMetadata({
       locale: "en_GB",
       type: "article",
       publishedTime: post.date,
-      images: post.image
-        ? [{ url: post.image.src, width: post.image.width, height: post.image.height }]
-        : [{ url: "/opengraph-image", width: 1200, height: 630 }],
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: post.excerpt,
-      images: [post.image ? post.image.src : "/opengraph-image"],
+      images: [image.url],
     },
   };
 }
