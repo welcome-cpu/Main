@@ -17,9 +17,9 @@ export default function Testimonials() {
   return (
     <section className="bg-muted px-6 py-24">
       <div className="mx-auto max-w-6xl">
-        <p className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+        <h2 className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
           What Our Guests Say About Gamrie Chalets
-        </p>
+        </h2>
         <p className="mt-4 text-center text-base text-muted-foreground">
           Read why guests return to our clifftop chalets above the Moray
           Firth.

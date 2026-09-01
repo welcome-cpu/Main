@@ -101,11 +101,11 @@ export default function Home() {
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/70 to-accent/60" />
-        <div className="relative z-10 mx-auto w-full max-w-6xl">
+        <div className="relative z-10 mx-auto w-full max-w-7xl">
           <p className="text-xs font-semibold tracking-[0.3em] uppercase text-primary-foreground/70">
             Escape. Unwind. Recharge.
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
+          <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">
             Luxury Dog-Friendly Self-Catering on the
             <br />
             Aberdeenshire Coast

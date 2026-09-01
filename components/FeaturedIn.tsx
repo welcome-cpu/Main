@@ -21,9 +21,9 @@ export default function FeaturedIn() {
   return (
     <section className="border-y border-border bg-surface px-6 py-16">
       <div className="mx-auto max-w-6xl text-center">
-        <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+        <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
           As Featured In
-        </p>
+        </h2>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-16 gap-y-10">
           {mentions.map((mention) => {
             const logo = (
