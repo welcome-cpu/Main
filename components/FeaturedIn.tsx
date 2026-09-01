@@ -13,7 +13,10 @@ const mentions = [
     src: "/The_Scotsman_Logo_og.png",
     width: 1200,
     height: 340,
-    href: "https://www.scotsman.com/",
+    // "Head north for a clifftop retreat", The Scotsman, 18 Jul 2026 —
+    // only accessible via PressReader's digital-edition reprint, not a
+    // standalone scotsman.com article.
+    href: "https://www.pressreader.com/uk/the-scotsman/20260718/283850105129638",
   },
 ];
 
