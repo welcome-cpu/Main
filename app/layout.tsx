@@ -23,7 +23,7 @@ const title = {
 };
 
 const description =
-  "Luxury clifftop chalets above Gardenstown, Aberdeenshire. Panoramic Moray Firth views, log burners & dog-friendly stays on Scotland's NE250 coastal route.";
+  "Luxury dog-friendly self-catering above Gardenstown, with Moray Firth views, coastal walks, and log-burner evenings. Check availability at Gamrie Chalets.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

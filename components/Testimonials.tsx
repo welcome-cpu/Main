@@ -3,7 +3,7 @@ const reviews = [
     name: "Niels Calvert",
     context: "Guests with pets · Stayed August 2025",
     title: "A Truly Special Escape You'll Never Want to Leave",
-    text: "Gamrie Chalets is a decadent bolt hole like none other. The views are simply sublime and the mesmerising landscape is ever changing minute by minute. The quality of the accommodation makes for a truly relaxing and indulgent stay where every single element has been carefully considered making a truly special place where you can't help but kick back and relax. The hardest part is saying goodbye...",
+    text: "Gamrie Chalets is a decadent bolt hole like none other. The views are simply sublime and the mesmerising landscape is ever changing minute by minute. The quality of the accommodation makes for a truly relaxing and indulgent stay where every single element has been carefully considered, making a truly special place where you can't help but kick back and relax. The hardest part is saying goodbye...",
   },
   {
     name: "Colin Turnbull",
@@ -18,7 +18,11 @@ export default function Testimonials() {
     <section className="bg-muted px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <p className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-          What Our Guests Say
+          What Our Guests Say About Gamrie Chalets
+        </p>
+        <p className="mt-4 text-center text-base text-muted-foreground">
+          Read why guests return to our clifftop chalets above the Moray
+          Firth.
         </p>
         <div className="mt-10 grid gap-8 sm:grid-cols-2">
           {reviews.map((review) => (

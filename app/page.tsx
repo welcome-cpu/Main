@@ -13,20 +13,20 @@ export const metadata: Metadata = {
 
 const whyStay = [
   {
-    text: "Clifftop Moray Firth views from every studio chalet, ever-changing through the day",
+    text: "Panoramic Moray Firth views from every studio chalet, ever-changing through the day",
     link: { word: "studio chalet", href: "/properties/muckle-view" },
   },
   {
-    text: "Warm, wood-lit evenings by the log burner after a day on the coast",
+    text: "Log-burner evenings to warm you after a day on the Aberdeenshire coast",
   },
   {
-    text: "Dolphins by day, the Northern Lights by night, watched from your own balcony",
+    text: "Dolphins by day, Northern Lights by night, watched from your own balcony",
   },
   {
-    text: "On-site EV charging, so the drive north is easy on an electric car",
+    text: "On-site EV charging, so the drive north is easy in an electric car",
   },
   {
-    text: "A walkable village and open coast, with trails beginning right outside the door",
+    text: "A walkable village and open coast, with coastal walks beginning right outside the door",
   },
 ];
 
@@ -57,12 +57,12 @@ const homeFaqs = [
   {
     question: "Are dogs welcome?",
     answer:
-      "Yes. Our studio chalets are dog-friendly, with coastal walks starting right outside the door and dog-welcoming cafés in the village below.",
+      "Yes. Our studio chalets offer dog-friendly self-catering above Gardenstown, with coastal walks starting right outside the door and dog-welcoming cafés in the village below.",
   },
   {
     question: "Is there EV charging?",
     answer:
-      "Yes, at Muckle View. On-site EV charging is ready and waiting, so you can plug in the moment you arrive.",
+      "Yes, at Muckle View. On-site EV charging is ready and waiting, so you can plug in the moment you arrive at your clifftop chalet.",
   },
   {
     question: "How close is Gardenstown?",
@@ -72,7 +72,7 @@ const homeFaqs = [
   {
     question: "Can I book a short break?",
     answer:
-      "Absolutely. Come for a long weekend or settle in for a slower week — both work beautifully here.",
+      "Absolutely. Come for a short break or a long weekend on the Aberdeenshire coast, or settle in for a slower week — both work beautifully here.",
   },
 ];
 
@@ -106,31 +106,28 @@ export default function Home() {
             Escape. Unwind. Recharge.
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
-            Luxury Self-Catering on the Aberdeenshire Coast
+            Luxury Dog-Friendly Self-Catering on the Aberdeenshire Coast
           </h1>
+          <p className="mt-4 max-w-2xl text-lg font-medium text-primary-foreground/90 sm:text-xl">
+            Dog-friendly clifftop chalets above Gardenstown, with panoramic
+            Moray Firth views at your feet and your dog by your side.
+          </p>
         </div>
       </section>
 
       <section className="px-6 py-24">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">
-            Luxury Dog-Friendly Self-Catering on the Aberdeenshire Coast
-          </h2>
-          <p className="mt-3 text-lg font-medium text-foreground">
-            Clifftop chalets above Gardenstown, with the Moray Firth at your
-            feet and your dog by your side.
-          </p>
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+          <p className="text-lg leading-relaxed text-muted-foreground">
             Some places you visit. Others stay with you long after
             you&apos;ve driven home. Perched high above the fishing village of
-            Gardenstown, Gamrie Chalets pairs sweeping sea views with a warm,
-            wood-lit welcome for you and your dog.
+            Gardenstown, Gamrie Chalets pairs sweeping Moray Firth views with
+            a warm, wood-lit welcome for you and your dog.
           </p>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            This is coastal accommodation with a genuine sense of place. Two
-            ways to stay, both built around the setting: intimate,
-            dog-friendly studio chalets for couples, and a generous family
-            home with room for everyone to breathe.
+            This is luxury self-catering on the Aberdeenshire coast with a
+            genuine sense of place. Two ways to stay, both built around the
+            setting: intimate, dog-friendly studio chalets for couples, and a
+            spacious family holiday home with room for everyone to breathe.
           </p>
           <Link
             href="/properties#availability"
@@ -196,12 +193,12 @@ export default function Home() {
       <section className="px-6 py-24">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-            Dog-Friendly Stays Above Gardenstown
+            Dog-Friendly Self-Catering Above Gardenstown
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
-            Your dog isn&apos;t merely permitted here - they&apos;re expected,
+            Your dog isn&apos;t merely permitted here — they&apos;re expected,
             welcome, and every bit as much a part of the trip as you are. The
-            coastline is generous with space: wide, quiet{" "}
+            Aberdeenshire coastline is generous with space: wide, quiet{" "}
             <Link
               href="/about#hiking-walking"
               className="font-semibold text-primary hover:underline"
@@ -212,10 +209,10 @@ export default function Home() {
             happy.
           </p>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
-            You won&apos;t spend the weekend planning around your dog. The
-            whole coast already has them in mind, from the trails at your
-            door to the harbour cafés that greet a well-mannered companion
-            with a smile.
+            You won&apos;t spend the weekend planning around your dog. This
+            stretch of coast already has them in mind, from the coastal walks
+            at your door to the harbour cafés that greet a well-mannered
+            companion with a smile.
           </p>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
           <a
@@ -230,13 +227,14 @@ export default function Home() {
       <section className="bg-muted px-6 py-24">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-            Family Accommodation by the Sea
+            Family Accommodation on the Aberdeenshire Coast
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
-            For families and longer stays, Murray Cottage is the home above
-            Gardenstown. Three bedrooms, sweeping Moray Firth views, and
-            room for everyone to settle in, whether that&apos;s a family
-            gathering, a group of friends, or a slow week away from it all.
+            For families and longer stays, Murray Cottage is our
+            three-bedroom holiday home above Gardenstown, with sweeping
+            Moray Firth views and room for everyone to settle in — whether
+            that&apos;s a family gathering, a group of friends, or a slow
+            week away from it all.
           </p>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
             It&apos;s the same clifftop setting, the same open coast, with
@@ -255,7 +253,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-          Choose Your Stay
+          Choose Your Clifftop Stay
         </h2>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-foreground">
           Two special properties. One unforgettable setting above the Moray
@@ -277,10 +275,10 @@ export default function Home() {
                 Muckle View
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                A contemporary studio chalet perched on the clifftop, with
-                panoramic views across the Moray Firth and a log burner for
-                cosy evenings in. Intimate, dog-friendly, and built for two
-                — the ideal couple&apos;s escape with the dog in tow.
+                A contemporary dog-friendly studio chalet perched on the
+                clifftop, with panoramic Moray Firth views and a log burner
+                for cosy evenings in. Intimate and built for two — the ideal
+                couple&apos;s coastal escape with the dog in tow.
               </p>
               <span className="mt-3 inline-block text-xs font-medium tracking-wide text-primary uppercase group-hover:underline">
                 Discover Muckle View →
@@ -302,10 +300,10 @@ export default function Home() {
                 Murray Cottage
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                The family home above Gardenstown, with three bedrooms,
-                sweeping views, and room for everyone to breathe. Perfect
-                for family holidays, group getaways, and slower weeks by the
-                sea.
+                Our three-bedroom family holiday home above Gardenstown, with
+                sweeping Moray Firth views and room for everyone to breathe.
+                Perfect for family holidays, group getaways, and slower weeks
+                on the Aberdeenshire coast.
               </p>
               <span className="mt-3 inline-block text-xs font-medium tracking-wide text-primary uppercase group-hover:underline">
                 Discover Murray Cottage →
@@ -318,7 +316,7 @@ export default function Home() {
       <section className="bg-muted px-6 py-24">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-            From Your Doorstep
+            Things to Do From Your Doorstep
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
             The setting earns its keep the moment you step outside.
@@ -396,13 +394,13 @@ export default function Home() {
       <section className="bg-muted px-6 py-24">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
           <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-            Your Clifftop Stay Is Waiting
+            Book Your Clifftop Stay on the Aberdeenshire Coast
           </h2>
           <p className="text-muted-foreground">
             Whether it&apos;s a couple&apos;s escape with the dog or a
-            family gathering by the sea, your dates are the only thing
-            standing between you and the coast. The view is ready whenever
-            you are.
+            family gathering above the Moray Firth, your dates are the only
+            thing standing between you and the coast. The view is ready
+            whenever you are.
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-4">
             <Link
