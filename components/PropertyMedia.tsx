@@ -9,7 +9,7 @@ export default function PropertyMedia({
   index = 0,
   overlayLabel,
 }: {
-  image?: { src: string; width: number; height: number };
+  image?: { src: string; width: number; height: number; alt?: string };
   gallery?: { src: string; width: number; height: number; alt: string }[];
   name: string;
   index?: number;
@@ -27,7 +27,7 @@ export default function PropertyMedia({
     <div className="relative overflow-hidden rounded-2xl border border-border">
       <Image
         src={image.src}
-        alt={name}
+        alt={image.alt ?? name}
         width={image.width}
         height={image.height}
         className="aspect-[4/3] w-full object-cover"

@@ -29,7 +29,7 @@ export default function FeaturedIn() {
             const logo = (
               <Image
                 src={mention.src}
-                alt={mention.name}
+                alt={`${mention.name} logo`}
                 width={mention.width}
                 height={mention.height}
                 className="h-14 w-auto transition-transform hover:scale-105 sm:h-20"

@@ -29,7 +29,12 @@ export const properties = [
     ],
     comingSoon: false,
     location: { lat: 57.670563223386880, lng: -2.337134626983644 },
-    image: { src: "/7907_Gamrie_High_158.jpg", width: 7871, height: 5249 },
+    image: {
+      src: "/7907_Gamrie_High_158.jpg",
+      width: 7871,
+      height: 5249,
+      alt: "Muckle View studio chalet on the clifftop above Gardenstown with Moray Firth views.",
+    },
     gallery: [
       { src: "/Muckle View/1.jpg", width: 1920, height: 1280, alt: "Muckle View chalet above the shore, beside the old boat sheds" },
       { src: "/Muckle View/2.jpg", width: 1920, height: 1281, alt: "Muckle View on the hillside beside Gardenstown Public Hall" },
@@ -99,7 +104,12 @@ export const properties = [
     ],
     comingSoon: false,
     location: { lat: 57.671059600000000, lng: -2.333991600000000 },
-    image: { src: "/78491_Murray-002.jpg", width: 4999, height: 3333 },
+    image: {
+      src: "/78491_Murray-002.jpg",
+      width: 4999,
+      height: 3333,
+      alt: "Murray Cottage family home above Gardenstown with sea views.",
+    },
     gallery: [
       { src: "/Murray Cottage/1.jpg", width: 1920, height: 1280, alt: "Coastal view from the lounge chairs at Murray Cottage" },
       { src: "/Murray Cottage/2.jpg", width: 1920, height: 1280, alt: "Murray Cottage exterior on the terraced street" },
@@ -161,7 +171,12 @@ export const properties = [
     ],
     comingSoon: true,
     location: { lat: 57.670563223386880, lng: -2.337134626983644 },
-    image: { src: "/Mohr Rest - Coming Soon.jpeg", width: 1920, height: 1440 },
+    image: {
+      src: "/Mohr Rest - Coming Soon.jpeg",
+      width: 1920,
+      height: 1440,
+      alt: "Mohr Rest, a new chalet joining Gamrie Chalets above Gardenstown, coming soon.",
+    },
   },
 ];
 
