@@ -83,31 +83,10 @@ const lodgingBusinessJsonLd = {
       publisher: { "@type": "Organization", name: "Scottish Field" },
     },
   ],
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "5",
-    reviewCount: "2",
-  },
-  review: [
-    {
-      "@type": "Review",
-      author: { "@type": "Person", name: "Niels Calvert" },
-      datePublished: "2025-10-18",
-      name: "A Truly Special Escape You'll Never Want to Leave",
-      reviewBody:
-        "Gamrie Chalets is a decadent bolt hole like none other. The views are simply sublime and the mesmerising landscape is ever changing minute by minute. The quality of the accommodation makes for a truly relaxing and indulgent stay where every single element has been carefully considered making a truly special place where you can't help but kick back and relax. The hardest part is saying goodbye...",
-      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-    },
-    {
-      "@type": "Review",
-      author: { "@type": "Person", name: "Colin Turnbull" },
-      datePublished: "2025-10-17",
-      name: "October Stay",
-      reviewBody:
-        "We had a lovely trip up to Gardenstown and this spot was the perfect place to relax and enjoy the incredible views. Thanks!",
-      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-    },
-  ],
+  // Review/AggregateRating deliberately live only on the homepage, next to
+  // the <Testimonials> component (see components/Testimonials.tsx) —
+  // Google requires review markup to match reviews genuinely shown on the
+  // page, and this layout renders on every route.
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

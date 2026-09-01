@@ -1,21 +1,42 @@
-const reviews = [
-  {
-    name: "Niels Calvert",
-    context: "Guests with pets · Stayed August 2025",
-    title: "A Truly Special Escape You'll Never Want to Leave",
-    text: "Gamrie Chalets is a decadent bolt hole like none other. The views are simply sublime and the mesmerising landscape is ever changing minute by minute. The quality of the accommodation makes for a truly relaxing and indulgent stay where every single element has been carefully considered, making a truly special place where you can't help but kick back and relax. The hardest part is saying goodbye...",
+import { reviews } from "@/lib/reviews";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+
+// Review/AggregateRating schema lives here, next to the reviews it
+// describes, so it can only ever appear on a page where they're actually
+// rendered — Google requires review markup to match visible content.
+const reviewJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LodgingBusiness",
+  name: SITE_NAME,
+  url: SITE_URL,
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: (
+      reviews.reduce((sum, review) => sum + review.ratingValue, 0) / reviews.length
+    ).toFixed(1),
+    reviewCount: String(reviews.length),
   },
-  {
-    name: "Colin Turnbull",
-    context: "Young couple · Stayed October 2025",
-    title: "October Stay",
-    text: "We had a lovely trip up to Gardenstown and this spot was the perfect place to relax and enjoy the incredible views. Thanks!",
-  },
-];
+  review: reviews.map((review) => ({
+    "@type": "Review",
+    author: { "@type": "Person", name: review.name },
+    datePublished: review.datePublished,
+    name: review.title,
+    reviewBody: review.text,
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: String(review.ratingValue),
+      bestRating: "5",
+    },
+  })),
+};
 
 export default function Testimonials() {
   return (
     <section className="bg-muted px-6 py-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }}
+      />
       <div className="mx-auto max-w-6xl">
         <h2 className="text-center text-xs font-semibold tracking-[0.3em] text-accent uppercase">
           What Our Guests Say About Gamrie Chalets
