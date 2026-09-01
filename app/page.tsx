@@ -5,7 +5,6 @@ import FeaturedIn from "@/components/FeaturedIn";
 import Testimonials from "@/components/Testimonials";
 import BackgroundVideo from "@/components/BackgroundVideo";
 import { bookableProperties } from "@/lib/properties";
-import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -50,6 +49,7 @@ const fromYourDoorstep = [
   {
     title: "The whisky trail",
     text: "Speyside's storied distilleries sit within an easy drive, from Glenglassaugh to the wider Malt Whisky Trail.",
+    link: { word: "Malt Whisky Trail", href: "/about#whisky-distilleries" },
   },
 ];
 
@@ -128,8 +128,23 @@ export default function Home() {
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
             This is luxury self-catering on the Aberdeenshire coast with a
             genuine sense of place. Two ways to stay, both built around the
-            setting: intimate, dog-friendly studio chalets for couples, and a
-            spacious family holiday home with room for everyone to breathe.
+            setting: intimate,{" "}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+            <a
+              href="/properties/muckle-view"
+              className="font-semibold text-primary hover:underline"
+            >
+              dog-friendly studio chalets
+            </a>{" "}
+            for couples, and a{" "}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+            <a
+              href="/properties/murray-cottage"
+              className="font-semibold text-primary hover:underline"
+            >
+              spacious family holiday home
+            </a>{" "}
+            with room for everyone to breathe.
           </p>
           <Link
             href="/properties#availability"
@@ -232,11 +247,18 @@ export default function Home() {
             Family Accommodation on the Aberdeenshire Coast
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
-            For families and longer stays, Murray Cottage is our
-            three-bedroom holiday home above Gardenstown, with sweeping
-            Moray Firth views and room for everyone to settle in — whether
-            that&apos;s a family gathering, a group of friends, or a slow
-            week away from it all.
+            For families and longer stays,{" "}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+            <a
+              href="/properties/murray-cottage"
+              className="font-semibold text-primary hover:underline"
+            >
+              Murray Cottage
+            </a>{" "}
+            is our three-bedroom holiday home above Gardenstown, with
+            sweeping Moray Firth views and room for everyone to settle in —
+            whether that&apos;s a family gathering, a group of friends, or a
+            slow week away from it all.
           </p>
           <p className="mt-6 text-lg leading-relaxed text-foreground">
             It&apos;s the same clifftop setting, the same open coast, with
@@ -325,17 +347,33 @@ export default function Home() {
             Here&apos;s a taste of what&apos;s within easy reach.
           </p>
           <ul className="mt-6 space-y-4 text-base">
-            {fromYourDoorstep.map((item) => (
-              <li key={item.title} className="flex gap-2">
-                <span className="text-accent">•</span>
-                <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">
-                    {item.title}:
-                  </span>{" "}
-                  {item.text}
-                </span>
-              </li>
-            ))}
+            {fromYourDoorstep.map((item) => {
+              const linkIndex = item.link ? item.text.indexOf(item.link.word) : -1;
+              return (
+                <li key={item.title} className="flex gap-2">
+                  <span className="text-accent">•</span>
+                  <span className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">
+                      {item.title}:
+                    </span>{" "}
+                    {item.link && linkIndex !== -1 ? (
+                      <>
+                        {item.text.slice(0, linkIndex)}
+                        <Link
+                          href={item.link.href}
+                          className="font-semibold text-primary hover:underline"
+                        >
+                          {item.link.word}
+                        </Link>
+                        {item.text.slice(linkIndex + item.link.word.length)}
+                      </>
+                    ) : (
+                      item.text
+                    )}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           <Link
             href="/about"
@@ -382,12 +420,12 @@ export default function Home() {
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
             More questions?{" "}
-            <a
-              href={`${SITE_URL}/faqs`}
+            <Link
+              href="/faqs"
               className="font-semibold text-primary hover:underline"
             >
               See all FAQs
-            </a>
+            </Link>
             .
           </p>
         </div>

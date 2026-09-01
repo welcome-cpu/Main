@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE_URL } from "@/lib/site";
+import Link from "next/link";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "FAQs";
@@ -86,12 +86,12 @@ export default function FaqsPage() {
       <p className="mt-4 text-muted-foreground">
         Everything you need to know before your stay. Can&apos;t find what
         you&apos;re looking for?{" "}
-        <a
-          href={`${SITE_URL}/contact`}
+        <Link
+          href="/contact"
           className="font-semibold text-primary hover:underline"
         >
           Get in touch
-        </a>
+        </Link>
         .
       </p>
 

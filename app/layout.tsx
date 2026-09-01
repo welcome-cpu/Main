@@ -29,6 +29,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title,
   description,
+  // Belt-and-suspenders alongside robots.ts: any non-production deploy
+  // (Vercel previews, branch aliases) also gets a page-level noindex, so a
+  // preview URL can't end up indexed even if something links to it before
+  // a crawler ever reads robots.txt.
+  ...(process.env.VERCEL_ENV !== "production" && {
+    robots: { index: false, follow: false },
+  }),
   openGraph: {
     title,
     description,
