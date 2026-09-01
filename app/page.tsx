@@ -106,7 +106,9 @@ export default function Home() {
             Escape. Unwind. Recharge.
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
-            Luxury Dog-Friendly Self-Catering on the Aberdeenshire Coast
+            Luxury Dog-Friendly Self-Catering on the
+            <br />
+            Aberdeenshire Coast
           </h1>
           <p className="mt-4 max-w-2xl text-lg font-medium text-primary-foreground/90 sm:text-xl">
             Dog-friendly clifftop chalets above Gardenstown, with panoramic
