@@ -100,7 +100,7 @@ export default function Home() {
           poster={{ src: "/7907_Gamrie_High_058.jpg", width: 8099, height: 5402 }}
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/70 to-accent/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/25 to-transparent" />
         <div className="relative z-10 mx-auto w-full max-w-7xl">
           <p className="text-xs font-semibold tracking-[0.3em] uppercase text-primary-foreground/70">
             Escape. Unwind. Recharge.
