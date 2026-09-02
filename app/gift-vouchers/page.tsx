@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Link from "next/link";
 import Script from "next/script";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
@@ -206,17 +205,6 @@ export default function GiftVouchersPage() {
               data-platform="Other"
             />
           </div>
-
-          <p className="mt-6 text-sm text-muted-foreground">
-            Prefer to ask first?{" "}
-            <Link
-              href="/contact"
-              className="font-semibold text-primary hover:underline"
-            >
-              Get in touch
-            </Link>{" "}
-            and we&apos;ll help you sort a voucher.
-          </p>
         </div>
       </section>
 
