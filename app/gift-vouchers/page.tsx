@@ -121,10 +121,11 @@ export default function GiftVouchersPage() {
             Give the Gift of Escape
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-            A Gamrie Chalets voucher is an invitation to slow down — clifftop
-            stays above Gardenstown, log fires, dark skies over the Moray
-            Firth, and the sea always in view. Choose an amount, and
-            we&apos;ll take care of the rest.
+            A Gamrie Chalets gift voucher is an invitation to escape to the
+            Aberdeenshire coast — luxury dog-friendly self-catering in
+            clifftop chalets above Gardenstown, with panoramic Moray Firth
+            views, log-burner evenings, and the sea always in view. Choose
+            an amount, and we&apos;ll take care of the rest.
           </p>
           <a
             href="#voucher"
