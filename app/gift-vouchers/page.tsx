@@ -124,32 +124,43 @@ export default function GiftVouchersPage() {
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
             A Gamrie Chalets voucher is an invitation to slow down — clifftop
             stays above Gardenstown, log fires, dark skies over the Moray
-            Firth, and the sea always in view. Choose an amount below and
+            Firth, and the sea always in view. Choose an amount, and
             we&apos;ll take care of the rest.
           </p>
-
-          <div className="mt-10">
-            <div
-              className="gift-up-target"
-              data-site-id="d4f77063-d502-4034-a385-847b17596001"
-              data-platform="Other"
-            />
-          </div>
-
-          <p className="mt-6 text-sm text-muted-foreground">
-            Prefer to ask first?{" "}
-            <Link
-              href="/contact"
-              className="font-semibold text-primary hover:underline"
-            >
-              Get in touch
-            </Link>{" "}
-            and we&apos;ll help you sort a voucher.
-          </p>
+          <a
+            href="#voucher"
+            className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Buy a Voucher
+          </a>
         </div>
       </div>
 
       <section className="bg-muted px-6 py-24">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
+            The Stay
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">
+            A Stay Worth Gifting
+          </h2>
+          <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            {stayFeatures.map((feature) => (
+              <div key={feature.title}>
+                <feature.icon className="mx-auto h-7 w-7 text-accent" />
+                <h3 className="mt-4 text-base font-semibold text-foreground">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {feature.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-24">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
             How It Works
@@ -175,27 +186,37 @@ export default function GiftVouchersPage() {
         </div>
       </section>
 
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-5xl text-center">
+      <section id="voucher" className="scroll-mt-24 bg-muted px-6 py-24">
+        <div className="mx-auto max-w-3xl">
           <p className="text-xs font-semibold tracking-[0.3em] text-accent uppercase">
-            The Stay
+            Buy a Voucher
           </p>
           <h2 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">
-            A Stay Worth Gifting
+            Choose an Amount
           </h2>
-          <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-            {stayFeatures.map((feature) => (
-              <div key={feature.title}>
-                <feature.icon className="mx-auto h-7 w-7 text-accent" />
-                <h3 className="mt-4 text-base font-semibold text-foreground">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {feature.text}
-                </p>
-              </div>
-            ))}
+          <p className="mt-4 text-muted-foreground">
+            Pick a value below to get started — your voucher is delivered by
+            email as soon as payment goes through.
+          </p>
+
+          <div className="mt-10">
+            <div
+              className="gift-up-target"
+              data-site-id="d4f77063-d502-4034-a385-847b17596001"
+              data-platform="Other"
+            />
           </div>
+
+          <p className="mt-6 text-sm text-muted-foreground">
+            Prefer to ask first?{" "}
+            <Link
+              href="/contact"
+              className="font-semibold text-primary hover:underline"
+            >
+              Get in touch
+            </Link>{" "}
+            and we&apos;ll help you sort a voucher.
+          </p>
         </div>
       </section>
 
