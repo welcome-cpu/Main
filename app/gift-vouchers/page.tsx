@@ -19,20 +19,20 @@ const steps = [
   {
     number: "01",
     title: "Choose an Amount",
-    text: "Pick any amount you like using the voucher form below — there's no fixed denomination.",
+    text: "Choose any amount from £10 upwards using the voucher form below — simply enter the value you'd like to gift.",
   },
   {
     number: "02",
-    title: "It's Delivered Instantly",
-    text: "Add a personal message and the recipient's details at checkout, and the voucher is emailed straight to them.",
+    title: "Choose How It's Delivered",
+    text: "At checkout, add a personal message and the recipient's details. You can choose to have the voucher emailed instantly or select a printed voucher if you'd prefer something physical.",
   },
   {
     number: "03",
-    title: "Check Dates & Email Your Code",
-    text: "Check availability on our properties page, then email your voucher code and preferred dates to welcome@gamriechalets.co.uk. We'll create the booking for you — if the voucher doesn't cover the full stay, you're welcome to pay the difference.",
+    title: "Check Dates & Book Your Stay",
+    text: "Check availability on our properties page, then send your voucher code and preferred dates via our contact page. We'll create the booking for you — and if the voucher doesn't cover the full stay, you're welcome to pay the difference.",
     links: [
       { word: "properties page", href: "/properties#availability" },
-      { word: "welcome@gamriechalets.co.uk", href: "mailto:welcome@gamriechalets.co.uk" },
+      { word: "contact page", href: "/contact" },
     ],
   },
 ];
