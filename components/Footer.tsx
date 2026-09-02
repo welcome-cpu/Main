@@ -73,6 +73,9 @@ export default function Footer() {
           <Link href="/faqs" className="hover:text-primary">
             FAQs
           </Link>
+          <Link href="/gift-vouchers" className="hover:text-primary">
+            Gift Vouchers
+          </Link>
           <Link href="/contact" className="hover:text-primary">
             Contact
           </Link>

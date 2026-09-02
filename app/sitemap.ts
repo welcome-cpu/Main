@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/gallery`, lastModified: buildDate, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/blog`, lastModified: buildDate, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/faqs`, lastModified: buildDate, changeFrequency: "yearly", priority: 0.6 },
+    { url: `${SITE_URL}/gift-vouchers`, lastModified: buildDate, changeFrequency: "yearly", priority: 0.6 },
     { url: `${SITE_URL}/contact`, lastModified: buildDate, changeFrequency: "yearly", priority: 0.5 },
   ];
 
