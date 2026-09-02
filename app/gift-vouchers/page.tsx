@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
+
+const GIFT_UP_CHECKOUT_URL =
+  "https://giftup.app/place-order/d4f77063-d502-4034-a385-847b17596001?platform=hosted&justshowcheckout=true";
 
 const title = "Gift Vouchers";
 const description =
@@ -30,30 +32,14 @@ export default function GiftVouchersPage() {
         towards a stay at either Muckle View or Murray Cottage.
       </p>
 
-      <div className="mt-10">
-        <div
-          className="gift-up-target"
-          data-site-id="d4f77063-d502-4034-a385-847b17596001"
-          data-platform="Other"
+      <div className="mt-10 overflow-hidden rounded-2xl border border-border">
+        <iframe
+          src={GIFT_UP_CHECKOUT_URL}
+          title="Gamrie Chalets gift voucher checkout"
+          allow="payment"
+          className="h-[1400px] w-full sm:h-[1100px]"
         />
       </div>
-
-      <Script
-        id="gift-up"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function (g, i, f, t, u, p, s) {
-                g[u] = g[u] || function() { (g[u].q = g[u].q || []).push(arguments) };
-                p = i.createElement(f);
-                p.async = 1;
-                p.src = t;
-                s = i.getElementsByTagName(f)[0];
-                s.parentNode.insertBefore(p, s);
-            })(window, document, "script", "https://cdn.giftup.app/dist/gift-up.js", "giftup");
-          `,
-        }}
-      />
     </div>
   );
 }
