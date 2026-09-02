@@ -5,7 +5,7 @@ import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "Gift Vouchers";
 const description =
-  "Give the gift of a clifftop escape. Buy a Gamrie Chalets gift voucher, redeemable against a stay at Muckle View or Murray Cottage.";
+  "Give the gift of a luxury dog-friendly self-catering escape on the Aberdeenshire coast. Buy a Gamrie Chalets gift voucher, redeemable against any stay.";
 
 export const metadata: Metadata = {
   title,
@@ -30,8 +30,45 @@ const steps = [
     number: "03",
     title: "They Choose Their Dates",
     text: "They book directly online and enter the voucher code at checkout to redeem it against a stay at Muckle View or Murray Cottage.",
+    links: [
+      { word: "Muckle View", href: "/properties/muckle-view" },
+      { word: "Murray Cottage", href: "/properties/murray-cottage" },
+    ],
   },
 ];
+
+function renderWithLinks(text: string, links?: { word: string; href: string }[]) {
+  const matches = (links ?? [])
+    .map((link) => {
+      const start = text.indexOf(link.word);
+      return start === -1 ? null : { ...link, start, end: start + link.word.length };
+    })
+    .filter((match): match is NonNullable<typeof match> => match !== null)
+    .sort((a, b) => a.start - b.start);
+
+  if (matches.length === 0) return text;
+
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  matches.forEach((match, index) => {
+    nodes.push(text.slice(cursor, match.start));
+    // Plain <a> (not next/link) forces a full reload, so the Lodgify
+    // booking widget's one-time DOM scan runs fresh on the property page.
+    nodes.push(
+      <a
+        key={index}
+        href={match.href}
+        className="font-semibold text-primary hover:underline"
+      >
+        {match.word}
+      </a>
+    );
+    cursor = match.end;
+  });
+  nodes.push(text.slice(cursor));
+
+  return nodes;
+}
 
 type IconProps = { className?: string };
 
@@ -178,7 +215,7 @@ export default function GiftVouchersPage() {
                   {step.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {step.text}
+                  {renderWithLinks(step.text, step.links)}
                 </p>
               </div>
             ))}
