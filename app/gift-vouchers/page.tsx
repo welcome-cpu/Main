@@ -20,17 +20,17 @@ const steps = [
   {
     number: "01",
     title: "Choose an Amount",
-    text: "Pick how much you'd like to gift using the voucher form below — any amount, no fixed denominations.",
+    text: "Pick any amount you like using the voucher form below — there's no fixed denomination.",
   },
   {
     number: "02",
-    title: "We Send the Voucher",
-    text: "A personalised voucher lands by email straight away, ready to print or forward on to whoever it's for.",
+    title: "It's Delivered Instantly",
+    text: "Add a personal message and the recipient's details at checkout, and the voucher is emailed straight to them.",
   },
   {
     number: "03",
     title: "They Choose Their Dates",
-    text: "Redeemable against a stay at Muckle View or Murray Cottage, whenever suits them.",
+    text: "They book directly online and enter the voucher code at checkout to redeem it against a stay at Muckle View or Murray Cottage.",
   },
 ];
 
