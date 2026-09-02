@@ -28,11 +28,11 @@ const steps = [
   },
   {
     number: "03",
-    title: "They Choose Their Dates",
-    text: "They book directly online and enter the voucher code at checkout to redeem it against a stay at Muckle View or Murray Cottage.",
+    title: "Check Dates & Email Your Code",
+    text: "Check availability on our properties page, then email your voucher code and preferred dates to welcome@gamriechalets.co.uk. We'll create the booking for you — if the voucher doesn't cover the full stay, you're welcome to pay the difference.",
     links: [
-      { word: "Muckle View", href: "/properties/muckle-view" },
-      { word: "Murray Cottage", href: "/properties/murray-cottage" },
+      { word: "properties page", href: "/properties#availability" },
+      { word: "welcome@gamriechalets.co.uk", href: "mailto:welcome@gamriechalets.co.uk" },
     ],
   },
 ];
