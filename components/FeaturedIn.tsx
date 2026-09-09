@@ -18,6 +18,14 @@ const mentions = [
     // standalone scotsman.com article.
     href: "https://www.pressreader.com/uk/the-scotsman/20260718/283850105129638",
   },
+  {
+    name: "The Press and Journal",
+    src: "/The_Press_and_Journal_logo.svg",
+    width: 279,
+    height: 209,
+    // No confirmed article URL yet — add one once it's available.
+    href: undefined,
+  },
 ];
 
 export default function FeaturedIn() {
