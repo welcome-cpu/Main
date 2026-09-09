@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import EmailSignupForm from "@/components/EmailSignupForm";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "Contact";
@@ -40,6 +41,10 @@ export default function ContactPage() {
 
       <div className="mt-10">
         <ContactForm />
+      </div>
+
+      <div className="mt-16">
+        <EmailSignupForm />
       </div>
     </div>
   );
