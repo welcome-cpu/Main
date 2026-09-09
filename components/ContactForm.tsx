@@ -68,7 +68,7 @@ export default function ContactForm() {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
         />
       </div>
       <div>
@@ -81,7 +81,7 @@ export default function ContactForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
         />
       </div>
       <div>
@@ -94,7 +94,7 @@ export default function ContactForm() {
           rows={5}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-foreground outline-none focus:border-primary"
         />
       </div>
       {TURNSTILE_SITE_KEY && (

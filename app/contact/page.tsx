@@ -46,7 +46,7 @@ export default function ContactPage() {
           </a>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-10 rounded-2xl border border-border bg-surface p-8 shadow-sm">
           <ContactForm />
         </div>
       </div>
