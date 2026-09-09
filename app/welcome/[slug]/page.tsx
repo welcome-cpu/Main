@@ -299,10 +299,10 @@ export default async function WelcomeGuidePage({
 
       <div className="mt-6 flex items-center gap-4 rounded-xl border border-border bg-muted px-5 py-4">
         <Image
-          src="/7907_Gamrie_High_140.jpg"
+          src="/7907_Gamrie_High_140.png"
           alt={guide.hostName}
-          width={7927}
-          height={5288}
+          width={1535}
+          height={1025}
           className="h-16 w-16 flex-none rounded-full object-cover"
         />
         <div className="text-sm text-muted-foreground">

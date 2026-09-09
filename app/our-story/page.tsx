@@ -58,10 +58,10 @@ export default function OurStoryPage() {
         <div className="mt-12 overflow-hidden">
           <div className="float-left mr-8 mb-4 w-64 overflow-hidden rounded-2xl border border-border sm:w-80">
             <Image
-              src="/7907_Gamrie_High_140.jpg"
-              alt="View from Gamrie Chalets over Gardenstown and the Moray Firth"
-              width={7927}
-              height={5288}
+              src="/7907_Gamrie_High_140.png"
+              alt="Shaun Donaldson, owner of Gamrie Chalets"
+              width={1535}
+              height={1025}
               className="aspect-[4/3] w-full object-cover"
             />
           </div>
