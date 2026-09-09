@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Script from "next/script";
 import PropertyMedia from "@/components/PropertyMedia";
 import FeaturedIn from "@/components/FeaturedIn";
 import Testimonials from "@/components/Testimonials";
 import BackgroundVideo from "@/components/BackgroundVideo";
+import EmailSignupForm from "@/components/EmailSignupForm";
 import { bookableProperties } from "@/lib/properties";
 
 export const metadata: Metadata = {
@@ -460,12 +460,9 @@ export default function Home() {
         </div>
       </section>
 
-      <Script
-        id="eocampaign-form"
-        src="https://eocampaign1.com/form/b4165b9a-ac90-11f1-bb8a-891967e37d57.js"
-        data-form="b4165b9a-ac90-11f1-bb8a-891967e37d57"
-        strategy="lazyOnload"
-      />
+      <section className="px-6 py-16">
+        <EmailSignupForm />
+      </section>
     </>
   );
 }
