@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <section className="border-y border-border bg-muted px-6 py-6">
+      <section className="border-y border-border bg-background px-6 py-6">
         <div className="mx-auto max-w-3xl">
           <EmailSignupForm />
         </div>
