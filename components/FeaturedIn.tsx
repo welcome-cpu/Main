@@ -23,8 +23,7 @@ const mentions = [
     src: "/The_Press_and_Journal_logo.svg",
     width: 279,
     height: 209,
-    // No confirmed article URL yet — add one once it's available.
-    href: undefined,
+    href: "https://www.pressandjournal.co.uk/fp/lifestyle/travel/7104304/gamrie-chalets-travel-report-gardenstown/",
   },
 ];
 
