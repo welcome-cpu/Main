@@ -72,7 +72,7 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "If you're a dog owner, your dog is very much part of the plan. Step straight onto coastal trails with room to roam and views around every bend. Gardenstown's cafés welcome four-legged guests as warmly as their owners, so you can explore together without a second thought. This is a getaway for everyone, tails included.",
-        links: [{ word: "Gardenstown", href: "/about" }],
+        links: [{ word: "Gardenstown's cafés", href: "/about#local-hospitality" }],
       },
       { type: "heading", level: 2, text: "Your Perfect Spring Weekend Plan" },
       {
