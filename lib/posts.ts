@@ -17,6 +17,117 @@ export type Post = {
 
 export const posts: Post[] = [
   {
+    slug: "spring-couples-weekend-aberdeenshire-coast",
+    title:
+      "Plan Your Perfect Spring Weekend on the Aberdeenshire Coast: Stay, Explore, Unwind",
+    metaTitle: "Spring Weekend Getaway, Aberdeenshire Coast",
+    date: "2026-09-12",
+    excerpt:
+      "A romantic spring weekend guide to Muckle View on the Aberdeenshire coast: clifftop walks, dolphins, and log-burner evenings. Check availability today.",
+    image: { src: "/7907_Gamrie_High_116.jpg", width: 7790, height: 5195 },
+    content: [
+      {
+        type: "paragraph",
+        text: "Spring on the Aberdeenshire coast is the ultimate reset for you and the one you love. Think dramatic sea views, bracing cliffside walks, and slow evenings by a glowing log burner. This is your invitation to step away from the noise, cook your favorite meals in a stylish kitchen, and sink into the little luxuries that make a getaway unforgettable. Everything here nudges you to slow down, breathe out, and let the coastline do its thing.",
+      },
+      {
+        type: "paragraph",
+        text: "Planning a romantic weekend getaway? Stay at Muckle View and make it one you'll remember. After a day chasing cliff paths and spotting dolphins, you'll fall straight into the comfort of a design-led chalet. It's effortless, intimate, and packed with clever touches of indulgence. Exactly what busy professionals need to properly recharge.",
+        links: [{ word: "Muckle View", href: "/properties/muckle-view" }],
+      },
+      { type: "cta", label: "Check Availability", href: "/properties/muckle-view" },
+      { type: "heading", level: 2, text: "Why Spring on the Aberdeenshire Coast Is Made for Couples" },
+      {
+        type: "paragraph",
+        text: "Spring feels tailor-made for two. The days stretch just long enough for coastal adventures, and the evenings pull you back to the fire with a glass of something good. Fresh air, romance, and rare, uninterrupted time together. That's the whole appeal.",
+      },
+      {
+        type: "paragraph",
+        text: "Wildlife wakes up around you. Seabirds crowd the cliffs, wildflowers splash color along the paths, and dolphins glide through the Moray Firth, often close enough to catch from your window. There's a real energy to the coast in spring, and none of the summer crowds. Just space to breathe, take it all in, and enjoy each other's company.",
+      },
+      {
+        type: "paragraph",
+        text: "Best of all, spring rewards the spontaneous. One quick weekend is all it takes to reset, reconnect, and feel a world away from the everyday.",
+      },
+      { type: "heading", level: 2, text: "Stay at Muckle View: Your Perfect Getaway for Two" },
+      {
+        type: "paragraph",
+        text: "For couples, Muckle View is the escape you've been waiting for. This sleek, dog-friendly studio chalet perches right on the clifftop, with sweeping Moray Firth views framed in your window. Inside, everything's been thought through: a stylish kitchen built for cooking your favorite dishes together, a log burner made for long, lazy evenings, and a luxurious bathroom stocked with premium Gordon Castle toiletries to round off every day. This is simplicity at its best, paired with thoughtful luxury in every detail, so you feel comfortable, connected, and completely at ease.",
+        links: [{ word: "Muckle View", href: "/properties/muckle-view" }],
+      },
+      {
+        type: "paragraph",
+        text: "Mornings start with brunch you make yourselves in a well-stocked kitchen. No rush, no interruptions, just the sound of the sea and the simple joy of cooking side by side. Evenings belong to the log burner, a glass of wine or a warming dram, and the kind of quiet that's hard to find at home. And when the day winds down, the bathroom becomes your own private spa, those Gordon Castle toiletries turning a routine into a treat.",
+      },
+      {
+        type: "paragraph",
+        text: "Muckle View isn't just somewhere to sleep. It's an invitation to enjoy simplicity at its best, with thoughtful luxury woven through the whole stay. That balance of intimacy and comfort makes it the ideal backdrop for a spring break on the Aberdeenshire coast.",
+      },
+      { type: "heading", level: 3, text: "Let the Clifftop Views Steal the Show" },
+      {
+        type: "paragraph",
+        text: "The view does a lot of the heavy lifting. From your chalet, the Moray Firth shifts through the day: calm and silver at dawn, alive with gold by dusk. Dolphins cut through the waves by daylight, and on clear nights, the Northern Lights flicker on the horizon. Picture yourself with a warm drink in hand, watching a scene so good you'll wish you could hit pause.",
+      },
+      { type: "heading", level: 3, text: "Bring the Dog and Make It a Full-House Weekend" },
+      {
+        type: "paragraph",
+        text: "If you're a dog owner, your dog is very much part of the plan. Step straight onto coastal trails with room to roam and views around every bend. Gardenstown's cafés welcome four-legged guests as warmly as their owners, so you can explore together without a second thought. This is a getaway for everyone, tails included.",
+        links: [{ word: "Gardenstown", href: "/about" }],
+      },
+      { type: "heading", level: 2, text: "Your Perfect Spring Weekend Plan" },
+      {
+        type: "paragraph",
+        text: "Here's how the weekend could unfold. Flex it to suit your mood, the weather, or the moment.",
+      },
+      { type: "heading", level: 3, text: "Friday Night: Unwind With the View" },
+      {
+        type: "paragraph",
+        text: "Arriving at Muckle View feels like exhaling. Drop your bags, light the log burner, and let the open sea reset your head. Throw together an easy dinner in the sleek kitchen, then wind down with a hot shower and Gordon Castle toiletries that feel like a mini spa. Finish the night wrapped in a blanket, drink in hand, with a front-row seat to the Moray Firth as dusk rolls in.",
+      },
+      { type: "heading", level: 3, text: "Saturday: Explore, Savor, Relax" },
+      {
+        type: "paragraph",
+        text: "Kick off with breakfast made together. Simple, unhurried, backed by the sound of the waves. Then wander the coastal trail to Crovie, where tiny cottages cling to the sea and every turn earns a new view. Back in Gardenstown, grab a harbor-side lunch before scanning the firth for dolphins. Head home to the chalet for a proper evening in: a homemade feast, the glow of the log burner, and the quiet luxury of your own clifftop hideaway.",
+        links: [
+          { word: "Crovie", href: "/about#hiking-walking" },
+          { word: "Gardenstown", href: "/about" },
+        ],
+      },
+      { type: "heading", level: 3, text: "Sunday Morning: Savor and Say Goodbye" },
+      {
+        type: "paragraph",
+        text: "Wake to light pouring across the firth. Take a slow, scenic breakfast and one last cliffside walk to soak it all up. Then set out on the North East 250, where castles, beaches, and a cheeky Speyside distillery stop turn the drive home into part of the trip.",
+        links: [{ word: "North East 250", href: "https://www.northeast250.com/see-the-route/" }],
+      },
+      { type: "heading", level: 2, text: "How to Make the Most of Your Coastal Weekend" },
+      {
+        type: "paragraph",
+        text: "A few pointers to squeeze every drop out of your escape:",
+      },
+      {
+        type: "list",
+        items: [
+          "Chase the light. Early mornings and late afternoons paint the firth in its most magical colors.",
+          "Pack smart. Spring here likes to surprise you, so bring layers for warm sun and fresh sea breezes alike.",
+          "Don't over-plan. Some of the best moments arrive when you're simply relaxing, watching the view from the balcony with nowhere to be.",
+          "Follow your curiosity. Head further along the coast to find hidden beaches and quiet little harbors waiting to be discovered.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "Want more ideas, from the best walks to wildlife spotting and scenic drives? Our experiences page has you covered.",
+        links: [{ word: "experiences page", href: "/about" }],
+      },
+      { type: "heading", level: 2, text: "Make This Spring an Unforgettable Couples' Escape" },
+      {
+        type: "paragraph",
+        text: "Spring won't hang around, so grab your chance while you can. Check availability at Muckle View and pick the weekend that's calling your name. The knockout views, the fresh coastal air, and your dog-friendly studio chalet for two are all right here, ready and waiting. Go on, book it.",
+        links: [{ word: "Muckle View", href: "/properties/muckle-view" }],
+      },
+      { type: "cta", label: "Check Availability", href: "/properties/muckle-view" },
+    ],
+  },
+  {
     slug: "family-friendly-3-day-aberdeenshire-coast-itinerary",
     title: "A Family-Friendly 3-Day Aberdeenshire Coast Itinerary from Gamrie Chalets",
     metaTitle: "3-Day Family Coast Itinerary, Aberdeenshire",
