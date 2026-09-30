@@ -87,7 +87,7 @@ export const welcomeGuides: WelcomeGuide[] = [
         {
           title: "Front door lock (Ultion Nuki Smart Lock 2025)",
           steps:
-            "To let yourself in, key your access code into the black keypad on the right-hand side of the front door, then press to unlock. To lock the door from inside, simply press the button in the centre of the Nuki lock. When leaving, lift the door handle to lock it, then press the arrow on the keypad to confirm it's locked. A physical key is kept as a backup — ask us if you ever need it.",
+            "To let yourself in, key your access code into the black keypad on the right-hand side of the front door, then press to unlock. To lock the door from inside, simply press the button in the centre of the Nuki lock. When leaving, lift the door handle to lock it, then press the arrow on the keypad to confirm it's locked.",
         },
       ],
       checkOutTime: "By 11:00am",
@@ -112,6 +112,18 @@ export const welcomeGuides: WelcomeGuide[] = [
             "An RFID tag hangs in the kitchen — tap it against the charger to start or stop a charging session. Please always return the tag to the kitchen when you're done, so it's ready for the next guest.",
           manualUrl:
             "https://download.easee.com/m/11a04672aa320755/original/EN_ChargeUp_UserGuide.pdf",
+        },
+      ],
+    },
+    heating: {
+      intro:
+        "The open-plan living and bedroom area is heated by a wall-mounted electric radiator.",
+      instructions: [
+        {
+          title: "Electric radiator (TCP Smart Wi-Fi oil-filled radiator)",
+          steps:
+            "Press the power button in the centre of the touchpad to switch the radiator on or off, then use the up and down arrows either side of it to raise or lower the temperature. If the buttons don't respond, the keypad is locked — press and hold the up and down arrows together for 3 seconds to unlock it. Please don't dry clothes or towels on the radiator, and keep anything flammable well clear of it.",
+          manualUrl: "/tcpsmartwifioilradiatorwallmounted500w750w1000w1500w.pdf",
         },
       ],
     },
@@ -197,6 +209,7 @@ export const welcomeGuides: WelcomeGuide[] = [
         "Fresh towels provided",
         "Complimentary toiletries",
         "Two luxury robes",
+        "Heated towel rail",
       ],
       instructions: [
         {
@@ -205,6 +218,12 @@ export const welcomeGuides: WelcomeGuide[] = [
             "First turn the temperature control fully down to 0. Then press the power button to switch the shower on. Next, press the button with the two lines and allow the water to run for a few seconds. Slowly increase the temperature until you reach your desired level. Electric showers take a short time to stabilise, so gradual adjustments work best.",
           manualUrl:
             "https://aquasshower.co.uk/download/264/AI0061_-_9.5kw_Instruction_rev02.pdf",
+        },
+        {
+          title: "Heated towel rail (TCP Smart Wi-Fi towel radiator)",
+          steps:
+            "Press the power button on the control panel to switch the towel rail on or off, then use the + and − buttons to set the temperature. The clock button starts a countdown timer — press it, then use + and − to choose how many hours it runs before switching itself off.",
+          manualUrl: "/tcp-smart-wifi-towel-radiator-user-guide.pdf",
         },
       ],
       disposalNote:
