@@ -115,18 +115,6 @@ export const welcomeGuides: WelcomeGuide[] = [
         },
       ],
     },
-    heating: {
-      intro:
-        "The open-plan living and bedroom area is heated by a wall-mounted electric radiator.",
-      instructions: [
-        {
-          title: "Electric radiator (TCP Smart Wi-Fi oil-filled radiator)",
-          steps:
-            "Press the power button in the centre of the touchpad to switch the radiator on or off, then use the up and down arrows either side of it to raise or lower the temperature. If the buttons don't respond, the keypad is locked — press and hold the up and down arrows together for 3 seconds to unlock it. Please don't dry clothes or towels on the radiator, and keep anything flammable well clear of it.",
-          manualUrl: "/tcpsmartwifioilradiatorwallmounted500w750w1000w1500w.pdf",
-        },
-      ],
-    },
     kitchen: {
       intro:
         "A fully equipped separate kitchen, ideal for anything from a quick breakfast to a relaxed evening meal.",
@@ -170,8 +158,15 @@ export const welcomeGuides: WelcomeGuide[] = [
         "Small table with lift-off trays",
         "Pull-up blinds on the front windows",
         "Log burner with supplied logs",
+        "Wall-mounted electric radiator",
       ],
       instructions: [
+        {
+          title: "Electric radiator (TCP Smart Wi-Fi oil-filled radiator)",
+          steps:
+            "Press the power button in the centre of the touchpad to switch the radiator on or off, then use the up and down arrows either side of it to raise or lower the temperature. If the buttons don't respond, the keypad is locked — press and hold the up and down arrows together for 3 seconds to unlock it. Please don't dry clothes or towels on the radiator, and keep anything flammable well clear of it.",
+          manualUrl: "/tcpsmartwifioilradiatorwallmounted500w750w1000w1500w.pdf",
+        },
         {
           title: "Lighting the log burner",
           steps:
