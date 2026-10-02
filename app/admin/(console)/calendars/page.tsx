@@ -1,11 +1,13 @@
 import {
   addFeedAction,
+  createExportAction,
   deleteFeedAction,
+  revokeExportAction,
   syncAllAction,
   syncFeedAction,
   toggleFeedAction,
 } from "@/app/admin/(console)/calendars/actions";
-import { AddFeedForm, SyncAllButton } from "@/components/admin/CalendarForms";
+import { AddFeedForm, ExportLinkForm, SyncAllButton } from "@/components/admin/CalendarForms";
 import {
   listConflicts,
   listFeeds,
@@ -14,6 +16,7 @@ import {
 } from "@/lib/admin/calendars";
 import { requireAdmin } from "@/lib/admin/dal";
 import { listProperties } from "@/lib/admin/properties";
+import { listExportLinks } from "@/lib/calendar/exports";
 
 const when = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -34,13 +37,16 @@ const showWhen = (d: Date | null) => (d ? when.format(d) : "Never");
 
 export default async function AdminCalendarsPage() {
   await requireAdmin();
-  const [feeds, runs, events, conflicts, properties] = await Promise.all([
+  const [feeds, runs, events, allConflicts, properties, exportLinks] = await Promise.all([
     listFeeds(),
     listRecentRuns(),
     listUpcomingImportedEvents(),
     listConflicts(),
     listProperties(),
+    listExportLinks(),
   ]);
+  const conflicts = allConflicts.filter((c) => !c.exactMatch);
+  const echoes = allConflicts.filter((c) => c.exactMatch);
 
   return (
     <div className="space-y-14">
@@ -66,6 +72,23 @@ export default async function AdminCalendarsPage() {
                 {c.propertyName}: {c.feedName} has {showDay(c.eventStart)} – {showDay(c.eventEnd)}, which
                 overlaps booking {c.reservationReference} ({showDay(c.reservationCheckIn)} –{" "}
                 {showDay(c.reservationCheckOut)}).
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {echoes.length > 0 && (
+        <section className="border border-border bg-surface p-4 text-sm">
+          <h2 className="font-semibold text-foreground-strong">Probably our own bookings, reflected back ({echoes.length})</h2>
+          <p className="mt-1 text-muted-foreground">
+            These imported bookings have exactly the same dates as a booking taken here, which is what happens when a
+            channel imports our export feed. Worth a glance, but usually nothing to do.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {echoes.map((c) => (
+              <li key={`${c.eventId}-${c.reservationReference}`}>
+                {c.propertyName}: {c.reservationReference} also appears in {c.feedName} ({showDay(c.eventStart)} – {showDay(c.eventEnd)})
               </li>
             ))}
           </ul>
@@ -134,6 +157,33 @@ export default async function AdminCalendarsPage() {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="max-w-3xl">
+        <h2 className="text-lg font-semibold text-foreground-strong">Export links for other channels</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Give one of these to Lodgify, Airbnb or Booking.com (as an imported calendar) so they block dates booked
+          here. They contain only booked and blocked dates, never guest details. Like any iCal link, channels only
+          check it every so often, so there is always some delay.
+        </p>
+        {exportLinks.length > 0 && (
+          <ul className="mt-4 divide-y divide-border border-y border-border text-sm">
+            {exportLinks.map((x) => (
+              <li key={x.id} className={`flex flex-wrap items-center justify-between gap-2 py-3 ${x.isActive ? "" : "opacity-50"}`}>
+                <span>
+                  <span className="font-medium text-foreground-strong">{x.propertyName}</span> · {x.label}
+                  <span className="block text-xs text-muted-foreground">
+                    {x.isActive ? `Last fetched ${showWhen(x.lastAccessedAt)}` : "Revoked"}
+                  </span>
+                </span>
+                {x.isActive && <HiddenForm action={revokeExportAction} fields={{ exportId: x.id }} label="Revoke" />}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-6">
+          <ExportLinkForm action={createExportAction} properties={properties.map((p) => ({ id: p.id, name: p.name }))} />
+        </div>
       </section>
 
       <section className="max-w-3xl">

@@ -38,12 +38,14 @@ function parseFilters(q: Record<string, string | string[] | undefined>): Booking
 export default async function AdminBookingsPage({ searchParams }: PageProps<"/admin/bookings">) {
   await requireAdmin();
   const filters = parseFilters(await searchParams);
-  const [rows, properties, attention, conflicts] = await Promise.all([
+  const [rows, properties, attention, allConflicts] = await Promise.all([
     listBookings(filters),
     listProperties(),
     needsAttention(),
     listConflicts(),
   ]);
+  // Exact-date matches are our own bookings reflected back by a channel.
+  const conflicts = allConflicts.filter((c) => !c.exactMatch);
   const hasAttention =
     attention.failedPayments.length + attention.failingFeeds.length + attention.failedEmails.length + conflicts.length > 0;
 

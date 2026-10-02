@@ -59,6 +59,11 @@ export type Conflict = {
   reservationReference: string;
   reservationCheckIn: string;
   reservationCheckOut: string;
+  /**
+   * Same dates exactly: almost always our own booking coming back from a
+   * channel that imports our export feed, rather than a real double booking.
+   */
+  exactMatch: boolean;
 };
 
 export async function listFeeds(): Promise<FeedSummary[]> {
@@ -114,7 +119,8 @@ export async function listConflicts(): Promise<Conflict[]> {
     SELECT e.id AS event_id, p.name AS property_name, f.name AS feed_name,
            e.start_date AS event_start, e.end_date AS event_end,
            r.reference AS reservation_reference,
-           r.check_in AS reservation_check_in, r.check_out AS reservation_check_out
+           r.check_in AS reservation_check_in, r.check_out AS reservation_check_out,
+           (e.start_date = r.check_in AND e.end_date = r.check_out) AS exact_match
     FROM external_events e
     JOIN calendar_feeds f ON f.id = e.feed_id AND f.is_active
     JOIN properties p ON p.id = e.property_id

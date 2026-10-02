@@ -371,6 +371,7 @@ function Month({
             <button
               key={d}
               type="button"
+              data-date={d}
               disabled={!s.selectable && !s.selected}
               onClick={() => onChoose(d)}
               aria-pressed={s.selected}
