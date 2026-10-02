@@ -19,7 +19,7 @@ declare module "@auth/core/jwt" {
 
 // Only accounts from our own Microsoft 365 tenant can sign in.
 const TENANT_ID = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER?.trim()
-  .match(/microsoftonline\.com\/([0-9a-f-]{36})\/v2\.0\/?$/i)?.[1]
+  .match(/^https:\/\/login\.microsoftonline\.com\/([0-9a-f-]{36})\/v2\.0\/?$/i)?.[1]
   ?.toLowerCase();
 
 /** Names (never values) of settings the admin area needs but doesn't have. */
