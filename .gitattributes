@@ -1,0 +1,2 @@
+# Keep migrations byte-identical across machines (their checksums are recorded).
+*.sql text eol=lf

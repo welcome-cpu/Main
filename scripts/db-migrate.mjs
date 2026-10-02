@@ -33,7 +33,8 @@ try {
   const files = (await readdir(dir)).filter((f) => f.endsWith(".sql")).sort();
 
   for (const file of files) {
-    const body = await readFile(path.join(dir, file), "utf8");
+    // Normalise line endings so a Windows checkout (CRLF) has the same checksum.
+    const body = (await readFile(path.join(dir, file), "utf8")).replace(/\r\n/g, "\n");
     const checksum = createHash("sha256").update(body).digest("hex");
 
     if (applied.has(file)) {
