@@ -2,6 +2,7 @@ import "server-only";
 import { recordAudit } from "@/lib/audit";
 import { GUEST_FACING_HOLD_MINUTES } from "@/lib/booking/holds";
 import { db } from "@/lib/db/client";
+import { logError } from "@/lib/log";
 import type { PaymentGateway } from "@/lib/payments/gateway";
 import type { Quote } from "@/lib/pricing/quote";
 
@@ -50,7 +51,7 @@ export async function startCheckout(
     await sql`UPDATE payments SET stripe_checkout_session_id = ${sessionId} WHERE id = ${payment.id}`;
     return { ok: true, url };
   } catch (error) {
-    console.error("Couldn't start Stripe checkout", error);
+    logError("Couldn't start Stripe checkout", error);
     await releaseFailedCheckout(hold.reservationId, payment.id, "Couldn't start payment");
     return { ok: false, message: "We couldn't start the payment. Your dates haven't been held; please try again." };
   }

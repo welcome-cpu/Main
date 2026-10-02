@@ -2,6 +2,7 @@ import "server-only";
 import { recordAudit } from "@/lib/audit";
 import { addDays, todayInZone } from "@/lib/dates";
 import { db } from "@/lib/db/client";
+import { logError } from "@/lib/log";
 import { normalizeLodgifyCalendar } from "@/lib/pricing/lodgify-rates";
 
 export type RateImportOutcome = {
@@ -118,7 +119,7 @@ export async function importLodgifyRates(
     return { propertyId: p.id, propertyName: p.name, ok: true, nightsWritten: nights.length };
   } catch (error) {
     const message = error instanceof ImportError ? error.message : "Unexpected error importing prices.";
-    if (!(error instanceof ImportError)) console.error("Lodgify rate import failed", error);
+    if (!(error instanceof ImportError)) logError("Lodgify rate import failed", error);
     await sql.begin(async (tx) => {
       await tx`UPDATE rate_imports SET status = 'ERROR', finished_at = now(), error = ${message} WHERE id = ${run.id}`;
       await recordAudit(tx, {

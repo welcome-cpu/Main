@@ -1,5 +1,6 @@
 import "server-only";
 import { after } from "next/server";
+import { logError } from "@/lib/log";
 
 /**
  * Runs work after the response is sent. Outside a request (e.g. in tests
@@ -7,7 +8,7 @@ import { after } from "next/server";
  * background. Never throws: follow-up work must not fail the response.
  */
 export function runAfterResponse(work: () => Promise<unknown>) {
-  const safe = () => work().catch((error) => console.error("Background work failed", error));
+  const safe = () => work().catch((error) => logError("Background work failed", error));
   try {
     after(safe);
   } catch {

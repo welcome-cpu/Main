@@ -25,3 +25,26 @@ export async function guardPublicRequest(request: Request, name: string, limit: 
 export function validationError(error: z.ZodError) {
   return json({ error: error.issues[0]?.message ?? "Invalid request." }, 400);
 }
+
+/**
+ * Reads a JSON body, refusing anything else. Requiring application/json
+ * means another website can't make a visitor's browser submit this with a
+ * plain form (browsers must ask permission first, which we never grant),
+ * and a cross-site Origin is refused outright.
+ */
+export async function readJsonBody(
+  request: Request
+): Promise<{ ok: true; body: unknown } | { ok: false; response: NextResponse }> {
+  const type = request.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!type.startsWith("application/json")) return { ok: false, response: json({ error: "Expected JSON." }, 415) };
+
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) {
+    return { ok: false, response: json({ error: "Cross-site requests aren't allowed." }, 403) };
+  }
+  try {
+    return { ok: true, body: await request.json() };
+  } catch {
+    return { ok: false, response: json({ error: "Invalid JSON." }, 400) };
+  }
+}

@@ -4,6 +4,7 @@ import { recordAudit } from "@/lib/audit";
 import { checkAvailability } from "@/lib/booking/availability";
 import { lockPropertyAvailability } from "@/lib/booking/locks";
 import { db } from "@/lib/db/client";
+import { logError } from "@/lib/log";
 import {
   enqueueBalanceFailedEmails,
   enqueueBalanceReceivedEmail,
@@ -264,7 +265,7 @@ async function markSucceeded(paymentId: string, paymentIntentId: string) {
 }
 
 async function failCapture(payment: PaymentRow, paymentIntentId: string, error: unknown) {
-  console.error("Stripe capture failed", error);
+  logError("Stripe capture failed", error);
   await db().begin(async (tx) => {
     await tx`
       UPDATE payments SET status = 'FAILED', failed_at = now(), stripe_payment_intent_id = ${paymentIntentId},

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runAfterResponse } from "@/lib/after-response";
 import { isDatabaseConfigured } from "@/lib/db/client";
+import { logError } from "@/lib/log";
 import { processOutbox } from "@/lib/email/outbox";
 import { paymentConfigProblem, stripeGateway } from "@/lib/payments/gateway";
 import { handleStripeEvent } from "@/lib/payments/webhook";
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     runAfterResponse(() => processOutbox({ limit: 10 }));
     return NextResponse.json({ received: true, ...outcome });
   } catch (error) {
-    console.error(`Stripe webhook ${event.type} (${event.id}) failed`, error);
+    logError(`Stripe webhook ${event.type} (${event.id}) failed`, error);
     return new NextResponse("Processing failed", { status: 500 });
   }
 }

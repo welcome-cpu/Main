@@ -1,4 +1,4 @@
-import { guardPublicRequest, json, validationError } from "@/lib/booking/api";
+import { guardPublicRequest, json, readJsonBody, validationError } from "@/lib/booking/api";
 import { createHold, GUEST_FACING_HOLD_MINUTES, HOLD_MINUTES } from "@/lib/booking/holds";
 import { getPublicProperty } from "@/lib/booking/public";
 import { holdBodySchema } from "@/lib/booking/public-validation";
@@ -18,7 +18,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const blocked = await guardPublicRequest(request, "hold", 5, 600);
   if (blocked) return blocked;
 
-  const parsed = holdBodySchema.safeParse(await request.json().catch(() => null));
+  const read = await readJsonBody(request);
+  if (!read.ok) return read.response;
+  const parsed = holdBodySchema.safeParse(read.body);
   if (!parsed.success) return validationError(parsed.error);
 
   const ip = clientIp(request);

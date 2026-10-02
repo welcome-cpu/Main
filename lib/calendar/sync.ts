@@ -5,6 +5,7 @@ import { IcsParseError, parseIcs } from "@/lib/calendar/ics-parse";
 import { planSync, type StoredEvent } from "@/lib/calendar/sync-plan";
 import { db } from "@/lib/db/client";
 import { todayInZone } from "@/lib/dates";
+import { logError } from "@/lib/log";
 
 export type SyncTrigger = "MANUAL" | "SCHEDULED";
 
@@ -199,6 +200,6 @@ function describeSyncError(error: unknown): string {
     return error.message;
   }
   // Unexpected: log the detail server-side, store only a generic message.
-  console.error("Calendar sync failed unexpectedly", error);
+  logError("Calendar sync failed unexpectedly", error);
   return "Unexpected error during sync. See the server logs.";
 }

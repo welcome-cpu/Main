@@ -1,4 +1,4 @@
-import { guardPublicRequest, json, validationError } from "@/lib/booking/api";
+import { guardPublicRequest, json, readJsonBody, validationError } from "@/lib/booking/api";
 import { getPublicProperty } from "@/lib/booking/public";
 import { quoteBodySchema } from "@/lib/booking/public-validation";
 import { db } from "@/lib/db/client";
@@ -13,8 +13,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const blocked = await guardPublicRequest(request, "quote", 30);
   if (blocked) return blocked;
 
-  const body = await request.json().catch(() => null);
-  const parsed = quoteBodySchema.safeParse(body);
+  const read = await readJsonBody(request);
+  if (!read.ok) return read.response;
+  const parsed = quoteBodySchema.safeParse(read.body);
   if (!parsed.success) return validationError(parsed.error);
 
   const property = await getPublicProperty((await params).slug);

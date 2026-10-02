@@ -201,6 +201,19 @@ describe.runIf(enabled)("booking holds (database)", () => {
       expect(noToken.status).toBe(404);
     });
 
+    it("refuses plain-text and cross-site submissions (CSRF)", async () => {
+      const p = await createProperty();
+      const body = JSON.stringify({ stay: stay("2034-07-10", "2034-07-12"), guest, acceptTerms: true });
+      const send = (headers: Record<string, string>) =>
+        holdRoute.POST(
+          new Request("https://example.test/api/book/x/hold", { method: "POST", headers: { "x-real-ip": randomUUID(), ...headers }, body }),
+          { params: Promise.resolve({ slug: p.slug }) }
+        );
+      expect((await send({ "content-type": "text/plain" })).status).toBe(415);
+      expect((await send({ "content-type": "application/json", origin: "https://evil.example" })).status).toBe(403);
+      expect((await send({ "content-type": "application/json", origin: "https://example.test" })).status).toBe(201);
+    });
+
     it("requires the booking terms to be accepted and valid guest details", async () => {
       const p = await createProperty();
       expect((await post(p.slug, { stay: stay("2034-02-10", "2034-02-12"), guest, acceptTerms: false })).status).toBe(400);
