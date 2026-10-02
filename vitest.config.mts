@@ -12,5 +12,7 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
+    // Database tests make many network round trips to Neon.
+    testTimeout: 30_000,
   },
 });

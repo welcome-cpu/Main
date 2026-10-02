@@ -19,7 +19,14 @@ export type StayPayload = {
   discountCode: string | null;
 };
 
-type Hold = { reservationId: string; reference: string; accessToken: string; payBy: string; quote: Quote };
+type Hold = {
+  reservationId: string;
+  reference: string;
+  accessToken: string;
+  payBy: string;
+  quote: Quote;
+  checkoutUrl: string | null;
+};
 
 const longDate = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
@@ -100,7 +107,14 @@ function DetailsForm({
       } catch {
         // Storage can be unavailable (private browsing); the hold still works this session.
       }
-      onHeld(body as Hold);
+      const hold = body as Hold;
+      // Off to Stripe's secure payment page. The booking is confirmed only
+      // when Stripe tells our server the payment went through.
+      if (hold.checkoutUrl) {
+        window.location.assign(hold.checkoutUrl);
+        return;
+      }
+      onHeld(hold);
     } catch {
       setError("Couldn't reach the server. Please check your connection and try again.");
     } finally {
@@ -167,7 +181,7 @@ function DetailsForm({
           disabled={submitting || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)}
           className="bg-primary px-6 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
-          {submitting ? "Holding your dates…" : "Continue to payment"}
+          {submitting ? "Holding your dates…" : "Continue to secure payment"}
         </button>
         <button type="button" onClick={onBack} className="text-sm underline">
           Change dates or guests
@@ -229,7 +243,7 @@ function HeldView({ hold, propertyName, onReleased }: { hold: Hold; propertyName
       <div className="border border-border bg-surface p-4">
         <PriceBreakdown quote={hold.quote} />
       </div>
-      <p className="text-sm text-muted-foreground">Online payment is being added in the next update.</p>
+      <p className="text-sm text-muted-foreground">Online payment isn&apos;t configured on this deployment.</p>
       <button type="button" onClick={release} disabled={releasing} className="text-sm underline disabled:opacity-50">
         {releasing ? "Releasing…" : "Cancel and change dates"}
       </button>

@@ -2,6 +2,8 @@ import { guardPublicRequest, json, validationError } from "@/lib/booking/api";
 import { createHold, GUEST_FACING_HOLD_MINUTES, HOLD_MINUTES } from "@/lib/booking/holds";
 import { getPublicProperty } from "@/lib/booking/public";
 import { holdBodySchema } from "@/lib/booking/public-validation";
+import { startCheckout } from "@/lib/payments/checkout";
+import { isPaymentConfigured, stripeGateway } from "@/lib/payments/gateway";
 import { clientIp } from "@/lib/rate-limit";
 import { passesTurnstile } from "@/lib/turnstile";
 
@@ -45,8 +47,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     );
   }
 
+  // Send the guest straight to Stripe's payment page. Without Stripe
+  // configured (local development) the hold is returned on its own.
+  let checkoutUrl: string | null = null;
+  if (isPaymentConfigured()) {
+    const checkout = await startCheckout(stripeGateway, result, {
+      propertyName: property.name,
+      guestEmail: guest.email.toLowerCase(),
+      origin: new URL(request.url).origin,
+      slug: property.slug,
+    });
+    if (!checkout.ok) return json({ error: checkout.message }, 502);
+    checkoutUrl = checkout.url;
+  }
+
   return json(
     {
+      checkoutUrl,
       reservationId: result.reservationId,
       reference: result.reference,
       accessToken: result.accessToken,

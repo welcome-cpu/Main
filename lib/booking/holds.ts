@@ -202,22 +202,47 @@ export type GuestHoldView = {
   /** When the guest-facing 30 minutes run out. */
   payBy: Date | null;
   quote: Quote;
+  /** The payment taken at booking (deposit or full), if checkout started. */
+  payment: { kind: string; status: string; amountPence: number } | null;
+  /** Internal: used server-side to find a still-open checkout. Not sent to browsers. */
+  checkoutSessionId: string | null;
 };
 
 /** A hold or booking, for the guest holding its access token only. */
 export async function getHoldForGuest(reservationId: string, accessToken: string): Promise<GuestHoldView | null> {
   if (!/^[0-9a-f-]{36}$/i.test(reservationId) || !/^[A-Za-z0-9_-]{43}$/.test(accessToken)) return null;
-  const [row] = await db()<(Omit<GuestHoldView, "status" | "payBy"> & { status: string; holdExpiresAt: Date | null; live: boolean })[]>`
+  const [row] = await db()<
+    (Omit<GuestHoldView, "status" | "payBy" | "payment"> & {
+      status: string;
+      holdExpiresAt: Date | null;
+      live: boolean;
+      paymentKind: string | null;
+      paymentStatus: string | null;
+      paymentAmountPence: number | null;
+    })[]
+  >`
     SELECT r.id AS reservation_id, r.reference, p.slug AS property_slug, p.name AS property_name,
            r.status, r.check_in, r.check_out, r.hold_expires_at, r.price_breakdown AS quote,
-           (r.status = 'HOLD' AND r.hold_expires_at > now()) AS live
-    FROM reservations r JOIN properties p ON p.id = r.property_id
+           (r.status = 'HOLD' AND r.hold_expires_at > now()) AS live,
+           pay.kind AS payment_kind, pay.status AS payment_status, pay.amount_pence AS payment_amount_pence,
+           pay.stripe_checkout_session_id AS checkout_session_id
+    FROM reservations r
+    JOIN properties p ON p.id = r.property_id
+    LEFT JOIN LATERAL (
+      SELECT kind, status, amount_pence, stripe_checkout_session_id FROM payments
+      WHERE reservation_id = r.id AND kind IN ('DEPOSIT', 'FULL')
+      ORDER BY created_at DESC LIMIT 1
+    ) pay ON true
     WHERE r.id = ${reservationId} AND r.access_token_sha256 = ${hashAccessToken(accessToken)}
   `;
   if (!row) return null;
-  const { holdExpiresAt, live, ...rest } = row;
+  const { holdExpiresAt, live, paymentKind, paymentStatus, paymentAmountPence, ...rest } = row;
   return {
     ...rest,
+    payment:
+      paymentKind && paymentStatus && paymentAmountPence !== null
+        ? { kind: paymentKind, status: paymentStatus, amountPence: paymentAmountPence }
+        : null,
     // A lapsed hold that hasn't been swept yet is reported as expired.
     status: row.status === "HOLD" && !live ? "EXPIRED" : (row.status as GuestHoldView["status"]),
     payBy:
