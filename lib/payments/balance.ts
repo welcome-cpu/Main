@@ -14,7 +14,12 @@ export type BalanceOutcome = { paymentId: string; reference: string; ok: boolean
  * (e.g. the bank asks the guest to authenticate) are recorded for
  * follow-up; the booking itself stays confirmed.
  */
-export async function chargeDueBalances(gateway: PaymentGateway, now: Date = new Date()): Promise<BalanceOutcome[]> {
+export async function chargeDueBalances(
+  gateway: PaymentGateway,
+  now: Date = new Date(),
+  /** Charge only this payment (an admin-requested retry). */
+  onlyPaymentId: string | null = null
+): Promise<BalanceOutcome[]> {
   const sql = db();
   const today = todayInZone("Europe/London", now);
   const due = await sql<
@@ -40,6 +45,7 @@ export async function chargeDueBalances(gateway: PaymentGateway, now: Date = new
     WHERE pay.kind = 'BALANCE' AND pay.status = 'PENDING' AND pay.due_date <= ${today}
       AND r.status = 'CONFIRMED'
       AND pay.stripe_customer_id IS NOT NULL AND pay.stripe_payment_method_id IS NOT NULL
+      ${onlyPaymentId ? sql`AND pay.id = ${onlyPaymentId}` : sql``}
     ORDER BY pay.due_date
   `;
 

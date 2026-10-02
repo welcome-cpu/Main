@@ -15,12 +15,18 @@ export default async function AdminConsoleLayout({ children }: LayoutProps<"/adm
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-        <nav className="flex gap-6 text-sm font-medium">
+        <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
+          <Link href="/admin/bookings" className="text-foreground-strong hover:underline">
+            Bookings
+          </Link>
+          <Link href="/admin/calendar" className="text-foreground-strong hover:underline">
+            Calendar
+          </Link>
           <Link href="/admin" className="text-foreground-strong hover:underline">
             Properties
           </Link>
           <Link href="/admin/calendars" className="text-foreground-strong hover:underline">
-            Calendars
+            Calendar sync
           </Link>
           <Link href="/admin/discounts" className="text-foreground-strong hover:underline">
             Discounts

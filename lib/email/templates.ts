@@ -214,3 +214,17 @@ export function guestBalanceReceived(d: BookingEmailData, amountPence: number): 
   const text = [`Dear ${d.guestFirstName},`, "", body, "", textTable(stayRows(d))].join("\n");
   return { subject, html, text };
 }
+
+export function guestBookingCancelled(d: BookingEmailData): RenderedEmail {
+  const subject = `Your booking at ${d.propertyName} has been cancelled (${d.reference})`;
+  const body = `Your booking below has been cancelled. If you have any questions about this, please get in touch.`;
+  const html = layout(
+    "Your booking has been cancelled",
+    p(`Dear ${escapeHtml(d.guestFirstName)},`) +
+      p(escapeHtml(body)) +
+      detailsTable(stayRows(d)) +
+      p(`Reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a>.`)
+  );
+  const text = [`Dear ${d.guestFirstName},`, "", body, "", textTable(stayRows(d)), "", `Reply or write to ${d.contactEmail}.`].join("\n");
+  return { subject, html, text };
+}

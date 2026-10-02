@@ -196,6 +196,16 @@ export const discountCodeSchema = z
     return { ...v, percentOff, amountOffPence };
   });
 
+export const cancelBookingSchema = z.object({
+  reason: z.string().trim().min(1, "Give a reason (kept in the booking history)").max(500),
+  emailGuest: checkbox,
+});
+
+export const manualPaymentSchema = z.object({
+  amountPence: pounds(1),
+  note: z.string().trim().max(300).optional().default(""),
+});
+
 /** Field errors keyed by field name, for redisplaying a form. */
 export function fieldErrors(error: z.ZodError) {
   return z.flattenError(error).fieldErrors as Record<string, string[] | undefined>;

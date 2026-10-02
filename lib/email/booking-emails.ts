@@ -5,6 +5,7 @@ import { enqueueEmail } from "@/lib/email/outbox";
 import {
   guestBalanceFailed,
   guestBalanceReceived,
+  guestBookingCancelled,
   guestBookingConfirmed,
   guestNotCharged,
   ownerNewBooking,
@@ -37,11 +38,17 @@ async function loadBookingEmailData(sql: Sql | Tx, reservationId: string): Promi
   return { ...row, siteUrl: SITE_URL, contactEmail: ownerMailbox() || "welcome@gamriechalets.co.uk" };
 }
 
-export async function enqueueBookingConfirmedEmails(sql: Sql | Tx, reservationId: string) {
+export async function enqueueBookingConfirmedEmails(
+  sql: Sql | Tx,
+  reservationId: string,
+  options: { resendKey?: string; guestOnly?: boolean } = {}
+) {
   const d = await loadBookingEmailData(sql, reservationId);
   if (!d) return;
-  await enqueueEmail(sql, { reservationId, kind: "BOOKING_CONFIRMED", dedupeKey: `booking-confirmed:${reservationId}`, to: d.guestEmail, ...guestBookingConfirmed(d) });
-  if (ownerMailbox()) {
+  // A resend gets its own key so it's sent again; the first send never repeats.
+  const key = options.resendKey ? `booking-confirmed:${reservationId}:resend:${options.resendKey}` : `booking-confirmed:${reservationId}`;
+  await enqueueEmail(sql, { reservationId, kind: "BOOKING_CONFIRMED", dedupeKey: key, to: d.guestEmail, ...guestBookingConfirmed(d) });
+  if (ownerMailbox() && !options.guestOnly) {
     await enqueueEmail(sql, {
       reservationId,
       kind: "OWNER_NEW_BOOKING",
@@ -98,4 +105,10 @@ export async function enqueueBalanceReceivedEmail(sql: Sql | Tx, reservationId: 
   const d = await loadBookingEmailData(sql, reservationId);
   if (!d) return;
   await enqueueEmail(sql, { reservationId, kind: "BALANCE_RECEIVED", dedupeKey: `balance-received:${paymentId}`, to: d.guestEmail, ...guestBalanceReceived(d, amountPence) });
+}
+
+export async function enqueueBookingCancelledEmail(sql: Sql | Tx, reservationId: string) {
+  const d = await loadBookingEmailData(sql, reservationId);
+  if (!d) return;
+  await enqueueEmail(sql, { reservationId, kind: "BOOKING_CANCELLED", dedupeKey: `booking-cancelled:${reservationId}`, to: d.guestEmail, ...guestBookingCancelled(d) });
 }
