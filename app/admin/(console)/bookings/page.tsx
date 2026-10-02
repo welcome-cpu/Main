@@ -168,7 +168,19 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                       <span className="text-muted-foreground">imported</span>
                     )}
                   </td>
-                  <td className="py-2 pr-3">{r.guestName ?? "—"}</td>
+                  <td className="py-2 pr-3">
+                    {r.guestName ?? "—"}
+                    {r.guestEmail && (
+                      <a href={`mailto:${r.guestEmail}`} className="block text-xs text-muted-foreground underline">
+                        {r.guestEmail}
+                      </a>
+                    )}
+                    {r.guestPhone && (
+                      <a href={`tel:${r.guestPhone.replace(/s/g, "")}`} className="block text-xs whitespace-nowrap text-muted-foreground underline">
+                        {r.guestPhone}
+                      </a>
+                    )}
+                  </td>
                   <td className="py-2 pr-3">{r.propertyName}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{show(r.checkIn)}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{show(r.checkOut)}</td>

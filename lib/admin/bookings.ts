@@ -21,6 +21,8 @@ export type BookingRow = {
   id: string;
   reference: string | null;
   guestName: string | null;
+  guestEmail: string | null;
+  guestPhone: string | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -51,6 +53,7 @@ export async function listBookings(f: BookingFilters): Promise<BookingRow[]> {
     ? await sql<BookingRow[]>`
         SELECT 'RESERVATION' AS kind, r.id, r.reference,
                CASE WHEN g.id IS NULL THEN NULL ELSE g.first_name || ' ' || g.last_name END AS guest_name,
+               g.email AS guest_email, g.phone AS guest_phone,
                p.name AS property_name, r.check_in, r.check_out,
                r.adults || ' ad' || CASE WHEN r.children > 0 THEN ', ' || r.children || ' ch' ELSE '' END
                  || CASE WHEN r.infants > 0 THEN ', ' || r.infants || ' inf' ELSE '' END
@@ -74,7 +77,8 @@ export async function listBookings(f: BookingFilters): Promise<BookingRow[]> {
 
   const external = includeExternal
     ? await sql<BookingRow[]>`
-        SELECT 'EXTERNAL' AS kind, e.id, NULL AS reference, e.summary AS guest_name, p.name AS property_name,
+        SELECT 'EXTERNAL' AS kind, e.id, NULL AS reference, e.summary AS guest_name,
+               NULL AS guest_email, NULL AS guest_phone, p.name AS property_name,
                e.start_date AS check_in, e.end_date AS check_out, NULL AS guests,
                f.source, s.label AS source_label,
                NULL AS total_pence, NULL AS paid_pence, NULL AS balance_pence, NULL AS payment_status,
