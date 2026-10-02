@@ -11,7 +11,33 @@ export function overlaps(a: DateRange, b: DateRange) {
   return a.start < b.end && b.start < a.end;
 }
 
-export type OccupancyKind = "RESERVATION" | "HOLD" | "EXTERNAL" | "MANUAL_BLOCK";
+/**
+ * Union of ranges, merging overlapping and touching ones, clipped to
+ * `window`. Used for the public calendar: merging means guests see only
+ * "booked" stretches, not where one booking ends and another begins.
+ */
+export function mergeRanges(ranges: DateRange[], window: DateRange): DateRange[] {
+  const clipped = ranges
+    .map((r) => ({
+      start: r.start > window.start ? r.start : window.start,
+      end: r.end < window.end ? r.end : window.end,
+    }))
+    .filter((r) => r.start < r.end)
+    .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
+
+  const merged: DateRange[] = [];
+  for (const r of clipped) {
+    const last = merged.at(-1);
+    if (last && r.start <= last.end) {
+      if (r.end > last.end) last.end = r.end;
+    } else {
+      merged.push({ ...r });
+    }
+  }
+  return merged;
+}
+
+export type OccupancyKind ="RESERVATION" | "HOLD" | "EXTERNAL" | "MANUAL_BLOCK";
 
 /**
  * Something already taking nights out of inventory. `end` already includes

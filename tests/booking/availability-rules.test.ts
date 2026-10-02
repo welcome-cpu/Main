@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateStay,
+  mergeRanges,
   overlaps,
   type Occupancy,
   type StayRequest,
@@ -211,5 +212,41 @@ describe("evaluateStay", () => {
     expect(
       evaluateStay(stay("2027-01-10", "2027-01-12"), inactive, [occ("EXTERNAL", "2027-01-11", "2027-01-12")], opts).available
     ).toBe(false);
+  });
+});
+
+describe("mergeRanges (public calendar)", () => {
+  const window = { start: "2027-03-01", end: "2027-04-01" };
+  it("merges overlapping and touching ranges so separate bookings aren't distinguishable", () => {
+    expect(
+      mergeRanges(
+        [
+          { start: "2027-03-10", end: "2027-03-12" },
+          { start: "2027-03-05", end: "2027-03-08" },
+          { start: "2027-03-08", end: "2027-03-10" },
+          { start: "2027-03-20", end: "2027-03-22" },
+          { start: "2027-03-21", end: "2027-03-25" },
+        ],
+        window
+      )
+    ).toEqual([
+      { start: "2027-03-05", end: "2027-03-12" },
+      { start: "2027-03-20", end: "2027-03-25" },
+    ]);
+  });
+  it("clips to the requested window and drops ranges outside it", () => {
+    expect(
+      mergeRanges(
+        [
+          { start: "2027-02-25", end: "2027-03-03" },
+          { start: "2027-03-30", end: "2027-04-05" },
+          { start: "2027-05-01", end: "2027-05-03" },
+        ],
+        window
+      )
+    ).toEqual([
+      { start: "2027-03-01", end: "2027-03-03" },
+      { start: "2027-03-30", end: "2027-04-01" },
+    ]);
   });
 });
