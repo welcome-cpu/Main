@@ -42,3 +42,27 @@ export const quoteBodySchema = z
   })
   .refine((v) => daysBetween(v.checkIn, v.checkOut) <= 365, "Stays are limited to a year")
   .refine((v) => new Set(v.extras.map((x) => x.id)).size === v.extras.length, "Each extra can only be listed once");
+
+export const holdBodySchema = z.object({
+  // The stay exactly as for a quote. No price fields are accepted: the
+  // server prices the stay itself.
+  stay: quoteBodySchema,
+  guest: z.object({
+    firstName: z.string().trim().min(1, "Enter your first name").max(100),
+    lastName: z.string().trim().min(1, "Enter your last name").max(100),
+    email: z.email("Enter a valid email address").max(254),
+    phone: z
+      .string()
+      .trim()
+      .min(6, "Enter a phone number")
+      .max(40)
+      .regex(/^[0-9+()\-.\s]+$/, "Enter a valid phone number"),
+    country: z.preprocess(
+      (v) => (v === "" || v == null ? null : v),
+      z.string().regex(/^[A-Z]{2}$/).nullable()
+    ),
+    message: z.preprocess((v) => (v === "" || v == null ? null : v), z.string().trim().max(2000).nullable()),
+  }),
+  acceptTerms: z.literal(true, "Please accept the booking terms"),
+  turnstileToken: z.string().max(4096).optional().nullable(),
+});

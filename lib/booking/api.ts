@@ -14,10 +14,10 @@ export function json(body: unknown, status = 200) {
  * Common gate for public booking endpoints: feature switched on, and the
  * caller within its rate limit. Returns an error response, or null to go on.
  */
-export async function guardPublicRequest(request: Request, name: string, perMinute: number) {
+export async function guardPublicRequest(request: Request, name: string, limit: number, windowSeconds = 60) {
   if (!isDirectBookingEnabled()) return json({ error: "Not found" }, 404);
-  if (!(await rateLimit(`${name}:${clientIp(request)}`, perMinute, 60))) {
-    return json({ error: "Too many requests. Please wait a minute and try again." }, 429);
+  if (!(await rateLimit(`${name}:${clientIp(request)}`, limit, windowSeconds))) {
+    return json({ error: "Too many requests. Please wait a few minutes and try again." }, 429);
   }
   return null;
 }

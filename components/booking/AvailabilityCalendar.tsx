@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import CheckoutStep, { type StayPayload } from "@/components/booking/CheckoutStep";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import type { PublicCalendar } from "@/lib/booking/public";
 import { addDays, daysBetween } from "@/lib/dates";
@@ -66,6 +67,7 @@ export default function AvailabilityCalendar({
   const [chosenExtras, setChosenExtras] = useState<Record<string, number>>({});
   const [discountCode, setDiscountCode] = useState("");
   const [result, setResult] = useState<QuoteResponse | null>(null);
+  const [checkout, setCheckout] = useState<{ stay: StayPayload; quote: Quote } | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +105,18 @@ export default function AvailabilityCalendar({
     }
   }
 
+  function stayPayload(): StayPayload {
+    return {
+      checkIn: checkIn!,
+      checkOut: checkOut!,
+      ...guests,
+      extras: Object.entries(chosenExtras)
+        .filter(([, quantity]) => quantity > 0)
+        .map(([id, quantity]) => ({ id, quantity })),
+      discountCode: discountCode.trim() || null,
+    };
+  }
+
   async function check() {
     if (!checkIn || !checkOut) return;
     setChecking(true);
@@ -112,15 +126,7 @@ export default function AvailabilityCalendar({
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          checkIn,
-          checkOut,
-          ...guests,
-          extras: Object.entries(chosenExtras)
-            .filter(([, quantity]) => quantity > 0)
-            .map(([id, quantity]) => ({ id, quantity })),
-          discountCode: discountCode.trim() || null,
-        }),
+        body: JSON.stringify(stayPayload()),
       });
       const body = await res.json();
       if (!res.ok) setError(body.error ?? "Something went wrong. Please try again.");
@@ -130,6 +136,21 @@ export default function AvailabilityCalendar({
     } finally {
       setChecking(false);
     }
+  }
+
+  if (checkout) {
+    return (
+      <CheckoutStep
+        slug={slug}
+        propertyName={property.name}
+        stay={checkout.stay}
+        quote={checkout.quote}
+        onBack={() => {
+          setCheckout(null);
+          setResult(null);
+        }}
+      />
+    );
   }
 
   const firstMonth = `${today.slice(0, 7)}-01`;
@@ -276,6 +297,15 @@ export default function AvailabilityCalendar({
                   </div>
                 )}
                 {result.quoteError && <p className="mt-2 text-red-800">{result.quoteError.message}</p>}
+                {result.quote && (
+                  <button
+                    type="button"
+                    onClick={() => setCheckout({ stay: stayPayload(), quote: result.quote! })}
+                    className="mt-4 w-full bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90"
+                  >
+                    Continue
+                  </button>
+                )}
               </>
             ) : (
               <>

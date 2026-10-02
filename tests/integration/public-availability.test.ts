@@ -45,9 +45,9 @@ describe.runIf(enabled)("public availability API (database)", () => {
     `;
     await sql`
       INSERT INTO reservations (reference, property_id, source, status, check_in, check_out, adults,
-        guest_id, currency, accommodation_pence, total_pence, deposit_pence, price_breakdown, created_by, confirmed_at)
+        guest_id, currency, accommodation_pence, total_pence, deposit_pence, price_breakdown, created_by, confirmed_at, terms_accepted_at)
       VALUES (${reference()}, ${id}, 'DIRECT', 'CONFIRMED', '2032-03-05', '2032-03-08', 2,
-        ${guestId}, 'GBP', 30000, 30000, 0, '{}', 'test', now())
+        ${guestId}, 'GBP', 30000, 30000, 0, '{}', 'test', now(), now())
     `;
     const [{ id: feedId }] = await sql<{ id: string }[]>`
       INSERT INTO calendar_feeds (property_id, source, name, url)
