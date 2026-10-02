@@ -25,3 +25,20 @@ export function queryParams(url: string, names: string[]) {
   const params = new URL(url).searchParams;
   return Object.fromEntries(names.map((n) => [n, params.get(n)]));
 }
+
+export const quoteBodySchema = z
+  .object({
+    checkIn: date,
+    checkOut: date,
+    adults: z.number().int().min(0).max(30),
+    children: z.number().int().min(0).max(30).default(0),
+    infants: z.number().int().min(0).max(10).default(0),
+    pets: z.number().int().min(0).max(10).default(0),
+    extras: z
+      .array(z.object({ id: z.uuid(), quantity: z.number().int().min(0).max(50) }))
+      .max(20)
+      .default([]),
+    discountCode: z.string().trim().max(32).optional().nullable(),
+  })
+  .refine((v) => daysBetween(v.checkIn, v.checkOut) <= 365, "Stays are limited to a year")
+  .refine((v) => new Set(v.extras.map((x) => x.id)).size === v.extras.length, "Each extra can only be listed once");

@@ -5,6 +5,7 @@ import {
   createBlockAction,
   createExtraAction,
   createRateRuleAction,
+  importRatesAction,
   removeBlockAction,
   toggleExtraAction,
   toggleRateRuleAction,
@@ -14,10 +15,12 @@ import {
   AvailabilityChecker,
   BlockForm,
   ExtraForm,
+  ImportRatesButton,
   PropertySettingsForm,
   RateRuleForm,
 } from "@/components/admin/PropertyForms";
 import { listUpcomingBlocks } from "@/lib/admin/blocks";
+import { lastRateImport } from "@/lib/pricing/lodgify-import";
 import { requireAdmin } from "@/lib/admin/dal";
 import { getProperty, listExtras, listRateRules } from "@/lib/admin/properties";
 import { formatPence } from "@/lib/money";
@@ -36,6 +39,13 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
 });
 const showDate = (isoDate: string) => dateFormat.format(new Date(`${isoDate}T00:00:00Z`));
+const importedAt = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/London",
+});
 
 export default async function AdminPropertyPage({ params }: PageProps<"/admin/properties/[id]">) {
   await requireAdmin();
@@ -43,10 +53,11 @@ export default async function AdminPropertyPage({ params }: PageProps<"/admin/pr
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const [extras, rateRules, blocks] = await Promise.all([
+  const [extras, rateRules, blocks, rateImport] = await Promise.all([
     listExtras(id),
     listRateRules(id),
     listUpcomingBlocks(id),
+    lastRateImport(id),
   ]);
 
   return (
@@ -58,6 +69,28 @@ export default async function AdminPropertyPage({ params }: PageProps<"/admin/pr
         <h1 className="mt-2 text-2xl font-semibold text-foreground-strong">{property.name}</h1>
         <p className="text-sm text-muted-foreground">/{property.slug}</p>
       </div>
+
+      {property.rateSource === "LODGIFY" && (
+        <section className="max-w-3xl">
+          <h2 className="text-lg font-semibold text-foreground-strong">Prices from Lodgify</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Nightly prices and minimum stays are copied from Lodgify every morning (on the live site), so any
+            pricing tool feeding Lodgify carries through. Your rate rules below still override them.
+          </p>
+          <p className="mt-3 text-sm">
+            {rateImport === null
+              ? "Not imported yet."
+              : rateImport.status === "OK"
+                ? `Last imported ${importedAt.format(rateImport.startedAt)}: ${rateImport.nightsWritten} nights, up to ${rateImport.lastNight ? showDate(rateImport.lastNight) : "?"}.`
+                : rateImport.status === "ERROR"
+                  ? `Last import failed (${importedAt.format(rateImport.startedAt)}): ${rateImport.error}`
+                  : "Import in progress…"}
+          </p>
+          <div className="mt-4">
+            <ImportRatesButton action={importRatesAction.bind(null, id)} />
+          </div>
+        </section>
+      )}
 
       <section className="max-w-3xl">
         <h2 className="text-lg font-semibold text-foreground-strong">Check availability</h2>

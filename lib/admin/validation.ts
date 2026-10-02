@@ -117,6 +117,7 @@ export const availabilityCheckSchema = z
     children: int(0, 30),
     infants: int(0, 10),
     pets: int(0, 10),
+    discountCode: z.string().trim().max(32).optional().default(""),
   })
   .refine((v) => v.checkOut > v.checkIn, {
     path: ["checkOut"],
@@ -141,6 +142,59 @@ export const calendarFeedSchema = z.object({
     }, "Paste the full https:// calendar link"),
   applyTurnover: checkbox,
 });
+
+const optionalDate = z.preprocess((v) => (v === "" || v == null ? null : v), isoDate.nullable());
+
+export const discountCodeSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .transform((v) => v.toUpperCase())
+      .pipe(z.string().regex(/^[A-Z0-9_-]{3,32}$/, "3–32 letters, numbers, - or _")),
+    propertyId: z.preprocess((v) => (v === "" || v == null ? null : v), z.uuid().nullable()),
+    discountType: z.enum(["PERCENT", "FIXED"]),
+    value: z.string().trim().min(1, "Required"),
+    minNights: optionalInt(1, 60),
+    stayFirstNight: optionalDate,
+    stayLastNight: optionalDate,
+    bookFrom: optionalDate,
+    bookUntil: optionalDate,
+    maxRedemptions: optionalInt(1, 100_000),
+  })
+  .transform((v, ctx) => {
+    let percentOff: number | null = null;
+    let amountOffPence: number | null = null;
+    if (v.discountType === "PERCENT") {
+      const pct = Number(v.value);
+      if (!/^\d{1,3}(\.\d{1,2})?$/.test(v.value) || pct <= 0 || pct > 100) {
+        ctx.addIssue({ code: "custom", path: ["value"], message: "Enter a percentage between 0 and 100" });
+        return z.NEVER;
+      }
+      percentOff = pct;
+    } else {
+      amountOffPence = poundsToPence(v.value);
+      if (!amountOffPence) {
+        ctx.addIssue({ code: "custom", path: ["value"], message: "Enter an amount like 20 or 20.50" });
+        return z.NEVER;
+      }
+    }
+    const pairs = [
+      [v.stayFirstNight, v.stayLastNight, "stayLastNight"],
+      [v.bookFrom, v.bookUntil, "bookUntil"],
+    ] as const;
+    for (const [first, last, field] of pairs) {
+      if ((first === null) !== (last === null)) {
+        ctx.addIssue({ code: "custom", path: [field], message: "Fill in both dates, or neither" });
+        return z.NEVER;
+      }
+      if (first !== null && last !== null && last < first) {
+        ctx.addIssue({ code: "custom", path: [field], message: "Must be on or after the first date" });
+        return z.NEVER;
+      }
+    }
+    return { ...v, percentOff, amountOffPence };
+  });
 
 /** Field errors keyed by field name, for redisplaying a form. */
 export function fieldErrors(error: z.ZodError) {

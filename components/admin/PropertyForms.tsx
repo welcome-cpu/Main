@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { AvailabilityCheckState, FormState } from "@/app/admin/(console)/actions";
 import { Checkbox, Field, FormMessage, Select, SubmitButton } from "@/components/admin/Form";
+import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import type { Property } from "@/lib/admin/properties";
 import { penceToInput } from "@/lib/money";
 
@@ -241,6 +242,7 @@ export function AvailabilityChecker({
         <Field label="Children" name="children" type="number" defaultValue={0} errors={e} />
         <Field label="Infants" name="infants" type="number" defaultValue={0} errors={e} />
         <Field label="Pets" name="pets" type="number" defaultValue={0} errors={e} />
+        <Field label="Discount code (optional)" name="discountCode" errors={e} />
         <div className="flex items-center gap-4 sm:col-span-3">
           <SubmitButton>Check</SubmitButton>
           {!r && <FormMessage state={state} />}
@@ -261,6 +263,12 @@ export function AvailabilityChecker({
               ))}
             </ul>
           )}
+          {r.quote && (
+            <div className="mt-4 max-w-sm border-t border-green-300 pt-3 text-foreground">
+              <PriceBreakdown quote={r.quote} />
+            </div>
+          )}
+          {r.quoteError && <p className="mt-2">Price: {r.quoteError}</p>}
           {r.conflicts.length > 0 && (
             <ul className="mt-2 space-y-1">
               {r.conflicts.map((c) => (
@@ -274,5 +282,15 @@ export function AvailabilityChecker({
         </div>
       )}
     </div>
+  );
+}
+
+export function ImportRatesButton({ action }: { action: () => Promise<FormState> }) {
+  const [state, formAction] = useActionState(action, {});
+  return (
+    <form action={formAction} className="flex flex-wrap items-center gap-4">
+      <SubmitButton>Import prices from Lodgify now</SubmitButton>
+      <FormMessage state={state} />
+    </form>
   );
 }

@@ -1,8 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { PublicCalendar, PublicCheck } from "@/lib/booking/public";
+import PriceBreakdown from "@/components/booking/PriceBreakdown";
+import type { PublicCalendar } from "@/lib/booking/public";
 import { addDays, daysBetween } from "@/lib/dates";
+import { formatPence } from "@/lib/money";
+import type { Quote, QuoteError } from "@/lib/pricing/quote";
+
+export type PublicExtra = {
+  id: string;
+  name: string;
+  description: string | null;
+  pricePence: number;
+  pricingType: "PER_STAY" | "PER_NIGHT" | "PER_GUEST" | "PER_GUEST_PER_NIGHT";
+  maxQuantity: number;
+};
+
+type QuoteResponse = {
+  available: boolean;
+  nights: number;
+  reasons: { code: string; message: string }[];
+  quote: Quote | null;
+  quoteError: QuoteError | null;
+};
+
+const PRICING_LABELS: Record<PublicExtra["pricingType"], string> = {
+  PER_STAY: "per stay",
+  PER_NIGHT: "per night",
+  PER_GUEST: "per guest",
+  PER_GUEST_PER_NIGHT: "per guest per night",
+};
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const monthLabel = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -17,13 +44,28 @@ const show = (iso: string) => longDate.format(new Date(`${iso}T00:00:00Z`));
 
 type Guests = { adults: number; children: number; infants: number; pets: number };
 
-export default function AvailabilityCalendar({ calendar, slug }: { calendar: PublicCalendar; slug: string }) {
+export default function AvailabilityCalendar({
+  calendar,
+  slug,
+  extras,
+}: {
+  calendar: PublicCalendar;
+  slug: string;
+  extras: PublicExtra[];
+}) {
   const { property, today, firstCheckIn, lastCheckIn } = calendar;
   const [monthIndex, setMonthIndex] = useState(0);
   const [checkIn, setCheckIn] = useState<string | null>(null);
   const [checkOut, setCheckOut] = useState<string | null>(null);
   const [guests, setGuests] = useState<Guests>({ adults: Math.min(2, property.maxGuests), children: 0, infants: 0, pets: 0 });
-  const [result, setResult] = useState<PublicCheck | null>(null);
+  // Any change invalidates the price shown, so it must be fetched again.
+  const updateGuests = (g: Guests) => {
+    setResult(null);
+    setGuests(g);
+  };
+  const [chosenExtras, setChosenExtras] = useState<Record<string, number>>({});
+  const [discountCode, setDiscountCode] = useState("");
+  const [result, setResult] = useState<QuoteResponse | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,11 +108,23 @@ export default function AvailabilityCalendar({ calendar, slug }: { calendar: Pub
     setChecking(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ checkIn, checkOut, ...Object.fromEntries(Object.entries(guests).map(([k, v]) => [k, String(v)])) });
-      const res = await fetch(`/api/availability/${slug}/check?${params}`, { cache: "no-store" });
+      const res = await fetch(`/api/quote/${slug}`, {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkIn,
+          checkOut,
+          ...guests,
+          extras: Object.entries(chosenExtras)
+            .filter(([, quantity]) => quantity > 0)
+            .map(([id, quantity]) => ({ id, quantity })),
+          discountCode: discountCode.trim() || null,
+        }),
+      });
       const body = await res.json();
       if (!res.ok) setError(body.error ?? "Something went wrong. Please try again.");
-      else setResult(body as PublicCheck);
+      else setResult(body as QuoteResponse);
     } catch {
       setError("Couldn't reach the server. Please check your connection and try again.");
     } finally {
@@ -145,11 +199,60 @@ export default function AvailabilityCalendar({ calendar, slug }: { calendar: Pub
 
       <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <legend className="mb-2 text-sm font-medium text-foreground-strong">Guests</legend>
-        <Counter label="Adults" value={guests.adults} min={1} max={property.maxGuests - guests.children} onChange={(adults) => setGuests({ ...guests, adults })} />
-        <Counter label="Children" value={guests.children} min={0} max={property.maxGuests - guests.adults} onChange={(children) => setGuests({ ...guests, children })} />
-        <Counter label="Infants (under 2)" value={guests.infants} min={0} max={2} onChange={(infants) => setGuests({ ...guests, infants })} />
-        <Counter label="Pets" value={guests.pets} min={0} max={property.maxPets} onChange={(pets) => setGuests({ ...guests, pets })} />
+        <Counter label="Adults" value={guests.adults} min={1} max={property.maxGuests - guests.children} onChange={(adults) => updateGuests({ ...guests, adults })} />
+        <Counter label="Children" value={guests.children} min={0} max={property.maxGuests - guests.adults} onChange={(children) => updateGuests({ ...guests, children })} />
+        <Counter label="Infants (under 2)" value={guests.infants} min={0} max={2} onChange={(infants) => updateGuests({ ...guests, infants })} />
+        <Counter label="Pets" value={guests.pets} min={0} max={property.maxPets} onChange={(pets) => updateGuests({ ...guests, pets })} />
       </fieldset>
+
+      {extras.length > 0 && (
+        <fieldset className="space-y-3">
+          <legend className="mb-2 text-sm font-medium text-foreground-strong">Extras</legend>
+          {extras.map((x) => {
+            const perGuest = x.pricingType === "PER_GUEST" || x.pricingType === "PER_GUEST_PER_NIGHT";
+            const max = perGuest ? 1 : x.maxQuantity;
+            const quantity = chosenExtras[x.id] ?? 0;
+            const setQuantity = (q: number) => {
+              setResult(null);
+              setChosenExtras({ ...chosenExtras, [x.id]: q });
+            };
+            return (
+              <div key={x.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                <span>
+                  <span className="font-medium text-foreground-strong">{x.name}</span> ·{" "}
+                  {formatPence(x.pricePence)} {PRICING_LABELS[x.pricingType]}
+                  {x.description && <span className="block text-xs text-muted-foreground">{x.description}</span>}
+                </span>
+                {max === 1 ? (
+                  <input
+                    type="checkbox"
+                    aria-label={`Add ${x.name}`}
+                    checked={quantity === 1}
+                    onChange={(e) => setQuantity(e.target.checked ? 1 : 0)}
+                    className="h-5 w-5"
+                  />
+                ) : (
+                  <Counter label={x.name} value={quantity} min={0} max={max} onChange={setQuantity} />
+                )}
+              </div>
+            );
+          })}
+        </fieldset>
+      )}
+
+      <label className="block text-sm">
+        <span className="font-medium text-foreground-strong">Discount code (optional)</span>
+        <input
+          value={discountCode}
+          onChange={(e) => {
+            setResult(null);
+            setDiscountCode(e.target.value);
+          }}
+          maxLength={32}
+          autoCapitalize="characters"
+          className="mt-1 block w-full max-w-xs border border-border bg-surface px-3 py-2 uppercase"
+        />
+      </label>
 
       <button
         type="button"
@@ -157,7 +260,7 @@ export default function AvailabilityCalendar({ calendar, slug }: { calendar: Pub
         disabled={!checkIn || !checkOut || checking}
         className="w-full bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
       >
-        {checking ? "Checking…" : "Check availability"}
+        {checking ? "Checking…" : "Check availability and price"}
       </button>
 
       <div aria-live="polite">
@@ -165,7 +268,15 @@ export default function AvailabilityCalendar({ calendar, slug }: { calendar: Pub
         {result && (
           <div className={`border p-4 text-sm ${result.available ? "border-green-300 bg-green-50 text-green-900" : "border-red-300 bg-red-50 text-red-900"}`}>
             {result.available ? (
-              <p className="font-semibold">Good news: these dates are available for {result.nights} nights.</p>
+              <>
+                <p className="font-semibold">Good news: these dates are available for {result.nights} nights.</p>
+                {result.quote && (
+                  <div className="mt-3 border-t border-green-300 pt-3 text-foreground">
+                    <PriceBreakdown quote={result.quote} />
+                  </div>
+                )}
+                {result.quoteError && <p className="mt-2 text-red-800">{result.quoteError.message}</p>}
+              </>
             ) : (
               <>
                 <p className="font-semibold">Sorry, we can&apos;t take this booking:</p>

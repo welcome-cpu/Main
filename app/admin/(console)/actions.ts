@@ -22,7 +22,9 @@ import {
   propertySettingsSchema,
   rateRuleSchema,
 } from "@/lib/admin/validation";
-import { checkAvailability } from "@/lib/booking/availability";
+import { importLodgifyRates } from "@/lib/pricing/lodgify-import";
+import type { Quote } from "@/lib/pricing/quote";
+import { quoteStay } from "@/lib/pricing/quote-service";
 import { db } from "@/lib/db/client";
 
 export type FormState = {
@@ -148,6 +150,8 @@ export type AvailabilityCheckState = FormState & {
     nights: number;
     reasons: string[];
     conflicts: { kind: string; source: string | null; ref: string; start: string; end: string }[];
+    quote: Quote | null;
+    quoteError: string | null;
   };
 };
 
@@ -163,8 +167,10 @@ export async function checkAvailabilityAction(
   const parsed = availabilityCheckSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
-  const result = await checkAvailability(db(), propertyId, parsed.data);
-  if (!result) return { message: "Unknown property." };
+  const { discountCode, ...stay } = parsed.data;
+  const quoted = await quoteStay(db(), propertyId, { ...stay, extras: [], discountCode: discountCode || null });
+  if (!quoted) return { message: "Unknown property." };
+  const result = quoted.availability;
   return {
     ok: true,
     result: {
@@ -172,6 +178,19 @@ export async function checkAvailabilityAction(
       nights: result.nights,
       reasons: result.reasons.map((r) => r.message),
       conflicts: result.conflicts.map(({ kind, source, ref, start, end }) => ({ kind, source, ref, start, end })),
+      quote: quoted.pricing?.ok ? quoted.pricing.quote : null,
+      quoteError: quoted.pricing && !quoted.pricing.ok ? quoted.pricing.error.message : null,
     },
   };
+}
+
+export async function importRatesAction(propertyId: string): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(propertyId)) return { message: "Unknown property." };
+
+  const outcome = await importLodgifyRates(propertyId, "MANUAL", admin.email);
+  revalidatePath(`/admin/properties/${propertyId}`);
+  return outcome.ok
+    ? { ok: true, message: `Imported prices for ${outcome.nightsWritten} nights.` }
+    : { message: `Import failed: ${outcome.error}` };
 }

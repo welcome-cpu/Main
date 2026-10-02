@@ -6,6 +6,8 @@ import AvailabilityCalendar from "@/components/booking/AvailabilityCalendar";
 import { isDirectBookingEnabled } from "@/lib/booking/feature";
 import { getPublicCalendar, getPublicProperty } from "@/lib/booking/public";
 import { addDays, todayInZone } from "@/lib/dates";
+import { db } from "@/lib/db/client";
+import { loadExtras } from "@/lib/pricing/quote-service";
 
 export const metadata: Metadata = {
   title: "Book direct",
@@ -24,7 +26,10 @@ export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
   const today = todayInZone(property.timezone);
   const from = `${today.slice(0, 7)}-01`;
   const to = addDays(today, property.bookingWindowDays + property.defaultMaxNights + property.turnoverNights + 31);
-  const calendar = await getPublicCalendar(property, { start: from, end: to });
+  const [calendar, extras] = await Promise.all([
+    getPublicCalendar(property, { start: from, end: to }),
+    loadExtras(db(), property.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -33,10 +38,21 @@ export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
       </Link>
       <h1 className="mt-2 text-3xl font-semibold text-foreground-strong">Book {property.name} direct</h1>
       <p className="mt-2 text-muted-foreground">
-        Choose your dates to check availability. Prices and online payment are coming next.
+        Choose your dates and guests to see availability and the full price. Online payment is coming next.
       </p>
       <div className="mt-8">
-        <AvailabilityCalendar calendar={calendar} slug={property.slug} />
+        <AvailabilityCalendar
+          calendar={calendar}
+          slug={property.slug}
+          extras={extras.map(({ id, name, description, pricePence, pricingType, maxQuantity }) => ({
+            id,
+            name,
+            description,
+            pricePence,
+            pricingType,
+            maxQuantity,
+          }))}
+        />
       </div>
     </div>
   );
