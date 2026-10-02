@@ -19,6 +19,9 @@ export default async function AdminConsoleLayout({ children }: LayoutProps<"/adm
           <Link href="/admin" className="text-foreground-strong hover:underline">
             Properties
           </Link>
+          <Link href="/admin/calendars" className="text-foreground-strong hover:underline">
+            Calendars
+          </Link>
         </nav>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>{admin.email}</span>

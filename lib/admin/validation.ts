@@ -98,6 +98,25 @@ export const rateRuleSchema = z
     message: "Set a price, a minimum stay or a maximum stay",
   });
 
+export const calendarFeedSchema = z.object({
+  propertyId: z.uuid("Choose a property"),
+  source: z.enum(["AIRBNB", "BOOKING_COM", "LODGIFY", "OTHER"]),
+  name: z.string().trim().min(1, "Required").max(100),
+  url: z
+    .string()
+    .trim()
+    .max(2000)
+    .refine((v) => {
+      try {
+        const u = new URL(v);
+        return u.protocol === "https:" && !u.username && !u.password;
+      } catch {
+        return false;
+      }
+    }, "Paste the full https:// calendar link"),
+  applyTurnover: checkbox,
+});
+
 /** Field errors keyed by field name, for redisplaying a form. */
 export function fieldErrors(error: z.ZodError) {
   return z.flattenError(error).fieldErrors as Record<string, string[] | undefined>;
