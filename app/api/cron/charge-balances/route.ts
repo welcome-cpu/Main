@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { runAfterResponse } from "@/lib/after-response";
 import { isAuthorizedCronRequest } from "@/lib/cron";
 import { isDatabaseConfigured } from "@/lib/db/client";
+import { processOutbox } from "@/lib/email/outbox";
 import { chargeDueBalances } from "@/lib/payments/balance";
 import { isPaymentConfigured, stripeGateway } from "@/lib/payments/gateway";
 
@@ -14,5 +16,6 @@ export async function GET(request: Request) {
   if (!isAuthorizedCronRequest(request)) return new NextResponse("Unauthorized", { status: 401 });
 
   const outcomes = await chargeDueBalances(stripeGateway);
+  runAfterResponse(() => processOutbox());
   return NextResponse.json({ charged: outcomes.filter((o) => o.ok).length, failed: outcomes.filter((o) => !o.ok).length });
 }

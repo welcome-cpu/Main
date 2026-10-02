@@ -2,6 +2,7 @@ import "server-only";
 import { recordAudit } from "@/lib/audit";
 import { todayInZone } from "@/lib/dates";
 import { db } from "@/lib/db/client";
+import { enqueueBalanceFailedEmails, enqueueBalanceReceivedEmail } from "@/lib/email/booking-emails";
 import type { PaymentGateway } from "@/lib/payments/gateway";
 
 export type BalanceOutcome = { paymentId: string; reference: string; ok: boolean; message?: string };
@@ -57,10 +58,12 @@ export async function chargeDueBalances(gateway: PaymentGateway, now: Date = new
 
     await sql.begin(async (tx) => {
       if (result.ok && result.status === "succeeded") {
-        await tx`
+        const updated = await tx`
           UPDATE payments SET status = 'SUCCEEDED', captured_at = now(), stripe_payment_intent_id = ${result.paymentIntentId}
           WHERE id = ${b.id} AND status = 'PENDING'
         `;
+        if (updated.count === 0) return; // recorded already (e.g. by the webhook)
+        await enqueueBalanceReceivedEmail(tx, b.reservationId, b.id, b.amountPence);
         await recordAudit(tx, {
           actorType: "SYSTEM",
           action: "payment.confirmed",
@@ -72,12 +75,14 @@ export async function chargeDueBalances(gateway: PaymentGateway, now: Date = new
       } else {
         const code = result.ok ? `status_${result.status}` : result.code;
         const message = result.ok ? `Payment is ${result.status}` : result.message;
-        await tx`
+        const updated = await tx`
           UPDATE payments SET status = 'FAILED', failed_at = now(),
             stripe_payment_intent_id = COALESCE(${result.paymentIntentId}, stripe_payment_intent_id),
             failure_code = ${code}, failure_message = ${message.slice(0, 300)}
           WHERE id = ${b.id} AND status = 'PENDING'
         `;
+        if (updated.count === 0) return;
+        await enqueueBalanceFailedEmails(tx, b.reservationId, b.id, b.amountPence);
         await recordAudit(tx, {
           actorType: "SYSTEM",
           action: "payment.failed",

@@ -4,6 +4,12 @@ import { recordAudit } from "@/lib/audit";
 import { checkAvailability } from "@/lib/booking/availability";
 import { lockPropertyAvailability } from "@/lib/booking/locks";
 import { db } from "@/lib/db/client";
+import {
+  enqueueBalanceFailedEmails,
+  enqueueBalanceReceivedEmail,
+  enqueueBookingConfirmedEmails,
+  enqueueNotChargedEmails,
+} from "@/lib/email/booking-emails";
 import type { PaymentGateway, PaymentIntentInfo } from "@/lib/payments/gateway";
 
 // Stripe webhooks are the ONLY thing that confirms a booking or marks money
@@ -124,6 +130,7 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session, gateway: Pa
         propertyId: r?.propertyId,
         details: { reference: r?.reference, paymentIntentId: pi.id, amountPence: authorised },
       });
+      await enqueueNotChargedEmails(tx, payment.reservationId, payment.id, "DATES_UNAVAILABLE");
     });
     return "dates unavailable; authorisation released";
   }
@@ -250,6 +257,9 @@ async function markSucceeded(paymentId: string, paymentIntentId: string) {
       entityId: paymentId,
       details: { reservationId: p.reservationId, kind: p.kind, amountPence: p.amountPence, paymentIntentId },
     });
+    // The booking emails go out once the money is actually taken.
+    if (p.kind === "BALANCE") await enqueueBalanceReceivedEmail(tx, p.reservationId, paymentId, p.amountPence);
+    else await enqueueBookingConfirmedEmails(tx, p.reservationId);
   });
 }
 
@@ -275,6 +285,7 @@ async function failCapture(payment: PaymentRow, paymentIntentId: string, error: 
       propertyId: r?.propertyId,
       details: { reference: r?.reference, paymentIntentId },
     });
+    if (r) await enqueueNotChargedEmails(tx, payment.reservationId, payment.id, "PAYMENT_FAILED");
   });
 }
 
@@ -292,6 +303,9 @@ async function failPayment(payment: PaymentRow, paymentIntentId: string, code: s
       entityId: payment.id,
       details: { reservationId: payment.reservationId, code, message },
     });
+    if (payment.kind === "BALANCE") {
+      await enqueueBalanceFailedEmails(tx, payment.reservationId, payment.id, payment.amountPence);
+    }
   });
 }
 

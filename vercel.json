@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/charge-balances",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/send-emails",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
