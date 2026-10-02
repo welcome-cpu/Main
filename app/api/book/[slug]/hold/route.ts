@@ -3,7 +3,7 @@ import { createHold, GUEST_FACING_HOLD_MINUTES, HOLD_MINUTES } from "@/lib/booki
 import { getPublicProperty } from "@/lib/booking/public";
 import { holdBodySchema } from "@/lib/booking/public-validation";
 import { startCheckout } from "@/lib/payments/checkout";
-import { isPaymentConfigured, stripeGateway } from "@/lib/payments/gateway";
+import { isPaymentConfigured, paymentConfigProblem, stripeGateway } from "@/lib/payments/gateway";
 import { clientIp } from "@/lib/rate-limit";
 import { passesTurnstile } from "@/lib/turnstile";
 
@@ -28,6 +28,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
 
   const property = await getPublicProperty((await params).slug);
   if (!property) return json({ error: "Not found" }, 404);
+
+  // Don't take dates off sale if payment is misconfigured (e.g. a live
+  // Stripe key on a test site).
+  if (paymentConfigProblem() === "LIVE_KEY_OUTSIDE_PRODUCTION") {
+    console.error("Refusing checkout: live Stripe key on a non-production deployment");
+    return json({ error: "Online payment is unavailable on this site at the moment." }, 503);
+  }
 
   const { stay, guest } = parsed.data;
   const result = await createHold(

@@ -233,6 +233,24 @@ describe.runIf(enabled)("booking holds (database)", () => {
       expect(firstRefusal).toBeGreaterThanOrEqual(5);
     }, 60_000);
 
+    it("refuses to hold dates when a live Stripe key is on a test site", async () => {
+      const p = await createProperty();
+      const before = { key: process.env.STRIPE_SECRET_KEY, env: process.env.VERCEL_ENV };
+      process.env.STRIPE_SECRET_KEY = "sk_live_should_never_be_used";
+      process.env.VERCEL_ENV = "preview";
+      try {
+        const res = await post(p.slug, { stay: stay("2034-06-10", "2034-06-12"), guest, acceptTerms: true });
+        expect(res.status).toBe(503);
+        const [{ n }] = await dbMod.db()<{ n: number }[]>`SELECT count(*)::int AS n FROM reservations WHERE property_id = ${p.id}`;
+        expect(n).toBe(0);
+      } finally {
+        if (before.key === undefined) delete process.env.STRIPE_SECRET_KEY;
+        else process.env.STRIPE_SECRET_KEY = before.key;
+        if (before.env === undefined) delete process.env.VERCEL_ENV;
+        else process.env.VERCEL_ENV = before.env;
+      }
+    });
+
     it("requires a Turnstile token when Turnstile is configured", async () => {
       const p = await createProperty();
       process.env.TURNSTILE_SECRET_KEY = "test-secret";

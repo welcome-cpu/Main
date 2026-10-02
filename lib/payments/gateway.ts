@@ -61,15 +61,27 @@ export interface PaymentGateway {
   parseWebhook(payload: string, signature: string): Stripe.Event;
 }
 
+/**
+ * Why payments can't run on this deployment, or null if they can. A live
+ * key anywhere but production is refused outright: a test site must never
+ * be able to take real money.
+ */
+export function paymentConfigProblem(): "MISSING" | "LIVE_KEY_OUTSIDE_PRODUCTION" | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return "MISSING";
+  if (key.startsWith("sk_live_") && process.env.VERCEL_ENV !== "production") return "LIVE_KEY_OUTSIDE_PRODUCTION";
+  return null;
+}
+
 export function isPaymentConfigured() {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+  return paymentConfigProblem() === null;
 }
 
 let client: Stripe | null = null;
 function stripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set.");
-  client ??= new Stripe(key, { maxNetworkRetries: 2, timeout: 20_000 });
+  const problem = paymentConfigProblem();
+  if (problem) throw new Error(`Stripe can't be used here: ${problem}`);
+  client ??= new Stripe(process.env.STRIPE_SECRET_KEY!, { maxNetworkRetries: 2, timeout: 20_000 });
   return client;
 }
 
