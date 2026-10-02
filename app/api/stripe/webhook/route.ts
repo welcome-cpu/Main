@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { runAfterResponse } from "@/lib/after-response";
 import { isDatabaseConfigured } from "@/lib/db/client";
 import { processOutbox } from "@/lib/email/outbox";
-import { stripeGateway } from "@/lib/payments/gateway";
+import { paymentConfigProblem, stripeGateway } from "@/lib/payments/gateway";
 import { handleStripeEvent } from "@/lib/payments/webhook";
 
 /**
@@ -10,9 +10,11 @@ import { handleStripeEvent } from "@/lib/payments/webhook";
  * before anything is trusted; duplicate deliveries are no-ops.
  */
 export async function POST(request: Request) {
-  if (!process.env.STRIPE_WEBHOOK_SECRET || !process.env.STRIPE_SECRET_KEY || !isDatabaseConfigured()) {
-    return new NextResponse("Not configured", { status: 503 });
-  }
+  // Distinct messages make setup problems visible in Stripe's delivery log.
+  if (!process.env.STRIPE_WEBHOOK_SECRET) return new NextResponse("Not configured: STRIPE_WEBHOOK_SECRET", { status: 503 });
+  if (!isDatabaseConfigured()) return new NextResponse("Not configured: DATABASE_URL", { status: 503 });
+  const keyProblem = paymentConfigProblem();
+  if (keyProblem) return new NextResponse(`Not configured: STRIPE_SECRET_KEY (${keyProblem})`, { status: 503 });
 
   const signature = request.headers.get("stripe-signature");
   if (!signature) return new NextResponse("Missing signature", { status: 400 });
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
   try {
     event = stripeGateway.parseWebhook(payload, signature);
   } catch {
-    return new NextResponse("Invalid signature", { status: 400 });
+    return new NextResponse("Invalid signature: STRIPE_WEBHOOK_SECRET doesn't match this endpoint's signing secret", { status: 400 });
   }
 
   try {

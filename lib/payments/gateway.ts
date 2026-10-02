@@ -85,6 +85,8 @@ function stripe() {
   return client;
 }
 
+const webhookVerifier = new Stripe("sk_test_signature_verification_only");
+
 const id = (value: string | { id: string } | null | undefined) =>
   typeof value === "string" ? value : (value?.id ?? null);
 
@@ -194,8 +196,10 @@ export const stripeGateway: PaymentGateway = {
   },
 
   parseWebhook(payload, signature) {
-    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
     if (!secret) throw new Error("STRIPE_WEBHOOK_SECRET is not set.");
-    return stripe().webhooks.constructEvent(payload, signature, secret);
+    // Verifying a signature needs no API access, so this works (and gives a
+    // clear answer) whatever state the API key is in.
+    return webhookVerifier.webhooks.constructEvent(payload, signature, secret);
   },
 };
