@@ -18,19 +18,30 @@ declare module "@auth/core/jwt" {
 }
 
 // Only accounts from our own Microsoft 365 tenant can sign in.
-const TENANT_ID = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER?.match(
-  /microsoftonline\.com\/([0-9a-f-]{36})\/v2\.0/
-)?.[1];
+const TENANT_ID = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER?.trim()
+  .match(/microsoftonline\.com\/([0-9a-f-]{36})\/v2\.0\/?$/i)?.[1]
+  ?.toLowerCase();
+
+/** Names (never values) of settings the admin area needs but doesn't have. */
+export function missingAdminSettings(): string[] {
+  const missing: string[] = [];
+  if (!isDatabaseConfigured()) missing.push("DATABASE_URL");
+  if (!process.env.AUTH_SECRET) missing.push("AUTH_SECRET");
+  if (!process.env.AUTH_MICROSOFT_ENTRA_ID_ID) missing.push("AUTH_MICROSOFT_ENTRA_ID_ID");
+  if (!process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET) missing.push("AUTH_MICROSOFT_ENTRA_ID_SECRET");
+  if (!process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER) {
+    missing.push("AUTH_MICROSOFT_ENTRA_ID_ISSUER");
+  } else if (!TENANT_ID) {
+    missing.push(
+      "AUTH_MICROSOFT_ENTRA_ID_ISSUER (set, but not in the form https://login.microsoftonline.com/<tenant id>/v2.0)"
+    );
+  }
+  return missing;
+}
 
 /** True when every setting the admin area needs is present. */
 export function isAdminConfigured() {
-  return Boolean(
-    isDatabaseConfigured() &&
-      process.env.AUTH_SECRET &&
-      process.env.AUTH_MICROSOFT_ENTRA_ID_ID &&
-      process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET &&
-      TENANT_ID
-  );
+  return missingAdminSettings().length === 0;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

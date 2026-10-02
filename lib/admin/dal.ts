@@ -13,7 +13,12 @@ import { getActiveAdminByObjectId, type AdminUser } from "@/lib/admin/users";
 export const requireAdmin = cache(async (): Promise<AdminUser> => {
   // Never prerender admin pages: always decide per request.
   await connection();
-  if (!isAdminConfigured()) notFound();
+  if (!isAdminConfigured()) {
+    // Production hides the admin area entirely; other deployments explain
+    // what is missing on the login page.
+    if (process.env.VERCEL_ENV === "production") notFound();
+    redirect("/admin/login");
+  }
 
   const session = await auth();
   if (!session?.objectId) redirect("/admin/login");
