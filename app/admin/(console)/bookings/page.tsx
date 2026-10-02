@@ -176,7 +176,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                       </a>
                     )}
                     {r.guestPhone && (
-                      <a href={`tel:${r.guestPhone.replace(/s/g, "")}`} className="block text-xs whitespace-nowrap text-muted-foreground underline">
+                      <a href={`tel:${r.guestPhone.replace(/\s/g, "")}`} className="block text-xs whitespace-nowrap text-muted-foreground underline">
                         {r.guestPhone}
                       </a>
                     )}
