@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import AvailabilityCalendar from "@/components/booking/AvailabilityCalendar";
-import { isDirectBookingEnabled } from "@/lib/booking/feature";
+import { directBookingProblem } from "@/lib/booking/feature";
 import { getPublicCalendar, getPublicProperty } from "@/lib/booking/public";
 import { addDays, todayInZone } from "@/lib/dates";
 import { db } from "@/lib/db/client";
@@ -17,7 +17,18 @@ export const metadata: Metadata = {
 
 export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
   await connection();
-  if (!isDirectBookingEnabled()) notFound();
+  const problem = directBookingProblem();
+  if (problem) {
+    // Production simply doesn't have these pages; other deployments say why.
+    if (process.env.VERCEL_ENV === "production") notFound();
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24">
+        <h1 className="text-2xl font-semibold text-foreground-strong">Direct booking is switched off here</h1>
+        <p className="mt-2 text-muted-foreground">{problem}</p>
+        <p className="mt-2 text-sm text-muted-foreground">Fix it in Vercel (Preview, branch dev), then redeploy.</p>
+      </div>
+    );
+  }
 
   const { slug } = await params;
   const property = await getPublicProperty(slug);
