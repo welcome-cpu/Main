@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { runSignInDiagnostics, type Check } from "@/lib/admin/diagnostics";
 import { missingAdminSettings, signIn } from "@/lib/auth";
 
 const ERRORS: Record<string, string> = {
@@ -19,19 +21,40 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
   const message =
     typeof error === "string" ? (ERRORS[error] ?? "Sign-in failed. Please try again.") : null;
 
+  // Outside production, a configuration error runs a self-test to show which
+  // part of sign-in is broken.
+  let checks: Check[] | null = null;
+  if (error === "Configuration" && process.env.VERCEL_ENV !== "production") {
+    const h = await headers();
+    const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+    checks = await runSignInDiagnostics(origin);
+  }
+
   async function signInWithMicrosoft() {
     "use server";
     await signIn("microsoft-entra-id", { redirectTo: "/admin" });
   }
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-24">
+    <div className="mx-auto max-w-md px-4 py-24">
       <h1 className="text-2xl font-semibold text-foreground-strong">Gamrie Chalets admin</h1>
       <p className="mt-2 text-muted-foreground">Sign in with your Microsoft 365 account.</p>
       {message && (
         <p role="alert" className="mt-6 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
           {message}
         </p>
+      )}
+      {checks && (
+        <ul className="mt-4 space-y-2 text-sm">
+          {checks.map((c) => (
+            <li key={c.name}>
+              <span className={c.ok ? "text-green-800" : "font-semibold text-red-700"}>
+                {c.ok ? "✓" : "✗"} {c.name}
+              </span>
+              <span className="block break-words text-muted-foreground">{c.detail}</span>
+            </li>
+          ))}
+        </ul>
       )}
       <form action={signInWithMicrosoft} className="mt-8">
         <button
