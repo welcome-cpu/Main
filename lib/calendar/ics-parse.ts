@@ -3,6 +3,8 @@
 // reservation or block, usually as all-day dates. Pure and dependency-free so
 // it can be unit tested with real feed fixtures.
 
+import { addDays, isValidDate, todayInZone } from "@/lib/dates";
+
 export type ParsedEvent = {
   uid: string;
   /** First night, YYYY-MM-DD in the property's local calendar. */
@@ -62,17 +64,6 @@ function unescapeText(value: string) {
   return value.replace(/\\([\\;,nN])/g, (_, ch: string) => (ch === "n" || ch === "N" ? "\n" : ch));
 }
 
-/** Calendar date in `timeZone` for an instant. */
-function dateInZone(instant: Date, timeZone: string) {
-  // en-CA formats as YYYY-MM-DD.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(instant);
-}
-
 /**
  * Converts a DTSTART/DTEND property to a local calendar date.
  * - VALUE=DATE (20260801): used as-is.
@@ -85,21 +76,10 @@ function toLocalDate(prop: Property, timeZone: string): string | null {
   const [, y, mo, d, h, mi, s, z] = m;
   if (h !== undefined && z) {
     const instant = new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +(s ?? 0)));
-    return dateInZone(instant, timeZone);
+    return todayInZone(timeZone, instant);
   }
   const date = `${y}-${mo}-${d}`;
   return isValidDate(date) ? date : null;
-}
-
-export function isValidDate(date: string) {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(date);
-}
-
-export function addDays(date: string, days: number) {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
 }
 
 /** Days from ISO duration like P3D or P1W (time parts are ignored). */

@@ -1,13 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  checkAvailabilityAction,
+  createBlockAction,
   createExtraAction,
   createRateRuleAction,
+  removeBlockAction,
   toggleExtraAction,
   toggleRateRuleAction,
   updatePropertyAction,
 } from "@/app/admin/(console)/actions";
-import { ExtraForm, PropertySettingsForm, RateRuleForm } from "@/components/admin/PropertyForms";
+import {
+  AvailabilityChecker,
+  BlockForm,
+  ExtraForm,
+  PropertySettingsForm,
+  RateRuleForm,
+} from "@/components/admin/PropertyForms";
+import { listUpcomingBlocks } from "@/lib/admin/blocks";
 import { requireAdmin } from "@/lib/admin/dal";
 import { getProperty, listExtras, listRateRules } from "@/lib/admin/properties";
 import { formatPence } from "@/lib/money";
@@ -33,7 +43,11 @@ export default async function AdminPropertyPage({ params }: PageProps<"/admin/pr
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const [extras, rateRules] = await Promise.all([listExtras(id), listRateRules(id)]);
+  const [extras, rateRules, blocks] = await Promise.all([
+    listExtras(id),
+    listRateRules(id),
+    listUpcomingBlocks(id),
+  ]);
 
   return (
     <div className="space-y-14">
@@ -44,6 +58,43 @@ export default async function AdminPropertyPage({ params }: PageProps<"/admin/pr
         <h1 className="mt-2 text-2xl font-semibold text-foreground-strong">{property.name}</h1>
         <p className="text-sm text-muted-foreground">/{property.slug}</p>
       </div>
+
+      <section className="max-w-3xl">
+        <h2 className="text-lg font-semibold text-foreground-strong">Check availability</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Runs the same check the booking system uses, against bookings, checkout holds, imported calendars
+          and blocked dates. Imported calendars are only as up to date as their last sync.
+        </p>
+        <div className="mt-4">
+          <AvailabilityChecker action={checkAvailabilityAction.bind(null, id)} />
+        </div>
+      </section>
+
+      <section className="max-w-3xl">
+        <h2 className="text-lg font-semibold text-foreground-strong">Blocked dates</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Nights you&apos;ve closed yourself. They can&apos;t overlap a booking taken on this website.
+        </p>
+        {blocks.length > 0 && (
+          <ul className="mt-4 divide-y divide-border border-y border-border text-sm">
+            {blocks.map((b) => (
+              <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <span>
+                  <span className="font-medium text-foreground-strong">
+                    {showDate(b.firstNight)} – {showDate(b.lastNight)}
+                  </span>
+                  {b.reason && ` · ${b.reason}`}
+                  <span className="block text-xs text-muted-foreground">by {b.createdBy}</span>
+                </span>
+                <ToggleForm action={removeBlockAction} fields={{ propertyId: id, blockId: b.id }} label="Unblock" />
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-6">
+          <BlockForm action={createBlockAction.bind(null, id)} />
+        </div>
+      </section>
 
       <section className="max-w-3xl">
         <PropertySettingsForm property={property} action={updatePropertyAction.bind(null, id)} />

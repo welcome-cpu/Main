@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import type { FormState } from "@/app/admin/(console)/actions";
+import type { AvailabilityCheckState, FormState } from "@/app/admin/(console)/actions";
 import { Checkbox, Field, FormMessage, Select, SubmitButton } from "@/components/admin/Form";
 import type { Property } from "@/lib/admin/properties";
 import { penceToInput } from "@/lib/money";
@@ -198,5 +198,81 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <legend className="mb-4 text-lg font-semibold text-foreground-strong">{title}</legend>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>
+  );
+}
+
+export function BlockForm({ action }: { action: Action }) {
+  const [state, formAction] = useActionState(action, {});
+  const e = state.errors;
+  return (
+    <form action={formAction} className="grid gap-4 sm:grid-cols-3">
+      <Field label="First night" name="firstNight" type="date" errors={e} required />
+      <Field label="Last night" name="lastNight" type="date" errors={e} required />
+      <Field label="Reason (optional)" name="reason" errors={e} hint="Only visible here." />
+      <div className="flex flex-wrap items-center gap-4 sm:col-span-3">
+        <SubmitButton>Block dates</SubmitButton>
+        <FormMessage state={state} />
+      </div>
+    </form>
+  );
+}
+
+const KIND_LABELS: Record<string, string> = {
+  RESERVATION: "Booking",
+  HOLD: "Checkout hold",
+  EXTERNAL: "Imported booking",
+  MANUAL_BLOCK: "Blocked by owner",
+};
+
+export function AvailabilityChecker({
+  action,
+}: {
+  action: (state: AvailabilityCheckState, formData: FormData) => Promise<AvailabilityCheckState>;
+}) {
+  const [state, formAction] = useActionState(action, {});
+  const e = state.errors;
+  const r = state.result;
+  return (
+    <div className="space-y-4">
+      <form action={formAction} className="grid gap-4 sm:grid-cols-3">
+        <Field label="Check-in" name="checkIn" type="date" errors={e} required />
+        <Field label="Check-out" name="checkOut" type="date" errors={e} required />
+        <Field label="Adults" name="adults" type="number" defaultValue={2} errors={e} />
+        <Field label="Children" name="children" type="number" defaultValue={0} errors={e} />
+        <Field label="Infants" name="infants" type="number" defaultValue={0} errors={e} />
+        <Field label="Pets" name="pets" type="number" defaultValue={0} errors={e} />
+        <div className="flex items-center gap-4 sm:col-span-3">
+          <SubmitButton>Check</SubmitButton>
+          {!r && <FormMessage state={state} />}
+        </div>
+      </form>
+      {r && (
+        <div
+          role="status"
+          className={`border p-4 text-sm ${r.available ? "border-green-300 bg-green-50 text-green-900" : "border-red-300 bg-red-50 text-red-900"}`}
+        >
+          <p className="font-semibold">
+            {r.available ? `Available: ${r.nights} nights can be booked.` : "Not available"}
+          </p>
+          {r.reasons.length > 0 && (
+            <ul className="mt-2 list-disc pl-5">
+              {r.reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          )}
+          {r.conflicts.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {r.conflicts.map((c) => (
+                <li key={`${c.kind}-${c.ref}`}>
+                  Clashes with: {KIND_LABELS[c.kind] ?? c.kind}
+                  {c.source && ` (${c.source})`}, nights {c.start} to {c.end} (exclusive, including turnover)
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

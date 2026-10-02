@@ -98,6 +98,31 @@ export const rateRuleSchema = z
     message: "Set a price, a minimum stay or a maximum stay",
   });
 
+export const manualBlockSchema = z
+  .object({
+    firstNight: isoDate,
+    lastNight: isoDate,
+    reason: z.string().trim().max(500).optional().default(""),
+  })
+  .refine((v) => v.lastNight >= v.firstNight, {
+    path: ["lastNight"],
+    message: "Must be on or after the first night",
+  });
+
+export const availabilityCheckSchema = z
+  .object({
+    checkIn: isoDate,
+    checkOut: isoDate,
+    adults: int(0, 30),
+    children: int(0, 30),
+    infants: int(0, 10),
+    pets: int(0, 10),
+  })
+  .refine((v) => v.checkOut > v.checkIn, {
+    path: ["checkOut"],
+    message: "Must be after check-in",
+  });
+
 export const calendarFeedSchema = z.object({
   propertyId: z.uuid("Choose a property"),
   source: z.enum(["AIRBNB", "BOOKING_COM", "LODGIFY", "OTHER"]),

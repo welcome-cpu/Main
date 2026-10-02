@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createBlock, removeBlock } from "@/lib/admin/blocks";
 import { requireAdmin } from "@/lib/admin/dal";
 import {
   createExtra,
@@ -13,12 +14,16 @@ import {
   updatePropertySettings,
 } from "@/lib/admin/properties";
 import {
+  availabilityCheckSchema,
   extraSchema,
   fieldErrors,
+  manualBlockSchema,
   newPropertySchema,
   propertySettingsSchema,
   rateRuleSchema,
 } from "@/lib/admin/validation";
+import { checkAvailability } from "@/lib/booking/availability";
+import { db } from "@/lib/db/client";
 
 export type FormState = {
   ok?: boolean;
@@ -108,4 +113,65 @@ export async function toggleRateRuleAction(formData: FormData) {
 
   await setRateRuleActive(admin, propertyId, ruleId, formData.get("isActive") === "true");
   revalidatePath(`/admin/properties/${propertyId}`);
+}
+
+export async function createBlockAction(
+  propertyId: string,
+  _: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(propertyId)) return { message: "Unknown property." };
+
+  const parsed = manualBlockSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+
+  const result = await createBlock(admin, propertyId, parsed.data);
+  if (result.error) return { message: result.error };
+  revalidatePath(`/admin/properties/${propertyId}`);
+  return { ok: true, message: "Dates blocked." };
+}
+
+export async function removeBlockAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const propertyId = String(formData.get("propertyId"));
+  const blockId = String(formData.get("blockId"));
+  if (!isUuid(propertyId) || !isUuid(blockId)) return;
+
+  await removeBlock(admin, propertyId, blockId);
+  revalidatePath(`/admin/properties/${propertyId}`);
+}
+
+export type AvailabilityCheckState = FormState & {
+  result?: {
+    available: boolean;
+    nights: number;
+    reasons: string[];
+    conflicts: { kind: string; source: string | null; ref: string; start: string; end: string }[];
+  };
+};
+
+/** Admin tool: runs the real availability engine for a hypothetical stay. */
+export async function checkAvailabilityAction(
+  propertyId: string,
+  _: AvailabilityCheckState,
+  formData: FormData
+): Promise<AvailabilityCheckState> {
+  await requireAdmin();
+  if (!isUuid(propertyId)) return { message: "Unknown property." };
+
+  const parsed = availabilityCheckSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+
+  const result = await checkAvailability(db(), propertyId, parsed.data);
+  if (!result) return { message: "Unknown property." };
+  return {
+    ok: true,
+    result: {
+      available: result.available,
+      nights: result.nights,
+      reasons: result.reasons.map((r) => r.message),
+      conflicts: result.conflicts.map(({ kind, source, ref, start, end }) => ({ kind, source, ref, start, end })),
+    },
+  };
 }
