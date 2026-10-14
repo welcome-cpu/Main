@@ -158,6 +158,19 @@ export default async function BlogPostPage({
 
               return <p key={index}>{nodes}</p>;
             }
+            case "image":
+              return (
+                <figure key={index} className="!mt-8 overflow-hidden rounded-2xl border border-border bg-muted">
+                  <Image
+                    src={block.src}
+                    alt={block.alt}
+                    width={block.width}
+                    height={block.height}
+                    sizes="(min-width: 768px) 768px, 100vw"
+                    className="mx-auto h-auto max-h-[38rem] w-auto max-w-full"
+                  />
+                </figure>
+              );
             case "heading": {
               const Tag = block.level === 2 ? "h2" : "h3";
               return (

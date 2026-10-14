@@ -3,7 +3,8 @@ export type ContentBlock =
   | { type: "heading"; level: 2 | 3; text: string }
   | { type: "list"; items: string[] }
   | { type: "cta"; label: string; href: string }
-  | { type: "ctaGroup"; items: { label: string; href: string }[] };
+  | { type: "ctaGroup"; items: { label: string; href: string }[] }
+  | { type: "image"; src: string; width: number; height: number; alt: string };
 
 export type Post = {
   slug: string;
@@ -16,6 +17,92 @@ export type Post = {
 };
 
 export const posts: Post[] = [
+  {
+    slug: "gamrie-chalets-guest-review-aberdeenshire-coast",
+    title: "Gamrie Chalets: Our Self-Catering Coastal Scotland Getaway in Aberdeenshire",
+    metaTitle: "Gamrie Chalets Review: Luxury Self-Catering on the Banffshire Coast",
+    date: "2026-10-14",
+    excerpt:
+      "Read a guest’s review of Gamrie Chalets, a stylish couple’s getaway in Gardenstown with cliff-top views, wood-burning stoves, complimentary EV charging, and easy access to Crovie, Banff, Duff House, and Fyvie Castle.",
+    image: { src: "/7907_Gamrie_High_078.jpg", width: 7901, height: 5270 },
+    content: [
+      {
+        type: "paragraph",
+        text: "Our guest and her husband swapped their busy Glasgow lives for three days on the wild Aberdeenshire coast. Here's how they spent their stay.",
+      },
+      {
+        type: "paragraph",
+        text: "Life in the city rarely slows down, so when we found a gap in the diary, we wanted somewhere that felt a world away. We pictured sea air, big skies and a little adventure, followed by evenings spent somewhere cosy. Gamrie Chalets, perched above the fishing village of Gardenstown, gave us all of that and more.",
+      },
+      { type: "image", src: "/blog/gamrie-chalets-guest-review/guest-outside-chalet.jpg", width: 1920, height: 2560, alt: "Our guest outside the timber-clad Muckle View chalet on the clifftop, with the sea behind" },
+      {
+        type: "paragraph",
+        text: "The northern coast of Scotland has a rugged beauty that is hard to put into words. Cliffs drop to the sea, villages cling to the shoreline, and the weather changes the view by the hour. After a day of wind-blown walks and coastal exploring, our stylish self-catering studio was the perfect place to warm up, unwind and plan the next day.",
+        links: [{ word: "stylish self-catering studio", href: "/properties/muckle-view" }],
+      },
+      { type: "image", src: "/blog/gamrie-chalets-guest-review/view-from-bed.jpg", width: 1920, height: 1440, alt: "The view from the bed through the glass gable to the balcony, the bay and the green headland" },
+      {
+        type: "paragraph",
+        text: "Here's how we spent our two-night escape: harbour walks, hidden villages, Georgian grandeur and a castle full of autumn colour.",
+      },
+      { type: "heading", level: 2, text: "Day One: Gardenstown and Crovie" },
+      {
+        type: "paragraph",
+        text: "Our first morning was spent admiring a view that kept on giving. In every season, the colours and landscape shift with the fast-evolving weather. Being coastal and facing north, it is reliably windy, so we wrapped up and headed down to explore the village below.",
+      },
+      { type: "image", src: "/blog/gamrie-chalets-guest-review/balcony.jpg", width: 1920, height: 2560, alt: "The covered balcony with two chairs and the sea beyond the glass doors" },
+      {
+        type: "paragraph",
+        text: "Winding roads took us past churches and gathering halls, through narrow streets built to withstand the elements, opening out onto a harbour. We walked along the beach and followed a coastal path up to the ruins of St John's Church, the very building we could see eye to eye with from our balcony.",
+        links: [{ word: "St John's Church", href: "/about#heritage-history" }],
+      },
+      {
+        type: "paragraph",
+        text: "After a wander round the ruins, we retraced our steps to the harbour for lunch at Ellies Café, conveniently beside a gallery and shop selling work by local painters, sculptors, and other Aberdeenshire artists. We bought a few memories to take home before making our way back up to the chalet, taking in the village as we went.",
+      },
+      {
+        type: "paragraph",
+        text: "With complimentary EV charging on offer at the chalets, we had all the range we needed to head east that afternoon and explore Crovie. Stepping back in time, we wandered around what can only be described as a set from Outlander: the quaintest village, with the stormy sea almost reaching the front doors of the cottages lining the wall when the tide was in. We took in the harbour, the old bond buildings, and the many memorials to fishermen and locals lost at sea over the years, a stark reminder that the sea was once the source of income and life for most families in this Aberdeenshire coastal area.",
+      },
+      { type: "image", src: "/blog/gamrie-chalets-guest-review/stormy-sea-rocks.jpg", width: 1920, height: 1440, alt: "Waves breaking white over dark rocks on a stormy day on the Aberdeenshire coast" },
+      {
+        type: "paragraph",
+        text: "As dusk fell, we headed back to spend an evening in with the wood-burning stove, pottering in the kitchen after a full day in the fresh coastal air, refreshed and ready for a good night's sleep.",
+      },
+      { type: "image", src: "/blog/gamrie-chalets-guest-review/log-burner-evening.jpg", width: 1920, height: 2560, alt: "A glass of red wine by the lit wood-burning stove on an evening in" },
+      { type: "heading", level: 2, text: "Day Two: MacDuff, Banff and Duff House" },
+      {
+        type: "paragraph",
+        text: "Day two was calmer, so we decided to venture west. The drive follows the top coast road with sweeping views to the sea, offset by yellow fields on either side. With the sun shining and the wind settled, Scotland quite literally beams with joy.",
+      },
+      {
+        type: "paragraph",
+        text: "We started at MacDuff, parking beside the lifeboat station. The calm sea and long stretch of walkable beach promenade gave us a proper walk, more than a stroll and less than a march, before we retraced our steps.",
+      },
+      { type: "image", src: "/blog/gamrie-chalets-guest-review/dolphin-sculpture.jpg", width: 1920, height: 1440, alt: "A wire dolphin sculpture on a stone plinth overlooking the sea" },
+      {
+        type: "paragraph",
+        text: "Lunchtime beckoned, so we headed to Banff, which offers a pleasing range of options from restaurants to local cafés and even an ice cream bar.",
+        links: [{ word: "local cafés", href: "/about#local-hospitality" }],
+      },
+      {
+        type: "paragraph",
+        text: "Then it was time for some indoor culture at Duff House in Banff, a centrally located Georgian mansion managed by Historic Environment Scotland and designed by William Adam. We love a period property, and the stories of wealth won and lost, and the disputes between architects and owners, kept us happily occupied for a couple of hours. We returned to Banff for a final coffee before stopping at the supermarket to pick up provisions for dinner. An evening pottering in the kitchen, with the wood-burning stove, pyjamas, and films on tap, lured us home as the sun went down.",
+        links: [{ word: "Duff House", href: "/about#heritage-history" }],
+      },
+      { type: "heading", level: 2, text: "Day Three: Fyvie Castle near Turriff" },
+      {
+        type: "paragraph",
+        text: "On our final day, we packed up swiftly and left early to give ourselves time to visit Fyvie Castle near Turriff. A National Trust for Scotland property, the castle and grounds reward a good few hours of exploration. We enjoyed the autumn colours inside and out and, with a well-stocked café on hand, were well set for the drive back to the central belt.",
+      },
+      { type: "heading", level: 2, text: "Why We Would Return to Gamrie Chalets" },
+      {
+        type: "paragraph",
+        text: "A two-night stay in a contemporary and stylish self-catering chalet with incredible views, and unrivalled history, nature, and culture on the doorstep, makes it genuinely hard to leave. It is easy to imagine how wonderful it would be to stay longer in the summer and enjoy the beach, fishing, dolphin watching, and paddleboarding on offer. In all seasons, Gamrie Chalets is a haven for escaping, unwinding, and exploring, and the chalets bring a touch of luxury and sophistication that makes time inside every bit as rewarding as time outside.",
+      },
+      { type: "cta", label: "Check Availability", href: "/properties/muckle-view" },
+    ],
+  },
   {
     slug: "spring-couples-weekend-aberdeenshire-coast",
     title:
