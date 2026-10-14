@@ -242,6 +242,7 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "On our final day, we packed up swiftly and left early to give ourselves time to visit Fyvie Castle near Turriff. A National Trust for Scotland property, the castle and grounds reward a good few hours of exploration. We enjoyed the autumn colours inside and out and, with a well-stocked café on hand, were well set for the drive back to the central belt.",
+        links: [{ word: "Fyvie Castle", href: "https://www.nts.org.uk/visit/places/fyvie-castle" }],
       },
       { type: "heading", level: 2, text: "Why We Would Return to Gamrie Chalets" },
       {
