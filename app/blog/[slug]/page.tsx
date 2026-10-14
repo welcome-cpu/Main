@@ -29,7 +29,9 @@ export async function generateMetadata({
     : { url: "/opengraph-image", width: 1200, height: 630 };
 
   return {
-    title,
+    // A meta title that already names the business is used as written,
+    // rather than getting "| Gamrie Chalets" appended a second time.
+    title: title.includes(SITE_NAME) ? { absolute: title } : title,
     description: post.excerpt,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
