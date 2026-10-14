@@ -169,6 +169,17 @@ export default async function BlogPostPage({
                     sizes="(min-width: 768px) 768px, 100vw"
                     className="mx-auto h-auto max-h-[38rem] w-auto max-w-full"
                   />
+                  {block.caption && (
+                    <figcaption className="border-t border-border bg-background px-4 py-2 text-sm text-muted-foreground">
+                      {block.caption.href ? (
+                        <a href={block.caption.href} target="_blank" rel="noopener noreferrer" className="underline">
+                          {block.caption.text}
+                        </a>
+                      ) : (
+                        block.caption.text
+                      )}
+                    </figcaption>
+                  )}
                 </figure>
               );
             case "heading": {
