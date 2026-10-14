@@ -25,13 +25,149 @@ export type Post = {
 
 export const posts: Post[] = [
   {
+    slug: "muckle-view-guest-review-recharge-relax-rewind",
+    title: "Recharge, Relax, Rewind: My Guest Review of Muckle View at Gamrie Chalets",
+    metaTitle: "Muckle View, Gamrie Chalets | Self-Catering Aberdeenshire",
+    date: "2026-10-14",
+    excerpt:
+      "Stay in a cliff-side, five-star Scandi-style studio at Muckle View. Dog-friendly, with coastal views over Gardenstown. Read our guest review.",
+    image: { src: "/7907_Gamrie_High_078.jpg", width: 7901, height: 5270 },
+    content: [
+      {
+        type: "paragraph",
+        text: "A midweek Scottish autumn getaway on the Aberdeenshire coast, with my partner, our dog, and a cliff-side view I still can't stop thinking about.",
+      },
+      { type: "heading", level: 3, text: "Recharge. Relax. Rewind." },
+      {
+        type: "paragraph",
+        text: "That was the promise, repeated again and again in a Facebook post for a remote getaway on the Moray Firth coast. So I booked it.",
+      },
+      {
+        type: "paragraph",
+        text: "Spoiler alert: I recharged. I relaxed. I unwound. My stay at Muckle View, part of Gamrie Chalets in Gardenstown, beat my highest expectations. Here's my honest review of two nights in one of the most striking self-catering stays I've found in Scotland.",
+        links: [{ word: "Muckle View", href: "/properties/muckle-view" }],
+      },
+      { type: "heading", level: 2, text: "Why We Booked Muckle View" },
+      {
+        type: "paragraph",
+        text: "Muckle View launched last year, and one image kept landing in my feed: a girl and her dog enjoying a coffee, looking out over a rugged cliff. It stuck with me.",
+      },
+      {
+        type: "paragraph",
+        text: "I had some final annual leave to use up, so my partner and I loaded up the car, lifted our dog into the back seat, and set off on a midweek break. We didn't need a packed itinerary. We needed somewhere to breathe, and that photo promised exactly that.",
+      },
+      { type: "heading", level: 2, text: "Arrival: The Drive to Gamrie and a Cliff-Side Welcome" },
+      {
+        type: "paragraph",
+        text: "From Edinburgh, the sat nav estimated about three hours and as city dwellers, the winding country roads took some getting used to, so allow extra time and enjoy the journey.",
+      },
+      {
+        type: "paragraph",
+        text: "When we arrived safely in Gamrie, the host's directions proved to be spot on. The chalet sits on a narrow road with a comfortable parking space facing the sea.",
+      },
+      {
+        type: "paragraph",
+        text: "We quickly learned that cliff-side really does mean on the side of a cliff. Our headlights lit up the dark drop toward the crashing waves below. Add a stiff wind, and we had landed in coastal wilderness at its Scottish autumn best.",
+      },
+      { type: "heading", level: 2, text: "First Impressions: No Ordinary Airbnb" },
+      {
+        type: "paragraph",
+        text: "The sleek digital lock gave us our first hint of the attention to detail we'd enjoy all stay. This was clearly no ordinary Airbnb.",
+      },
+      {
+        type: "paragraph",
+        text: "Inside, a modern kitchen with everything you need for a short break opens into a contemporary Scandi-style studio. The bed and two very comfortable chairs face a full-width A-frame window.",
+      },
+      {
+        type: "image",
+        src: "/blog/gamrie-chalets-guest-review/view-from-bed.jpg",
+        width: 1920,
+        height: 1440,
+        alt: "The view from the bed through Muckle View's full-width A-frame window to the balcony, the bay and the green headland",
+      },
+      {
+        type: "paragraph",
+        text: "At 10 p.m. there was nothing to see outside, but we opened the balcony doors anyway. The silence gave way to booming waves, splashing and crashing below while the onshore wind howled along with them. Then we closed the doors and... silence again. The only clue to the weather outside was the occasional creak of the impressive steel frame.",
+      },
+      { type: "heading", level: 2, text: "The Fit-Out: Five-Star Comfort in Every Detail" },
+      {
+        type: "paragraph",
+        text: "The five-star fit-out showed itself everywhere we looked. The bathroom was perfect, with fluffy white towels, robes and branded toiletries. These small touches told us this was the real deal.",
+      },
+      {
+        type: "paragraph",
+        text: "Within minutes, I had the wood burning stove going (feeling rather pleased with myself) and had picked a movie on the TV, which comes with Netflix. Meanwhile, my partner got to grips with the kitchen. Our dog settled in like she'd lived there for years.",
+      },
+      {
+        type: "image",
+        src: "/blog/gamrie-chalets-guest-review/log-burner-evening.jpg",
+        width: 1920,
+        height: 2560,
+        alt: "A glass of red wine by the lit wood-burning stove, with a film on the TV",
+      },
+      { type: "paragraph", text: "Bliss." },
+      { type: "heading", level: 2, text: "The View: Waking Up Above Gardenstown" },
+      {
+        type: "paragraph",
+        text: "We hadn't closed the blinds, so the sunrise woke us the next morning. Since we'd arrived in pitch darkness, nothing had prepared us for what we saw. Sunbeams bounced off the green cliff of Mohr opposite, its grass swaying in time with the wind.",
+      },
+      {
+        type: "paragraph",
+        text: "Everything that first Facebook photo promised came true in that moment.",
+      },
+      {
+        type: "paragraph",
+        text: "I stepped onto the balcony and looked down on a choppy blue-green sea. Below sat the picture-perfect fishing harbor of Gardenstown, framed by village rooftops tumbling down the hillside. These are the kind of coastal views you can't fully capture on camera.",
+      },
+      {
+        type: "image",
+        src: "/blog/gamrie-chalets-guest-review/balcony.jpg",
+        width: 1920,
+        height: 2560,
+        alt: "Muckle View's covered balcony with two chairs, looking out to sea",
+      },
+      {
+        type: "paragraph",
+        text: "Muckle View sits right on top of a view that is captivating, almost hypnotic. The weather changed by the minute. Skies darkened, rain swept in and retreated, and then the clouds broke to let sunshine pour through, only to shift again moments later. I could have watched it all day. Some of the time, I did.",
+      },
+      { type: "heading", level: 2, text: "The Morning Experience: Slow Coffee, PJs and a Recharged Car" },
+      {
+        type: "paragraph",
+        text: "We knew right away that our first morning would be a slow one. We stayed in our pyjamas, made a complimentary Nespresso coffee, and curled up in the two stylish easy chairs with cozy throws and the wood burner glowing beside us.",
+      },
+      {
+        type: "paragraph",
+        text: "And while we recharged, so did our car. The host offers free EV charging, so our electric car quietly topped up while we did absolutely nothing. It's a small detail, but it made the trip easier and meant one less thing to plan.",
+      },
+      {
+        type: "paragraph",
+        text: "This is where Muckle View really shines. The design invites you to slow down and simply be. Read. Write. Reflect. Or just watch the sea.",
+      },
+      { type: "heading", level: 2, text: "Final Verdict: Would I Stay at Muckle View Again?" },
+      {
+        type: "paragraph",
+        text: "Without question. We booked two nights, and I honestly wish we'd stayed longer.",
+      },
+      {
+        type: "paragraph",
+        text: "Muckle View brings together three things that rarely meet in one place: a dramatic cliff-side location, ever-changing Aberdeenshire coast scenery, and the highest standard of comfort and design. For a dog-friendly, self-catering escape that truly helps you switch off, it's hard to beat.",
+      },
+      {
+        type: "paragraph",
+        text: "That girl and her dog in the photo showed exactly what we needed. Recharge. Relax. Rewind. Gamrie Chalets delivered on every word.",
+      },
+      { type: "paragraph", text: "We'll definitely be back." },
+      { type: "cta", label: "Check Availability", href: "/properties/muckle-view" },
+    ],
+  },
+  {
     slug: "gamrie-chalets-guest-review-aberdeenshire-coast",
     title: "Gamrie Chalets: Our Self-Catering Coastal Scotland Getaway in Aberdeenshire",
     metaTitle: "Gamrie Chalets Review: Luxury Self-Catering on the Banffshire Coast",
     date: "2026-10-14",
     excerpt:
       "Read a guest’s review of Gamrie Chalets, a stylish couple’s getaway in Gardenstown with cliff-top views, wood-burning stoves, complimentary EV charging, and easy access to Crovie, Banff, Duff House, and Fyvie Castle.",
-    image: { src: "/7907_Gamrie_High_078.jpg", width: 7901, height: 5270 },
+    image: { src: "/7907_Gamrie_High_106.jpg", width: 8192, height: 5464 },
     content: [
       {
         type: "paragraph",
@@ -47,7 +183,6 @@ export const posts: Post[] = [
         text: "The northern coast of Scotland has a rugged beauty that is hard to put into words. Cliffs drop to the sea, villages cling to the shoreline, and the weather changes the view by the hour. After a day of wind-blown walks and coastal exploring, our stylish self-catering studio was the perfect place to warm up, unwind and plan the next day.",
         links: [{ word: "stylish self-catering studio", href: "/properties/muckle-view" }],
       },
-      { type: "image", src: "/blog/gamrie-chalets-guest-review/view-from-bed.jpg", width: 1920, height: 1440, alt: "The view from the bed through the glass gable to the balcony, the bay and the green headland" },
       {
         type: "paragraph",
         text: "Here's how we spent our two-night escape: harbour walks, hidden villages, Georgian grandeur and a castle full of autumn colour.",
@@ -57,7 +192,6 @@ export const posts: Post[] = [
         type: "paragraph",
         text: "Our first morning was spent admiring a view that kept on giving. In every season, the colours and landscape shift with the fast-evolving weather. Being coastal and facing north, it is reliably windy, so we wrapped up and headed down to explore the village below.",
       },
-      { type: "image", src: "/blog/gamrie-chalets-guest-review/balcony.jpg", width: 1920, height: 2560, alt: "The covered balcony with two chairs and the sea beyond the glass doors" },
       {
         type: "paragraph",
         text: "Winding roads took us past churches and gathering halls, through narrow streets built to withstand the elements, opening out onto a harbour. We walked along the beach and followed a coastal path up to the ruins of St John's Church, the very building we could see eye to eye with from our balcony.",
@@ -76,7 +210,6 @@ export const posts: Post[] = [
         type: "paragraph",
         text: "As dusk fell, we headed back to spend an evening in with the wood-burning stove, pottering in the kitchen after a full day in the fresh coastal air, refreshed and ready for a good night's sleep.",
       },
-      { type: "image", src: "/blog/gamrie-chalets-guest-review/log-burner-evening.jpg", width: 1920, height: 2560, alt: "A glass of red wine by the lit wood-burning stove on an evening in" },
       { type: "heading", level: 2, text: "Day Two: MacDuff, Banff and Duff House" },
       {
         type: "paragraph",
