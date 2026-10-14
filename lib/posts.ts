@@ -4,7 +4,14 @@ export type ContentBlock =
   | { type: "list"; items: string[] }
   | { type: "cta"; label: string; href: string }
   | { type: "ctaGroup"; items: { label: string; href: string }[] }
-  | { type: "image"; src: string; width: number; height: number; alt: string };
+  | {
+      type: "image";
+      src: string;
+      width: number;
+      height: number;
+      alt: string;
+      caption?: { text: string; href?: string };
+    };
 
 export type Post = {
   slug: string;
@@ -79,7 +86,6 @@ export const posts: Post[] = [
         type: "paragraph",
         text: "We started at MacDuff, parking beside the lifeboat station. The calm sea and long stretch of walkable beach promenade gave us a proper walk, more than a stroll and less than a march, before we retraced our steps.",
       },
-      { type: "image", src: "/blog/gamrie-chalets-guest-review/dolphin-sculpture.jpg", width: 1920, height: 1440, alt: "A wire dolphin sculpture on a stone plinth overlooking the sea" },
       {
         type: "paragraph",
         text: "Lunchtime beckoned, so we headed to Banff, which offers a pleasing range of options from restaurants to local cafés and even an ice cream bar.",
@@ -89,6 +95,14 @@ export const posts: Post[] = [
         type: "paragraph",
         text: "Then it was time for some indoor culture at Duff House in Banff, a centrally located Georgian mansion managed by Historic Environment Scotland and designed by William Adam. We love a period property, and the stories of wealth won and lost, and the disputes between architects and owners, kept us happily occupied for a couple of hours. We returned to Banff for a final coffee before stopping at the supermarket to pick up provisions for dinner. An evening pottering in the kitchen, with the wood-burning stove, pyjamas, and films on tap, lured us home as the sun went down.",
         links: [{ word: "Duff House", href: "/about#heritage-history" }],
+      },
+      {
+        type: "image",
+        src: "/blog/gamrie-chalets-guest-review/dolphin-sculpture.jpg",
+        width: 1920,
+        height: 1440,
+        alt: "The Portsoy Dolphin, a wire sculpture on a stone plinth overlooking the sea at Portsoy",
+        caption: { text: "The Portsoy Dolphin, a short drive west of Banff", href: "https://portsoy75club.org/portsoy-dolphin/" },
       },
       { type: "heading", level: 2, text: "Day Three: Fyvie Castle near Turriff" },
       {
