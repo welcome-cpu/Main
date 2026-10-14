@@ -200,6 +200,7 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "After a wander round the ruins, we retraced our steps to the harbour for lunch at Ellies Café, conveniently beside a gallery and shop selling work by local painters, sculptors, and other Aberdeenshire artists. We bought a few memories to take home before making our way back up to the chalet, taking in the village as we went.",
+        links: [{ word: "Ellies Café", href: "https://bumbleandbrae.co.uk/" }],
       },
       {
         type: "paragraph",
