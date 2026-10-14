@@ -30,10 +30,10 @@ export const properties = [
     comingSoon: false,
     location: { lat: 57.670563223386880, lng: -2.337134626983644 },
     image: {
-      src: "/7907_Gamrie_High_158.jpg",
-      width: 7871,
-      height: 5249,
-      alt: "Muckle View studio chalet on the clifftop above Gardenstown with Moray Firth views.",
+      src: "/Muckle View/3.jpg",
+      width: 1920,
+      height: 1280,
+      alt: "Muckle View's glazed gable end and terrace looking out to the Moray Firth.",
     },
     gallery: [
       { src: "/Muckle View/3.jpg", width: 1920, height: 1280, alt: "Glazed gable end and terrace looking out to the Moray Firth" },
