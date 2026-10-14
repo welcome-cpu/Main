@@ -36,9 +36,9 @@ export const properties = [
       alt: "Muckle View studio chalet on the clifftop above Gardenstown with Moray Firth views.",
     },
     gallery: [
-      { src: "/Muckle View/1.jpg", width: 1920, height: 1280, alt: "Muckle View chalet above the shore, beside the old boat sheds" },
-      { src: "/Muckle View/2.jpg", width: 1920, height: 1281, alt: "Muckle View on the hillside beside Gardenstown Public Hall" },
       { src: "/Muckle View/3.jpg", width: 1920, height: 1280, alt: "Glazed gable end and terrace looking out to the Moray Firth" },
+      { src: "/Muckle View/2.jpg", width: 1920, height: 1281, alt: "Muckle View on the hillside beside Gardenstown Public Hall" },
+      { src: "/Muckle View/1.jpg", width: 1920, height: 1280, alt: "Muckle View chalet above the shore, beside the old boat sheds" },
       { src: "/Muckle View/4.jpg", width: 1920, height: 1280, alt: "Clifftop terrace seating with a lantern at dusk" },
       { src: "/Muckle View/5.jpg", width: 1920, height: 1280, alt: "\"Muckle View\" nameplate on the timber cladding" },
       { src: "/Muckle View/6.jpg", width: 1920, height: 1281, alt: "Electric car charging by the front door, with the bay beyond" },
