@@ -162,14 +162,16 @@ export default async function BlogPostPage({
             }
             case "image":
               return (
-                <figure key={index} className="!mt-8 overflow-hidden rounded-2xl border border-border bg-muted">
+                // The frame hugs the photo, so portrait shots get a portrait frame
+                // instead of sitting inside a wide box.
+                <figure key={index} className="!mt-8 mx-auto w-fit max-w-full overflow-hidden rounded-2xl border border-border">
                   <Image
                     src={block.src}
                     alt={block.alt}
                     width={block.width}
                     height={block.height}
                     sizes="(min-width: 768px) 768px, 100vw"
-                    className="mx-auto h-auto max-h-[38rem] w-auto max-w-full"
+                    className="mx-auto block h-auto max-h-[38rem] w-auto max-w-full"
                   />
                   {block.caption && (
                     <figcaption className="border-t border-border bg-background px-4 py-2 text-sm text-muted-foreground">
