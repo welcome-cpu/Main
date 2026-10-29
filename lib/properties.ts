@@ -172,10 +172,10 @@ export const properties = [
     comingSoon: true,
     location: { lat: 57.670563223386880, lng: -2.337134626983644 },
     image: {
-      src: "/Mohr Rest - Coming Soon.jpeg",
+      src: "/Mohr Rest - Coming Soon - New.jpg",
       width: 1920,
       height: 1440,
-      alt: "Mohr Rest, a new chalet joining Gamrie Chalets above Gardenstown, coming soon.",
+      alt: "The Mohr Rest slate sign on the new chalet's timber cladding, looking out over the bay to the headland at Gardenstown. Coming soon.",
     },
   },
 ];
