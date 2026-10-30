@@ -28,8 +28,11 @@ export async function GET(request: Request) {
         .filter((property) => property.lodgifyRentalId)
         .map(async (property) => {
           const fitsGuests = guests <= property.sleeps;
+          // Not open yet for stays starting before its opening date.
+          const isOpen = !property.bookableFrom || start >= property.bookableFrom;
           const available =
             fitsGuests &&
+            isOpen &&
             (await isRangeAvailable(property.lodgifyRentalId!, start, end));
           return {
             slug: property.slug,

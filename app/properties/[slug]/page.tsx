@@ -8,6 +8,8 @@ import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 import { pageOpenGraph, pageTwitter, socialImage } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
 
+const opening = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
 export async function generateStaticParams() {
   return properties.map((property) => ({ slug: property.slug }));
 }
@@ -172,6 +174,14 @@ export default async function PropertyPage({
             </>
           ) : property.lodgifyRentalId ? (
             <div className="mt-8">
+              {/* Decided at build time: the next deploy after opening day drops it. */}
+              {property.bookableFrom && property.bookableFrom > new Date().toISOString().slice(0, 10) && (
+                <p className="mb-4 rounded-xl border border-border bg-muted px-5 py-4 text-sm text-muted-foreground">
+                  {property.name} welcomes its first guests from{" "}
+                  <span className="font-semibold text-foreground">{opening.format(new Date(`${property.bookableFrom}T00:00:00Z`))}</span>.
+                  Book now for stays from that date.
+                </p>
+              )}
               <LodgifyBookingWidget rentalId={property.lodgifyRentalId} />
             </div>
           ) : (
