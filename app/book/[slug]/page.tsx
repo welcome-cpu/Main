@@ -7,6 +7,7 @@ import { runAfterResponse } from "@/lib/after-response";
 import { directBookingProblem } from "@/lib/booking/feature";
 import { loadBookingSetup } from "@/lib/booking/setup";
 import { syncStaleLodgifyFeeds } from "@/lib/calendar/sync";
+import { importStaleLodgifyRates } from "@/lib/pricing/lodgify-import";
 
 export const metadata: Metadata = {
   title: "Book direct",
@@ -33,8 +34,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
   const chalets = await loadBookingSetup(slug);
   if (!chalets) notFound();
   const name = chalets[0].calendar.property.name;
-  // Keeps Lodgify's calendars fresh where the scheduled sync doesn't run.
-  runAfterResponse(() => syncStaleLodgifyFeeds());
+  // Keeps Lodgify's calendars and prices fresh where the scheduled jobs don't run.
+  runAfterResponse(() => Promise.all([syncStaleLodgifyFeeds(), importStaleLodgifyRates()]));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">

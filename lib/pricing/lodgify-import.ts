@@ -155,4 +155,20 @@ export async function lastRateImport(propertyId: string) {
   return row ?? null;
 }
 
+/**
+ * Re-imports Lodgify prices for properties not imported for a while (or
+ * ever, like a newly added one). Used by the booking pages, so deployments
+ * without the scheduled job (the dev site) don't fall behind.
+ */
+export async function importStaleLodgifyRates(maxAgeHours = 12) {
+  const properties = await db()<{ id: string }[]>`
+    SELECT p.id FROM properties p
+    WHERE p.rate_source = 'LODGIFY' AND NOT EXISTS (
+      SELECT 1 FROM rate_imports i
+      WHERE i.property_id = p.id AND i.started_at > now() - make_interval(hours => ${maxAgeHours})
+    )
+  `;
+  for (const p of properties) await importLodgifyRates(p.id, "SCHEDULED");
+}
+
 class ImportError extends Error {}
