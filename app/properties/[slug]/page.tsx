@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PropertyMedia from "@/components/PropertyMedia";
 import LodgifyBookingWidget from "@/components/LodgifyBookingWidget";
+import TwinChaletCalendar from "@/components/TwinChaletCalendar";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 import { pageOpenGraph, pageTwitter, socialImage } from "@/lib/metadata";
@@ -55,6 +56,7 @@ export default async function PropertyPage({
   if (!property) {
     notFound();
   }
+  const twin = property.twinSlug ? properties.find((p) => p.slug === property.twinSlug) : undefined;
 
   const jsonLd = breadcrumbJsonLd([
     { name: "Home", path: "/" },
@@ -183,6 +185,20 @@ export default async function PropertyPage({
                 </p>
               )}
               <LodgifyBookingWidget rentalId={property.lodgifyRentalId} />
+              {twin && (
+                <section className="mt-10 rounded-2xl border border-border bg-muted px-5 py-6 sm:px-8 sm:py-8">
+                  <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
+                    Dates taken? Check both studio chalets
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {property.name} and {twin.name} are identical studio chalets side by side. Pick your dates to see
+                    which is free, then book whichever suits.
+                  </p>
+                  <div className="mt-6">
+                    <TwinChaletCalendar slug={property.slug} />
+                  </div>
+                </section>
+              )}
             </div>
           ) : (
             <Link
