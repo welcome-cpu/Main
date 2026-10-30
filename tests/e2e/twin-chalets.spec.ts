@@ -46,7 +46,7 @@ async function showMonthWith(page: Page, date: string) {
 
 test("books Mohr Rest from Muckle View's page when Muckle View is taken", async ({ page }) => {
   await page.goto("/properties/muckle-view");
-  await expect(page.getByRole("heading", { name: "Book Muckle View or Mohr Rest" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Book Muckle View", exact: true })).toBeVisible();
   await showMonthWith(page, inDays(BLOCK_FROM));
   await expect(page.locator(`[data-date="${inDays(BLOCK_FROM + 1)}"]`)).toHaveAttribute("aria-label", /booked, Mohr Rest free/);
 
@@ -65,14 +65,15 @@ test("books Mohr Rest from Muckle View's page when Muckle View is taken", async 
   await expect(page.getByText(/Mohr Rest/).first()).toBeVisible();
 });
 
-test("prices both chalets when both are free", async ({ page }) => {
+test("offers only this page's chalet when it's free", async ({ page }) => {
   await page.goto("/properties/mohr-rest");
   await showMonthWith(page, inDays(BLOCK_FROM + 20));
   await page.locator(`[data-date="${inDays(BLOCK_FROM + 20)}"]`).click();
   await showMonthWith(page, inDays(BLOCK_FROM + 23));
   await page.locator(`[data-date="${inDays(BLOCK_FROM + 23)}"]`).click();
-  await expect(page.locator('[data-chalet="Mohr Rest"]').getByRole("button", { name: "Book Mohr Rest" })).toBeVisible();
-  await expect(page.locator('[data-chalet="Muckle View"]').getByRole("button", { name: "Book Muckle View" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Book now" })).toBeVisible();
+  await expect(page.locator('[data-chalet="Mohr Rest"]')).toContainText("Available for 3 nights");
+  await expect(page.locator('[data-chalet="Muckle View"]')).toHaveCount(0);
 });
 
 test("a search's dates and guests carry into the booking page", async ({ page }) => {

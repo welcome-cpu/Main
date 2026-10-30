@@ -17,6 +17,10 @@ type QuoteResponse = {
   quoteError: QuoteError | null;
 };
 
+/** Whether a chalet can't take the stay because the dates are taken there. */
+const takenAt = (r: ChaletResult | undefined) =>
+  r?.state === "taken" || (r?.state === "done" && r.response.reasons.some((x) => x.code === "DATES_TAKEN"));
+
 /** One chalet's answer for the chosen stay. */
 type ChaletResult =
   | { state: "loading" }
@@ -160,38 +164,45 @@ export default function AvailabilityCalendar({
     };
   }
 
-  // Price every chalet that's free as soon as the stay is complete, and
-  // again whenever guests, extras or codes change. Latest answer wins.
+  // Price this page's chalet as soon as the stay is complete, and again
+  // whenever guests, extras or codes change. Only if it can't take the
+  // stay is the chalet next door priced and offered. Latest answer wins.
   const stayKey = checkIn && checkOut ? JSON.stringify([checkIn, checkOut, guests, chosenExtras, codes]) : null;
   useEffect(() => {
     if (!stayKey) return;
     const controller = new AbortController();
-    const timer = setTimeout(() => {
-      chalets.forEach(async (chalet, i) => {
-        const slug = chalet.slug;
-        if (!freeFor(i)) {
-          setResults((r) => ({ ...r, [slug]: { state: "taken" } }));
-          return;
-        }
-        setResults((r) => ({ ...r, [slug]: { state: "loading" } }));
-        try {
-          const res = await fetch(`/api/quote/${slug}`, {
-            method: "POST",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(stayFor(chalet)),
-            signal: controller.signal,
-          });
-          const body = await res.json();
-          setResults((r) => ({
-            ...r,
-            [slug]: res.ok ? { state: "done", response: body as QuoteResponse } : { state: "error", message: body.error ?? "Something went wrong." },
-          }));
-        } catch (error) {
-          if ((error as Error).name === "AbortError") return;
-          setResults((r) => ({ ...r, [slug]: { state: "error", message: "Couldn't reach the server. Please check your connection." } }));
-        }
-      });
+    async function quote(chalet: ChaletSetup, i: number): Promise<ChaletResult> {
+      const slug = chalet.slug;
+      if (!freeFor(i)) {
+        setResults((r) => ({ ...r, [slug]: { state: "taken" } }));
+        return { state: "taken" };
+      }
+      setResults((r) => ({ ...r, [slug]: { state: "loading" } }));
+      try {
+        const res = await fetch(`/api/quote/${slug}`, {
+          method: "POST",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stayFor(chalet)),
+          signal: controller.signal,
+        });
+        const body = await res.json();
+        const result: ChaletResult = res.ok
+          ? { state: "done", response: body as QuoteResponse }
+          : { state: "error", message: body.error ?? "Something went wrong." };
+        setResults((r) => ({ ...r, [slug]: result }));
+        return result;
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return { state: "loading" };
+        const result: ChaletResult = { state: "error", message: "Couldn't reach the server. Please check your connection." };
+        setResults((r) => ({ ...r, [slug]: result }));
+        return result;
+      }
+    }
+    const timer = setTimeout(async () => {
+      const here = await quote(chalets[0], 0);
+      if (controller.signal.aborted || !takenAt(here)) return;
+      chalets.slice(1).forEach((c, i) => void quote(c, i + 1));
     }, 250);
     return () => {
       clearTimeout(timer);
@@ -231,6 +242,9 @@ export default function AvailabilityCalendar({
   const twins = chalets.slice(1);
   const twinName = twins[0]?.calendar.property.name;
   const minNights = primary.property.defaultMinNights;
+  // The chalet next door is only offered when this one can't take the stay.
+  const offerTwins = twins.length > 0 && takenAt(results[chalets[0].slug]);
+  const shown = offerTwins ? chalets : chalets.slice(0, 1);
 
   return (
     <div ref={top} className="scroll-mt-24 space-y-6">
@@ -391,23 +405,21 @@ export default function AvailabilityCalendar({
       <div aria-live="polite" className="space-y-4">
         {checkIn && checkOut && (
           <>
-            {chalets.every((c) => results[c.slug]?.state === "taken") && (
+            {offerTwins && chalets.every((c) => results[c.slug]?.state === "taken") && (
               <p className="border border-red-300 bg-red-50 p-4 text-sm text-red-900">
-                {chalets.length > 1
-                  ? `Neither ${chalets.map((c) => c.calendar.property.name).join(" nor ")} is free for all of these nights.`
-                  : "These dates aren't free."}{" "}
+                Neither {chalets.map((c) => c.calendar.property.name).join(" nor ")} is free for all of these nights.
                 Please choose other dates.
               </p>
             )}
-            <div className={`grid gap-4 ${chalets.length > 1 ? "md:grid-cols-2" : ""}`}>
-              {chalets.map((chalet, i) => (
+            <div className={`grid gap-4 ${offerTwins ? "md:grid-cols-2" : ""}`}>
+              {shown.map((chalet, i) => (
                 <ChaletCard
                   key={chalet.slug}
                   name={chalet.calendar.property.name}
                   isThisPage={i === 0}
-                  showName={chalets.length > 1}
+                  showName={offerTwins}
                   result={results[chalet.slug] ?? { state: "loading" }}
-                  hideIfTaken={chalets.length > 1}
+                  hideIfTaken={offerTwins}
                   onBook={(quote) =>
                     setCheckout({ slug: chalet.slug, name: chalet.calendar.property.name, stay: stayFor(chalet), quote })
                   }

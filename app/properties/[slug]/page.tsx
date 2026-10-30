@@ -191,13 +191,10 @@ export default async function PropertyPage({
                   the chalet next door. Production keeps Lodgify. */}
               {isDirectBookingEnabled() ? (
                 <section id="book" className="scroll-mt-24 rounded-2xl border border-border bg-background px-4 py-6 sm:px-8 sm:py-8">
-                  <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
-                    {twin ? `Book ${property.name} or ${twin.name}` : `Book ${property.name}`}
-                  </h2>
+                  <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Book {property.name}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {twin
-                      ? `Pick your dates to see the price for both identical studio chalets, then book whichever is free.`
-                      : "Pick your dates to see the full price, then book and pay securely by card."}
+                    Pick your dates to see the full price, then book and pay securely by card.
+                    {twin && ` If they're taken, we'll show you whether ${twin.name}, the identical chalet next door, is free.`}
                   </p>
                   <div className="mt-6">
                     <PropertyBooking slug={property.slug} />
