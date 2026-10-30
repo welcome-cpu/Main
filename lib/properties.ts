@@ -3,6 +3,9 @@ export const properties = [
     slug: "muckle-view",
     name: "Muckle View",
     lodgifyRentalId: "646178",
+    lodgifyRoomTypeId: "713160",
+    // The identical studio next door, offered when these dates are taken.
+    twinSlug: "mohr-rest",
     // Listed nightly rate range from Lodgify (original_min/max_price, not
     // the guest-facing price with booking-engine markup) — a rough band
     // for schema.org priceRange, checked 2026-08-29. Update if rates shift
@@ -85,6 +88,7 @@ export const properties = [
     slug: "murray-cottage",
     name: "Murray Cottage",
     lodgifyRentalId: "794951",
+    lodgifyRoomTypeId: "862103",
     priceRange: "£104–£262",
     sleeps: 6,
     description:
@@ -151,6 +155,8 @@ export const properties = [
     slug: "mohr-rest",
     name: "Mohr Rest",
     lodgifyRentalId: "862655",
+    lodgifyRoomTypeId: "929844",
+    twinSlug: "muckle-view",
     // Same studio design and nightly rates as Muckle View.
     priceRange: "£165–£295",
     sleeps: 2,
