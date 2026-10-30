@@ -29,7 +29,7 @@ export default defineConfig({
     env: {
       // Settings already in the environment win over .env.local, so these
       // point the app at the test database and switch off real payments,
-      // email, Turnstile and admin sign-in for the run.
+      // email, Turnstile, admin sign-in and Lodgify imports for the run.
       DATABASE_URL: testDb,
       DIRECT_BOOKING_ENABLED: "true",
       STRIPE_SECRET_KEY: "",
@@ -38,6 +38,7 @@ export default defineConfig({
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
       CONTACT_MAILBOX: "",
       AUTH_MICROSOFT_ENTRA_ID_ID: "",
+      LODGIFY_API_KEY: "",
     },
   },
 });

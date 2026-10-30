@@ -15,7 +15,7 @@ live site keeps the Lodgify widget until the switch-over below is done.
 | Payments | `lib/payments/*` | Stripe Checkout, manual capture, webhooks confirm bookings, daily balance charges |
 | Gift vouchers | `lib/vouchers/*` | Gift Up! codes, redeemed at checkout; see below |
 | Email | `lib/email/*` | Microsoft Graph from welcome@ via an outbox (sent exactly once, retried) |
-| Calendar import | `lib/calendar/*` | iCal feeds, every 15 min on production; not real-time |
+| Calendar import | `lib/calendar/*` | Lodgify via its API (`/v2/availability`, one feed per property, bookings and closed dates) plus any iCal feeds; every 15 min on production, and on booking-page visits when over 10 min old; not real-time |
 | Calendar export | `/api/ical/<token>.ics` | Bookings taken here + owner blocks for other channels; no guest details; links revocable |
 | Admin | `/admin` | Microsoft 365 sign-in, allowlist in `admin_users` |
 | Public pages | `/book/[slug]`, `/book/[slug]/confirmation` | Only exist where `DIRECT_BOOKING_ENABLED=true`; there, property pages and search link here instead of Lodgify |
@@ -55,7 +55,7 @@ never touch dev or production data.
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_` | `pk_test_` | |
 | `STRIPE_WEBHOOK_SECRET` | live endpoint | test endpoint | Each endpoint has its own `whsec_` |
 | `CRON_SECRET` | ✓ | – | Scheduled jobs only run on production |
-| `LODGIFY_API_KEY` | ✓ | ✓ | Read-only price import |
+| `LODGIFY_API_KEY` | ✓ | ✓ | Read-only: prices, calendars and guest details |
 | `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `CONTACT_MAILBOX` | ✓ | ✓ | Contact-form app registration; sends from welcome@ |
 | `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | ✓ | optional | Required on production: protects holds from abuse |
 | `GIFTUP_API_KEY` | ✓ | ✓ | Gift Up! API key. Everywhere but production uses Gift Up's test mode, so dev bookings can't spend real vouchers |

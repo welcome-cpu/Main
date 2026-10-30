@@ -173,4 +173,43 @@ describe.runIf(enabled)("calendar sync (database)", () => {
     const conflicts = await calendars.listConflicts();
     expect(conflicts.some((c) => c.reservationReference === reference)).toBe(true);
   });
+  it("imports a property's calendar from Lodgify's API, with the same safety checks", async () => {
+    const sql = dbMod.db();
+    const lodgifyId = 900000 + Math.floor(Math.random() * 99999);
+    const [{ id: apiProperty }] = await sql<{ id: string }[]>`
+      INSERT INTO properties (slug, name, max_guests, base_nightly_pence, lodgify_property_id)
+      VALUES (${"test-api-" + lodgifyId}, ${"Integration API " + lodgifyId}, 2, 10000, ${lodgifyId}) RETURNING id
+    `;
+    const [{ id: apiFeed }] = await sql<{ id: string }[]>`
+      INSERT INTO calendar_feeds (property_id, source, name, url, kind)
+      VALUES (${apiProperty}, 'LODGIFY', 'Lodgify (API)', ${"https://api.lodgify.com/v2/availability/" + lodgifyId}, 'LODGIFY_API')
+      RETURNING id
+    `;
+    process.env.LODGIFY_API_KEY = "test-key";
+    const periods = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        start: `2035-0${i + 1}-10`,
+        end: `2035-0${i + 1}-12`,
+        available: 0,
+        bookings: [{ id: 100 + i }],
+      }));
+    const lodgify = (n: number) => () => new Response(JSON.stringify([{ property_id: lodgifyId, periods: periods(n) }]), { status: 200 });
+
+    serve(lodgify(6));
+    const first = await sync.syncFeed(apiFeed, "MANUAL");
+    expect(first).toMatchObject({ ok: true, added: 6 });
+    const fetched = String((globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0]);
+    expect(fetched).toContain(`/v2/availability/${lodgifyId}?start=`);
+    const [stay] = await sql<{ startDate: string; endDate: string }[]>`
+      SELECT start_date, end_date FROM external_events WHERE feed_id = ${apiFeed} AND uid = 'lodgify-booking-100'
+    `;
+    expect(stay).toEqual({ startDate: "2035-01-10", endDate: "2035-01-13" });
+
+    // Lodgify suddenly showing almost nothing is treated as a fault.
+    serve(lodgify(1));
+    expect((await sync.syncFeed(apiFeed, "MANUAL")).ok).toBe(false);
+    const [{ n }] = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM external_events WHERE feed_id = ${apiFeed} AND status = 'ACTIVE'`;
+    expect(n).toBe(6);
+    delete process.env.LODGIFY_API_KEY;
+  });
 });

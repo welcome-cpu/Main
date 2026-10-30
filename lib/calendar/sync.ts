@@ -1,10 +1,11 @@
 import "server-only";
 import { recordAudit } from "@/lib/audit";
 import { fetchFeed, FeedFetchError } from "@/lib/calendar/fetch-feed";
-import { IcsParseError, parseIcs } from "@/lib/calendar/ics-parse";
+import { IcsParseError, parseIcs, type ParsedEvent } from "@/lib/calendar/ics-parse";
+import { fetchLodgifyCalendar, LodgifyFeedError } from "@/lib/calendar/lodgify-feed";
 import { planSync, type StoredEvent } from "@/lib/calendar/sync-plan";
 import { db } from "@/lib/db/client";
-import { todayInZone } from "@/lib/dates";
+import { addDays, todayInZone } from "@/lib/dates";
 import { logError } from "@/lib/log";
 
 export type SyncTrigger = "MANUAL" | "SCHEDULED";
@@ -27,7 +28,9 @@ type FeedRow = {
   name: string;
   url: string;
   source: string;
+  kind: "ICAL" | "LODGIFY_API";
   propertyId: string;
+  lodgifyPropertyId: number | null;
   timezone: string;
 };
 
@@ -45,7 +48,7 @@ export async function syncFeed(
 ): Promise<SyncOutcome> {
   const sql = db();
   const [feed] = await sql<FeedRow[]>`
-    SELECT f.id, f.name, f.url, f.source, f.property_id, p.timezone
+    SELECT f.id, f.name, f.url, f.source, f.kind, f.property_id, p.lodgify_property_id, p.timezone
     FROM calendar_feeds f JOIN properties p ON p.id = f.property_id
     WHERE f.id = ${feedId}
   `;
@@ -63,9 +66,19 @@ export async function syncFeed(
   let warnings: string[] = [];
 
   try {
-    const fetched = await fetchFeed(feed.url);
-    httpStatus = fetched.httpStatus;
-    const parsed = parseIcs(fetched.text, feed.timezone);
+    let parsed: { events: ParsedEvent[]; warnings: string[] };
+    if (feed.kind === "LODGIFY_API") {
+      if (!feed.lodgifyPropertyId) throw new SyncRefused("This property has no Lodgify property ID.");
+      // Well into the past as well, so past stays aren't marked as removed.
+      const today = todayInZone(feed.timezone);
+      const fetched = await fetchLodgifyCalendar(feed.lodgifyPropertyId, addDays(today, -400), addDays(today, 800));
+      httpStatus = fetched.httpStatus;
+      parsed = { events: fetched.events, warnings: [] };
+    } else {
+      const fetched = await fetchFeed(feed.url);
+      httpStatus = fetched.httpStatus;
+      parsed = parseIcs(fetched.text, feed.timezone);
+    }
     warnings = parsed.warnings;
     eventsSeen = parsed.events.length;
 
@@ -196,10 +209,30 @@ export async function syncAllFeeds(trigger: SyncTrigger, actor: string | null = 
 }
 
 function describeSyncError(error: unknown): string {
-  if (error instanceof FeedFetchError || error instanceof IcsParseError || error instanceof SyncRefused) {
+  if (
+    error instanceof FeedFetchError ||
+    error instanceof IcsParseError ||
+    error instanceof LodgifyFeedError ||
+    error instanceof SyncRefused
+  ) {
     return error.message;
   }
   // Unexpected: log the detail server-side, store only a generic message.
   logError("Calendar sync failed unexpectedly", error);
   return "Unexpected error during sync. See the server logs.";
+}
+
+/**
+ * Refreshes Lodgify API feeds that haven't been tried for a while. Used by
+ * the booking pages, so deployments without the scheduled job (the dev
+ * site) don't fall behind. Cheap: one request per property, at most every
+ * few minutes.
+ */
+export async function syncStaleLodgifyFeeds(maxAgeMinutes = 10) {
+  const feeds = await db()<{ id: string }[]>`
+    SELECT id FROM calendar_feeds
+    WHERE is_active AND kind = 'LODGIFY_API'
+      AND (last_attempted_at IS NULL OR last_attempted_at < now() - make_interval(mins => ${maxAgeMinutes}))
+  `;
+  for (const f of feeds) await syncFeed(f.id, "SCHEDULED");
 }

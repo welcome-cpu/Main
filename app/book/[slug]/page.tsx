@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import AvailabilityCalendar, { type InitialStay } from "@/components/booking/AvailabilityCalendar";
+import { runAfterResponse } from "@/lib/after-response";
 import { directBookingProblem } from "@/lib/booking/feature";
 import { getPublicCalendar, getPublicProperty } from "@/lib/booking/public";
+import { syncStaleLodgifyFeeds } from "@/lib/calendar/sync";
 import { addDays, todayInZone } from "@/lib/dates";
 import { db } from "@/lib/db/client";
 import { loadExtras } from "@/lib/pricing/quote-service";
@@ -34,6 +36,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
   const { slug } = await params;
   const property = await getPublicProperty(slug);
   if (!property) notFound();
+  // Keeps Lodgify's calendars fresh where the scheduled sync doesn't run.
+  runAfterResponse(() => syncStaleLodgifyFeeds());
 
   const today = todayInZone(property.timezone);
   const from = `${today.slice(0, 7)}-01`;
