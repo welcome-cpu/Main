@@ -44,6 +44,12 @@ test("a single free night between bookings isn't offered", async ({ page }) => {
   await expect(lonelyNight).toHaveAttribute("aria-label", /not available/);
   await expect(lonelyNight).toBeDisabled();
   await expect(page.locator(`[data-date="${inDays(150)}"]`)).toHaveAttribute("aria-label", /booked/);
+
+  // The last free night before a booking can't start a 2-night stay either.
+  await showMonthWith(page, inDays(147));
+  await expect(page.locator(`[data-date="${inDays(147)}"]`)).toHaveAttribute("aria-label", /not available/);
+  await expect(page.locator(`[data-date="${inDays(147)}"]`)).toBeDisabled();
+  await expect(page.locator(`[data-date="${inDays(146)}"]`)).toBeEnabled();
 });
 
 test("check-out isn't offered before the minimum stay", async ({ page }) => {

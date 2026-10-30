@@ -84,17 +84,16 @@ function latestCheckOutFrom(checkIn: string, calendar: PublicCalendar, booked: S
 }
 
 /**
- * Nights that some bookable stay can include. A free night in a gap too
- * short for the minimum stay can't be booked, so it isn't one of these.
+ * Dates a stay can start on. Only these show as available: a free night
+ * that a stay can't start on (in a gap too short for the minimum, or the
+ * last night or two before a booking) would only confuse guests.
  */
-function bookableNights(calendar: PublicCalendar, booked: Set<string>) {
-  const nights = new Set<string>();
+function checkInDates(calendar: PublicCalendar, booked: Set<string>) {
+  const dates = new Set<string>();
   for (let d = calendar.firstCheckIn; d <= calendar.lastCheckIn; d = addDays(d, 1)) {
-    const latest = latestCheckOutFrom(d, calendar, booked);
-    if (!latest) continue;
-    for (let n = d; n < latest; n = addDays(n, 1)) nights.add(n);
+    if (latestCheckOutFrom(d, calendar, booked)) dates.add(d);
   }
-  return nights;
+  return dates;
 }
 
 /**
@@ -144,7 +143,7 @@ export default function AvailabilityCalendar({
   const [checkout, setCheckout] = useState<{ slug: string; name: string; stay: StayPayload; quote: Quote } | null>(null);
 
   const booked = useMemo(() => chalets.map((c) => nightSet(c.calendar.unavailable)), [chalets]);
-  const bookable = useMemo(() => chalets.map((c, i) => bookableNights(c.calendar, booked[i])), [chalets, booked]);
+  const startable = useMemo(() => chalets.map((c, i) => checkInDates(c.calendar, booked[i])), [chalets, booked]);
   const top = useRef<HTMLDivElement>(null);
   // Moving between choosing and checkout swaps the content; keep its top in view.
   const inCheckout = checkout !== null;
@@ -162,7 +161,7 @@ export default function AvailabilityCalendar({
 
   // A check-in is offered only where a long enough stay can start, and a
   // check-out only where the stay meets the minimum at a chalet that's free.
-  const freeSomewhere = (d: string) => chalets.some((c, i) => latestCheckOutFrom(d, c.calendar, booked[i]) !== null);
+  const freeSomewhere = (d: string) => startable.some((dates) => dates.has(d));
   const canCheckOut = (d: string) =>
     checkIn !== null &&
     chalets.some(
@@ -301,14 +300,21 @@ export default function AvailabilityCalendar({
             dayState={(d) => {
               const inRange = checkIn && checkOut && d > checkIn && d < checkOut;
               const selected = d === checkIn || d === checkOut;
-              const selectable = checkIn && !checkOut ? canCheckOut(d) || freeSomewhere(d) : freeSomewhere(d);
-              const unavailableHere = !bookable[0].has(d);
+              // While choosing a check-out, the possible check-out days are
+              // the available ones; otherwise, the days a stay can start.
+              const choosingCheckOut = Boolean(checkIn && !checkOut);
+              const checkOutOption = choosingCheckOut && canCheckOut(d);
+              const selectable = checkOutOption || freeSomewhere(d);
+              // Nights inside the stay before the minimum is reached aren't unavailable, just not a check-out.
+              const withinStay = choosingCheckOut && d > checkIn! && chalets.some((_, i) => latest[i] !== null && d < latest[i]!);
+              const unavailableHere = !checkOutOption && !withinStay && !startable[0].has(d);
               return {
                 selected: Boolean(selected),
                 inRange: Boolean(inRange),
                 unavailable: unavailableHere,
                 booked: booked[0].has(d),
-                twinFree: unavailableHere && twins.some((_, i) => bookable[i + 1].has(d)),
+                twinFree: unavailableHere && !choosingCheckOut && twins.some((_, i) => startable[i + 1].has(d)),
+                checkOutOption,
                 selectable,
               };
             }}
@@ -566,6 +572,7 @@ function Month({
     unavailable: boolean;
     booked: boolean;
     twinFree: boolean;
+    checkOutOption: boolean;
     selectable: boolean;
   };
   onChoose: (d: string) => void;
@@ -598,9 +605,11 @@ function Month({
                 ? "bg-oak/40 text-foreground-strong hover:outline hover:outline-primary"
                 : s.unavailable
                   ? "text-muted-foreground/60 line-through"
-                  : s.selectable
-                    ? "border border-border bg-white font-medium text-foreground-strong hover:border-primary"
-                    : "text-muted-foreground/50";
+                  : s.checkOutOption
+                    ? "border-2 border-primary bg-white font-medium text-foreground-strong"
+                    : s.selectable
+                      ? "border border-border bg-white font-medium text-foreground-strong hover:border-primary"
+                      : "text-muted-foreground/50";
           return (
             <button
               key={d}
@@ -609,7 +618,7 @@ function Month({
               disabled={!s.selectable && !s.selected}
               onClick={() => onChoose(d)}
               aria-pressed={s.selected}
-              aria-label={`${show(d)}${s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : s.booked ? ", booked" : s.unavailable ? ", not available" : ""}`}
+              aria-label={`${show(d)}${s.checkOutOption ? ", check-out" : s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : s.booked ? ", booked" : s.unavailable ? ", not available" : ""}`}
               className={`aspect-square text-sm disabled:cursor-default ${cls}`}
             >
               {i + 1}
