@@ -29,13 +29,16 @@ export default function PriceBreakdown({ quote }: { quote: Quote }) {
       <div className="border-t border-border pt-2">
         <Row label="Total" value={money(quote.totalPence)} strong />
       </div>
-      {quote.balanceDueDate ? (
+      {quote.voucher && (
+        <Row label={`Gift voucher (${quote.voucher.code})`} value={`−${money(quote.voucher.pence)}`} />
+      )}
+      {quote.voucher && quote.dueNowPence === 0 ? null : quote.balanceDueDate ? (
         <>
           <Row label="Pay now (deposit)" value={money(quote.dueNowPence)} strong />
           <Row label={`Balance, due ${show(quote.balanceDueDate)}`} value={money(quote.balancePence)} />
         </>
       ) : (
-        <Row label="Pay now (in full)" value={money(quote.dueNowPence)} strong />
+        <Row label={quote.voucher ? "Pay now by card" : "Pay now (in full)"} value={money(quote.dueNowPence)} strong />
       )}
     </dl>
   );

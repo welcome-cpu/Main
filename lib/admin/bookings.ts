@@ -159,6 +159,8 @@ export type BookingDetail = {
     dueDate: string | null;
     stripePaymentIntentId: string | null;
     failureMessage: string | null;
+    voucherCode: string | null;
+    voucherReversedAt: Date | null;
     createdAt: Date;
   }[];
   emails: { kind: string; recipient: string; status: string; sentAt: Date | null; lastError: string | null; createdAt: Date }[];
@@ -193,7 +195,7 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
   const [payments, emails, history] = await Promise.all([
     sql<BookingDetail["payments"]>`
       SELECT id, provider, kind, status, amount_pence, refunded_pence, due_date, stripe_payment_intent_id,
-             failure_message, created_at
+             failure_message, voucher_code, voucher_reversed_at, created_at
       FROM payments WHERE reservation_id = ${id} ORDER BY created_at
     `,
     sql<BookingDetail["emails"]>`
@@ -359,12 +361,14 @@ export type Attention = {
   failedPayments: { reservationId: string; reference: string; propertyName: string; checkIn: string; amountPence: number; message: string | null }[];
   failingFeeds: { name: string; propertyName: string; error: string | null; failures: number }[];
   failedEmails: { reservationId: string | null; reference: string | null; kind: string; recipient: string; error: string | null }[];
+  /** Gift Up redemptions that may need sorting out by hand in Gift Up. */
+  voucherProblems: { reservationId: string; reference: string; voucherCode: string; amountPence: number; message: string }[];
 };
 
 /** Things the owner needs to deal with. */
 export async function needsAttention(): Promise<Attention> {
   const sql = db();
-  const [failedPayments, failingFeeds, failedEmails] = await Promise.all([
+  const [failedPayments, failingFeeds, failedEmails, voucherProblems] = await Promise.all([
     sql<Attention["failedPayments"]>`
       SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
              pay.amount_pence, pay.failure_message AS message
@@ -384,6 +388,18 @@ export async function needsAttention(): Promise<Attention> {
       WHERE e.status = 'FAILED' AND e.created_at > now() - interval '30 days'
       ORDER BY e.created_at DESC
     `,
+    sql<Attention["voucherProblems"]>`
+      SELECT r.id AS reservation_id, r.reference, pay.voucher_code, pay.amount_pence,
+             CASE WHEN pay.status = 'FAILED'
+               THEN 'Gift Up didn''t answer clearly, so the voucher may have been used. Check it in Gift Up and undo the redemption there if so.'
+               ELSE 'The voucher couldn''t be given back automatically yet (' || COALESCE(pay.failure_message, 'retrying') || ').'
+             END AS message
+      FROM payments pay JOIN reservations r ON r.id = pay.reservation_id
+      WHERE pay.kind = 'VOUCHER' AND pay.created_at > now() - interval '60 days'
+        AND ((pay.status = 'FAILED' AND pay.failure_code = 'giftup_unknown')
+          OR (pay.status = 'CANCELLED' AND pay.voucher_reversed_at IS NULL AND pay.failure_message IS NOT NULL))
+      ORDER BY pay.created_at DESC
+    `,
   ]);
-  return { failedPayments, failingFeeds, failedEmails };
+  return { failedPayments, failingFeeds, failedEmails, voucherProblems };
 }

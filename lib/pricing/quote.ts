@@ -50,6 +50,9 @@ export type DiscountDefinition = {
   redemptions: number;
 };
 
+/** A gift voucher, already checked with Gift Up on the server. */
+export type VoucherDefinition = { code: string; availablePence: number };
+
 export type QuoteRequest = {
   checkIn: string;
   checkOut: string;
@@ -82,7 +85,9 @@ export type Quote = {
   extrasPence: number;
   discount: { id: string; code: string; pence: number } | null;
   totalPence: number;
-  /** Charged when booking: the deposit, or the full total. */
+  /** Paid from a gift voucher. Absent on quotes stored before vouchers existed. */
+  voucher?: { code: string; pence: number } | null;
+  /** Charged to a card when booking: the deposit, or the full total less any voucher. */
   dueNowPence: number;
   balancePence: number;
   /** When the balance is due; null when paying in full now. */
@@ -93,7 +98,8 @@ export type QuoteError =
   | { code: "PRICE_UNAVAILABLE"; message: string }
   | { code: "UNKNOWN_EXTRA"; message: string }
   | { code: "EXTRA_QUANTITY"; message: string }
-  | { code: "DISCOUNT_INVALID"; message: string };
+  | { code: "DISCOUNT_INVALID"; message: string }
+  | { code: "VOUCHER_INVALID"; message: string };
 
 export type QuoteResult = { ok: true; quote: Quote } | { ok: false; error: QuoteError };
 
@@ -115,6 +121,7 @@ export function buildQuote(input: {
   policy: PricingPolicy;
   extras: ExtraDefinition[];
   discount: DiscountDefinition | null;
+  voucher?: VoucherDefinition | null;
   /** Property-local date the booking is being made on. */
   today: string;
 }): QuoteResult {
@@ -189,6 +196,36 @@ export function buildQuote(input: {
   // --- Totals and payment schedule --------------------------------------------
   const totalPence = accommodationPence + cleaningFeePence + petFeePence + extrasPence - (discount?.pence ?? 0);
 
+  // A gift voucher pays what it can, and the rest is paid by card when
+  // booking: no deposit, so there's never a balance to collect later from a
+  // guest whose card was never taken.
+  if (input.voucher) {
+    const voucherPence = Math.min(input.voucher.availablePence, totalPence);
+    if (voucherPence <= 0) {
+      return { ok: false, error: { code: "VOUCHER_INVALID", message: "This gift voucher has no balance left." } };
+    }
+    return {
+      ok: true,
+      quote: {
+        currency: policy.currency,
+        checkIn: request.checkIn,
+        checkOut: request.checkOut,
+        nights: lines,
+        accommodationPence,
+        cleaningFeePence,
+        petFeePence,
+        extras,
+        extrasPence,
+        discount,
+        totalPence,
+        voucher: { code: input.voucher.code, pence: voucherPence },
+        dueNowPence: totalPence - voucherPence,
+        balancePence: 0,
+        balanceDueDate: null,
+      },
+    };
+  }
+
   // Deposit now and balance later only if the balance due date is still in
   // the future; otherwise the guest pays in full when booking.
   const dueDate = addDays(request.checkIn, -policy.balanceDueDaysBefore);
@@ -209,6 +246,7 @@ export function buildQuote(input: {
       extrasPence,
       discount,
       totalPence,
+      voucher: null,
       dueNowPence,
       balancePence: totalPence - dueNowPence,
       balanceDueDate: splitPayment ? dueDate : null,

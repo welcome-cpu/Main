@@ -6,6 +6,7 @@ import { lockPropertyAvailability } from "@/lib/booking/locks";
 import { db, type Tx } from "@/lib/db/client";
 import type { Quote, QuoteError } from "@/lib/pricing/quote";
 import { quoteStay, type StayQuoteRequest } from "@/lib/pricing/quote-service";
+import { cancelHoldVoucher } from "@/lib/vouchers/cancel";
 
 /**
  * How long a checkout hold lasts. Guests are told 30 minutes, and the Stripe
@@ -143,7 +144,7 @@ async function createHoldInTransaction(
       reference, property_id, source, status, check_in, check_out, turnover_nights,
       adults, children, infants, pets, guest_id, guest_message, hold_expires_at,
       currency, accommodation_pence, cleaning_fee_pence, pet_fee_pence, extras_pence,
-      discount_pence, total_pence, deposit_pence, balance_due_date, price_breakdown,
+      discount_pence, total_pence, deposit_pence, voucher_pence, balance_due_date, price_breakdown,
       discount_code_id, created_by, access_token_sha256, terms_accepted_at
     ) VALUES (
       ${reference}, ${propertyId}, 'DIRECT', 'HOLD', ${stay.checkIn}, ${stay.checkOut}, ${property.turnoverNights},
@@ -151,7 +152,7 @@ async function createHoldInTransaction(
       now() + make_interval(mins => ${HOLD_MINUTES}),
       ${quote.currency}, ${quote.accommodationPence}, ${quote.cleaningFeePence}, ${quote.petFeePence},
       ${quote.extrasPence}, ${quote.discount?.pence ?? 0}, ${quote.totalPence}, ${quote.dueNowPence},
-      ${quote.balanceDueDate}, ${tx.json(quote as unknown as Parameters<Tx["json"]>[0])},
+      ${quote.voucher?.pence ?? 0}, ${quote.balanceDueDate}, ${tx.json(quote as unknown as Parameters<Tx["json"]>[0])},
       ${quote.discount?.id ?? null}, 'guest', ${hashAccessToken(accessToken)}, now()
     )
     RETURNING id, hold_expires_at
@@ -161,6 +162,15 @@ async function createHoldInTransaction(
     await tx`
       INSERT INTO reservation_extras (reservation_id, extra_id, name, pricing_type, unit_price_pence, quantity, total_pence)
       VALUES (${reservation.id}, ${x.extraId}, ${x.name}, ${x.pricingType}, ${x.unitPricePence}, ${x.quantity}, ${x.totalPence})
+    `;
+  }
+
+  // Redeemed at Gift Up once this transaction has committed (see
+  // lib/vouchers/redemption.ts): never while holding the availability lock.
+  if (quote.voucher) {
+    await tx`
+      INSERT INTO payments (reservation_id, provider, kind, status, amount_pence, currency, voucher_code)
+      VALUES (${reservation.id}, 'GIFTUP', 'VOUCHER', 'PENDING', ${quote.voucher.pence}, ${quote.currency}, ${quote.voucher.code})
     `;
   }
 
@@ -177,6 +187,7 @@ async function createHoldInTransaction(
       checkOut: stay.checkOut,
       totalPence: quote.totalPence,
       dueNowPence: quote.dueNowPence,
+      voucherPence: quote.voucher?.pence ?? 0,
       ip: meta.ip,
     },
   });
@@ -263,6 +274,7 @@ export async function releaseHold(reservationId: string, accessToken: string): P
       RETURNING property_id
     `;
     if (!row) return false;
+    await cancelHoldVoucher(tx, reservationId);
     await recordAudit(tx, {
       actorType: "GUEST",
       action: "reservation.hold_released",

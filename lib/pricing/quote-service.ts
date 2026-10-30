@@ -10,11 +10,14 @@ import {
   type NightPriceInput,
   type PricingPolicy,
   type QuoteResult,
+  type VoucherDefinition,
 } from "@/lib/pricing/quote";
 
 export type StayQuoteRequest = StayRequest & {
   extras: { id: string; quantity: number }[];
   discountCode?: string | null;
+  /** Checked with Gift Up by the caller; never taken from the browser. */
+  voucher?: VoucherDefinition | null;
 };
 
 export type StayQuote = {
@@ -77,6 +80,7 @@ export async function quoteStay(
       policy,
       extras,
       discount,
+      voucher: request.voucher ?? null,
       today: todayInZone(policyRow.timezone, options.now),
     }),
   };

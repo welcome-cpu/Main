@@ -12,6 +12,7 @@ import {
   enqueueNotChargedEmails,
 } from "@/lib/email/booking-emails";
 import type { PaymentGateway, PaymentIntentInfo } from "@/lib/payments/gateway";
+import { cancelHoldVoucher } from "@/lib/vouchers/cancel";
 
 // Stripe webhooks are the ONLY thing that confirms a booking or marks money
 // as received. The guest reaching the success page proves nothing.
@@ -123,6 +124,7 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session, gateway: Pa
         UPDATE reservations SET cancellation_reason = 'Dates no longer available when payment arrived'
         WHERE id = ${payment.reservationId} RETURNING property_id, reference
       `;
+      await cancelHoldVoucher(tx, payment.reservationId);
       await recordAudit(tx, {
         actorType: "STRIPE",
         action: "payment.voided_dates_unavailable",
@@ -180,16 +182,29 @@ async function confirmReservation(
       guestId: string | null;
       totalPence: number;
       depositPence: number;
+      voucherPence: number;
       balanceDueDate: string | null;
       currency: string;
     }[]>`
       SELECT id, reference, status, (status = 'HOLD' AND hold_expires_at > now()) AS live,
              check_in, check_out, adults, children, infants, pets, guest_id,
-             total_pence, deposit_pence, balance_due_date, currency
+             total_pence, deposit_pence, voucher_pence, balance_due_date, currency
       FROM reservations WHERE id = ${payment.reservationId} FOR UPDATE
     `;
     if (r.status === "CONFIRMED") return "ALREADY_CONFIRMED";
     if (r.status === "CANCELLED") return "UNAVAILABLE";
+
+    // Part paid by gift voucher: confirm only if that redemption still
+    // stands. If it was given back (the hold lapsed), the card is released
+    // rather than the booking confirmed short. The row lock stops the
+    // voucher being given back while this transaction confirms.
+    if (r.voucherPence > 0) {
+      const [voucher] = await tx<{ status: string }[]>`
+        SELECT status FROM payments WHERE reservation_id = ${r.id} AND kind = 'VOUCHER'
+        ORDER BY created_at DESC LIMIT 1 FOR UPDATE
+      `;
+      if (voucher?.status !== "AUTHORISED") return "UNAVAILABLE";
+    }
 
     if (!r.live) {
       const availability = await checkAvailability(
@@ -210,6 +225,12 @@ async function confirmReservation(
       throw error;
     }
 
+    if (r.voucherPence > 0) {
+      await tx`
+        UPDATE payments SET status = 'SUCCEEDED', captured_at = now()
+        WHERE reservation_id = ${r.id} AND kind = 'VOUCHER' AND status = 'AUTHORISED'
+      `;
+    }
     await tx`
       UPDATE payments SET status = 'AUTHORISED', authorised_at = now(), stripe_payment_intent_id = ${pi.id},
         stripe_customer_id = ${pi.customerId}, stripe_payment_method_id = ${pi.paymentMethodId}
@@ -219,7 +240,7 @@ async function confirmReservation(
       await tx`UPDATE guests SET stripe_customer_id = ${pi.customerId} WHERE id = ${r.guestId} AND stripe_customer_id IS NULL`;
     }
 
-    const balance = r.totalPence - r.depositPence;
+    const balance = r.totalPence - r.depositPence - r.voucherPence;
     if (balance > 0 && r.balanceDueDate) {
       await tx`
         INSERT INTO payments (reservation_id, provider, kind, status, amount_pence, currency, due_date,
@@ -278,6 +299,13 @@ async function failCapture(payment: PaymentRow, paymentIntentId: string, error: 
       WHERE id = ${payment.reservationId} AND status = 'CONFIRMED'
       RETURNING property_id, reference
     `;
+    // Any gift voucher part goes back to the voucher too.
+    if (r) {
+      await tx`
+        UPDATE payments SET status = 'CANCELLED', cancelled_at = now()
+        WHERE reservation_id = ${payment.reservationId} AND kind = 'VOUCHER' AND status IN ('AUTHORISED', 'SUCCEEDED')
+      `;
+    }
     await recordAudit(tx, {
       actorType: "STRIPE",
       action: "payment.capture_failed",
@@ -324,6 +352,7 @@ async function onCheckoutEnded(session: Stripe.Checkout.Session) {
       UPDATE reservations SET status = 'EXPIRED' WHERE id = ${payment.reservationId} AND status = 'HOLD'
       RETURNING property_id, reference
     `;
+    await cancelHoldVoucher(tx, payment.reservationId);
     if (r) {
       await recordAudit(tx, {
         actorType: "STRIPE",

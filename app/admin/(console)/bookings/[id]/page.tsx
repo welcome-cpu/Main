@@ -106,6 +106,8 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
                 {p.dueDate && p.status === "PENDING" && ` · due ${show(p.dueDate)}`}
                 {p.refundedPence > 0 && ` · refunded ${formatPence(p.refundedPence)}`}
                 {p.provider === "MANUAL" && " · recorded manually"}
+                {p.voucherCode && ` · Gift Up ${p.voucherCode}`}
+                {p.voucherReversedAt && " · given back to the voucher"}
                 {p.failureMessage && <span className="block text-xs text-muted-foreground">{p.failureMessage}</span>}
                 {p.stripePaymentIntentId && (
                   <span className="block font-mono text-xs text-muted-foreground">{p.stripePaymentIntentId}</span>
@@ -115,6 +117,7 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
           </ul>
           <p className="text-xs text-muted-foreground">
             Refunds are made in the Stripe dashboard (search for the payment id above); they appear here automatically.
+            Gift voucher amounts on a booking you cancel aren&apos;t given back automatically: do that in Gift Up if you want to.
           </p>
         </section>
       </div>

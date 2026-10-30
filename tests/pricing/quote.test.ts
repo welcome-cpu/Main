@@ -8,6 +8,7 @@ import {
   type NightPriceInput,
   type PricingPolicy,
   type QuoteRequest,
+  type VoucherDefinition,
 } from "@/lib/pricing/quote";
 
 const policy: PricingPolicy = {
@@ -45,6 +46,7 @@ function quote(opts: {
   pol?: Partial<PricingPolicy>;
   extras?: ExtraDefinition[];
   discount?: DiscountDefinition | null;
+  voucher?: VoucherDefinition | null;
   today?: string;
 }) {
   const req = request(opts.req);
@@ -54,6 +56,7 @@ function quote(opts: {
     policy: { ...policy, ...opts.pol },
     extras: opts.extras ?? [],
     discount: opts.discount ?? null,
+    voucher: opts.voucher ?? null,
     today: opts.today ?? TODAY,
   });
 }
@@ -257,5 +260,44 @@ describe("groupNights", () => {
       { from: "2027-02-03", nights: 1, pricePence: 22500 },
       { from: "2027-02-04", nights: 1, pricePence: 16500 },
     ]);
+  });
+});
+
+describe("gift vouchers", () => {
+  it("takes a partial voucher off the total and charges the rest in full now", () => {
+    const r = quote({ voucher: { code: "GIFT-1", availablePence: 10000 } });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.quote.totalPence).toBe(49500);
+    expect(r.quote.voucher).toEqual({ code: "GIFT-1", pence: 10000 });
+    expect(r.quote.dueNowPence).toBe(39500);
+    expect(r.quote.balancePence).toBe(0);
+    expect(r.quote.balanceDueDate).toBeNull();
+  });
+
+  it("never uses more of the voucher than the stay costs", () => {
+    const r = quote({ voucher: { code: "GIFT-1", availablePence: 100000 } });
+    expect(r.ok && r.quote.voucher).toEqual({ code: "GIFT-1", pence: 49500 });
+    expect(r.ok && r.quote.dueNowPence).toBe(0);
+  });
+
+  it("applies after a discount", () => {
+    const q = ok(quote({ voucher: { code: "GIFT-1", availablePence: 100000 }, discount: discount({}) }));
+    expect(q.discount?.pence).toBe(4950);
+    expect(q.totalPence).toBe(44550);
+    expect(q.voucher?.pence).toBe(44550);
+    expect(q.dueNowPence).toBe(0);
+  });
+
+  it("refuses an empty voucher", () => {
+    const r = quote({ voucher: { code: "GIFT-1", availablePence: 0 } });
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.error.code).toBe("VOUCHER_INVALID");
+  });
+
+  it("leaves quotes without a voucher unchanged", () => {
+    const r = quote({});
+    expect(r.ok && r.quote.voucher).toBeNull();
+    expect(r.ok && r.quote.dueNowPence).toBe(24750);
   });
 });

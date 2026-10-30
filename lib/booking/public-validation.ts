@@ -40,6 +40,7 @@ export const quoteBodySchema = z
       .max(20)
       .default([]),
     discountCode: z.string().trim().max(32).optional().nullable(),
+    voucherCode: z.string().trim().max(40).optional().nullable(),
   })
   .refine((v) => daysBetween(v.checkIn, v.checkOut) <= 365, "Stays are limited to a year")
   .refine((v) => new Set(v.extras.map((x) => x.id)).size === v.extras.length, "Each extra can only be listed once");

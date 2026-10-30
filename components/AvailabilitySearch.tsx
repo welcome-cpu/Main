@@ -8,6 +8,8 @@ type Result = {
   name: string;
   sleeps: number;
   available: boolean;
+  /** Our own booking page, where direct booking is on. */
+  bookUrl?: string;
 };
 
 type Status = "idle" | "loading" | "unconfigured" | "error" | "ready";
@@ -128,7 +130,7 @@ export default function AvailabilitySearch() {
                 // page, so the Lodgify booking widget script (which only
                 // scans the DOM for its target element once) runs fresh.
                 <a
-                  href={`/properties/${result.slug}`}
+                  href={result.bookUrl ?? `/properties/${result.slug}`}
                   className="font-semibold text-primary hover:underline"
                 >
                   View &amp; Book →

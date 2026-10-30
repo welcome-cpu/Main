@@ -55,7 +55,12 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
   // Exact-date matches are our own bookings reflected back by a channel.
   const conflicts = allConflicts.filter((c) => !c.exactMatch);
   const hasAttention =
-    attention.failedPayments.length + attention.failingFeeds.length + attention.failedEmails.length + conflicts.length > 0;
+    attention.failedPayments.length +
+      attention.failingFeeds.length +
+      attention.failedEmails.length +
+      attention.voucherProblems.length +
+      conflicts.length >
+    0;
 
   const select = "mt-1 block border border-border bg-surface px-2 py-1.5 text-sm";
   return (
@@ -77,6 +82,14 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                 </Link>{" "}
                 ({f.propertyName}, arriving {show(f.checkIn)}): balance of {formatPence(f.amountPence)} failed
                 {f.message ? ` (${f.message})` : ""}.
+              </li>
+            ))}
+            {attention.voucherProblems.map((v) => (
+              <li key={`${v.reservationId}-${v.voucherCode}`}>
+                <Link href={`/admin/bookings/${v.reservationId}`} className="underline">
+                  {v.reference}
+                </Link>
+                : gift voucher {v.voucherCode} ({formatPence(v.amountPence)}). {v.message}
               </li>
             ))}
             {attention.failingFeeds.map((f) => (

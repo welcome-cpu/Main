@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { logError } from "@/lib/log";
 import type { PaymentGateway } from "@/lib/payments/gateway";
 import type { Quote } from "@/lib/pricing/quote";
+import { cancelHoldVoucher } from "@/lib/vouchers/cancel";
 
 // Stripe requires a Checkout Session to stay open for at least 30 minutes.
 const STRIPE_MIN_OPEN_SECONDS = 30 * 60 + 15;
@@ -67,6 +68,7 @@ async function releaseFailedCheckout(reservationId: string, paymentId: string | 
       RETURNING property_id, reference
     `;
     if (row) {
+      await cancelHoldVoucher(tx, reservationId);
       await recordAudit(tx, {
         actorType: "SYSTEM",
         action: "reservation.hold_released",

@@ -45,20 +45,68 @@ const show = (iso: string) => longDate.format(new Date(`${iso}T00:00:00Z`));
 
 type Guests = { adults: number; children: number; infants: number; pets: number };
 
+export type InitialStay = { checkIn: string; checkOut: string } & Partial<Guests>;
+
+/** Nights booked, from merged half-open ranges. */
+function nightSet(ranges: PublicCalendar["unavailable"]) {
+  const nights = new Set<string>();
+  for (const r of ranges) {
+    for (let d = r.start; d < r.end; d = addDays(d, 1)) nights.add(d);
+  }
+  return nights;
+}
+
+const canCheckInAt = (d: string, c: PublicCalendar, booked: Set<string>) =>
+  d >= c.firstCheckIn && d <= c.lastCheckIn && !booked.has(d);
+
+/**
+ * The latest check-out from `checkIn` at one chalet, or null if it can't be
+ * a check-in there: the stay plus its own turnover nights must end before
+ * the next booked night.
+ */
+function latestCheckOutFrom(checkIn: string, calendar: PublicCalendar, booked: Set<string>) {
+  if (!canCheckInAt(checkIn, calendar, booked)) return null;
+  const { defaultMaxNights, turnoverNights } = calendar.property;
+  const limit = addDays(checkIn, defaultMaxNights);
+  for (let d = checkIn; d < limit; d = addDays(d, 1)) {
+    if (booked.has(d)) return addDays(d, -turnoverNights);
+  }
+  return limit;
+}
+
 export default function AvailabilityCalendar({
   calendar,
   slug,
   extras,
+  twin = null,
+  initial = null,
 }: {
   calendar: PublicCalendar;
   slug: string;
   extras: PublicExtra[];
+  /** The identical chalet next door, offered when dates are taken here. */
+  twin?: { slug: string; calendar: PublicCalendar } | null;
+  /** Dates and guests carried over from a search or the chalet next door. */
+  initial?: InitialStay | null;
 }) {
-  const { property, today, firstCheckIn, lastCheckIn } = calendar;
-  const [monthIndex, setMonthIndex] = useState(0);
-  const [checkIn, setCheckIn] = useState<string | null>(null);
-  const [checkOut, setCheckOut] = useState<string | null>(null);
-  const [guests, setGuests] = useState<Guests>({ adults: Math.min(2, property.maxGuests), children: 0, infants: 0, pets: 0 });
+  const { property, today } = calendar;
+  const firstMonth = `${today.slice(0, 7)}-01`;
+  const [monthIndex, setMonthIndex] = useState(() =>
+    initial ? Math.max(0, monthsBetween(firstMonth, `${initial.checkIn.slice(0, 7)}-01`)) : 0
+  );
+  const [checkIn, setCheckIn] = useState<string | null>(initial?.checkIn ?? null);
+  const [checkOut, setCheckOut] = useState<string | null>(initial?.checkOut ?? null);
+  const [guests, setGuests] = useState<Guests>(() => {
+    const clamp = (v: number | undefined, min: number, max: number, fallback: number) =>
+      v === undefined ? fallback : Math.max(min, Math.min(max, v));
+    const adults = clamp(initial?.adults, 1, property.maxGuests, Math.min(2, property.maxGuests));
+    return {
+      adults,
+      children: clamp(initial?.children, 0, property.maxGuests - adults, 0),
+      infants: clamp(initial?.infants, 0, 2, 0),
+      pets: clamp(initial?.pets, 0, property.maxPets, 0),
+    };
+  });
   // Any change invalidates the price shown, so it must be fetched again.
   const updateGuests = (g: Guests) => {
     setResult(null);
@@ -66,31 +114,26 @@ export default function AvailabilityCalendar({
   };
   const [chosenExtras, setChosenExtras] = useState<Record<string, number>>({});
   const [discountCode, setDiscountCode] = useState("");
+  const [voucherCode, setVoucherCode] = useState("");
   const [result, setResult] = useState<QuoteResponse | null>(null);
   const [checkout, setCheckout] = useState<{ stay: StayPayload; quote: Quote } | null>(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const unavailable = useMemo(() => {
-    const nights = new Set<string>();
-    for (const r of calendar.unavailable) {
-      for (let d = r.start; d < r.end; d = addDays(d, 1)) nights.add(d);
-    }
-    return nights;
-  }, [calendar.unavailable]);
+  const unavailable = useMemo(() => nightSet(calendar.unavailable), [calendar.unavailable]);
+  const twinUnavailable = useMemo(() => (twin ? nightSet(twin.calendar.unavailable) : null), [twin]);
 
-  // With a check-in chosen, the latest possible check-out: the stay plus its
-  // own turnover nights must end before the next unavailable night.
-  const latestCheckOut = useMemo(() => {
-    if (!checkIn) return null;
-    const limit = addDays(checkIn, property.defaultMaxNights);
-    for (let d = checkIn; d < limit; d = addDays(d, 1)) {
-      if (unavailable.has(d)) return addDays(d, -property.turnoverNights);
-    }
-    return limit;
-  }, [checkIn, unavailable, property.defaultMaxNights, property.turnoverNights]);
+  // Dates can be chosen if they're free here or next door; which chalet
+  // they suit is shown once both are chosen.
+  const latestHere = checkIn ? latestCheckOutFrom(checkIn, calendar, unavailable) : null;
+  const latestTwin =
+    checkIn && twin && twinUnavailable ? latestCheckOutFrom(checkIn, twin.calendar, twinUnavailable) : null;
+  const latestCheckOut = [latestHere, latestTwin].filter((d): d is string => d !== null).sort().at(-1) ?? null;
+  const freeHere = Boolean(checkOut && latestHere && checkOut <= latestHere);
+  const freeTwin = Boolean(checkOut && latestTwin && checkOut <= latestTwin);
 
-  const canCheckIn = (d: string) => d >= firstCheckIn && d <= lastCheckIn && !unavailable.has(d);
+  const twinFree = (d: string) => Boolean(twin && twinUnavailable && canCheckInAt(d, twin.calendar, twinUnavailable));
+  const canCheckIn = (d: string) => canCheckInAt(d, calendar, unavailable) || twinFree(d);
   const canCheckOut = (d: string) =>
     checkIn !== null && latestCheckOut !== null && d > checkIn && d <= latestCheckOut;
 
@@ -114,6 +157,7 @@ export default function AvailabilityCalendar({
         .filter(([, quantity]) => quantity > 0)
         .map(([id, quantity]) => ({ id, quantity })),
       discountCode: discountCode.trim() || null,
+      voucherCode: voucherCode.trim() || null,
     };
   }
 
@@ -153,9 +197,21 @@ export default function AvailabilityCalendar({
     );
   }
 
-  const firstMonth = `${today.slice(0, 7)}-01`;
   const months = [0, 1].map((i) => addMonths(firstMonth, monthIndex + i));
+  const lastCheckIn = [calendar.lastCheckIn, twin?.calendar.lastCheckIn ?? ""].sort().at(-1)!;
   const lastMonth = `${lastCheckIn.slice(0, 7)}-01`;
+  const twinName = twin?.calendar.property.name;
+  const twinHref =
+    twin && checkIn && checkOut
+      ? `/book/${twin.slug}?${new URLSearchParams({
+          checkIn,
+          checkOut,
+          adults: String(guests.adults),
+          children: String(guests.children),
+          infants: String(guests.infants),
+          pets: String(guests.pets),
+        })}`
+      : null;
 
   return (
     <div className="space-y-6">
@@ -187,9 +243,16 @@ export default function AvailabilityCalendar({
               const inRange = checkIn && checkOut && d > checkIn && d < checkOut;
               const selected = d === checkIn || d === checkOut;
               const selectable = checkIn && !checkOut ? canCheckOut(d) || canCheckIn(d) : canCheckIn(d);
-              return { selected: Boolean(selected), inRange: Boolean(inRange), unavailable: unavailable.has(d), selectable };
+              return {
+                selected: Boolean(selected),
+                inRange: Boolean(inRange),
+                unavailable: unavailable.has(d),
+                twinFree: unavailable.has(d) && twinFree(d),
+                selectable,
+              };
             }}
             onChoose={choose}
+            twinName={twinName}
           />
         ))}
       </div>
@@ -198,6 +261,9 @@ export default function AvailabilityCalendar({
         <span><span className="inline-block h-3 w-3 border border-border bg-surface align-middle" /> Available</span>
         <span><span className="inline-block h-3 w-3 bg-muted align-middle" /> Booked</span>
         <span><span className="inline-block h-3 w-3 bg-primary align-middle" /> Your dates</span>
+        {twinName && (
+          <span><span className="inline-block h-3 w-3 bg-oak/40 align-middle" /> Booked here, {twinName} free</span>
+        )}
       </div>
 
       <div className="border border-border bg-surface p-4 text-sm">
@@ -213,10 +279,33 @@ export default function AvailabilityCalendar({
             {show(checkIn)} → {show(checkOut)} · {daysBetween(checkIn, checkOut)} nights
           </p>
         )}
+        {checkIn && checkOut && twinName && freeHere && freeTwin && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {twinName}, the identical chalet next door, is free for these dates too.
+          </p>
+        )}
         <p className="mt-1 text-xs text-muted-foreground">
           Check-in from {property.checkInTime}, check-out by {property.checkOutTime}.
         </p>
       </div>
+
+      {checkIn && checkOut && !freeHere && freeTwin && twinHref && (
+        <div className="border border-oak bg-oak/15 p-4 text-sm">
+          <p className="font-semibold text-foreground-strong">
+            {property.name} is booked for some of these nights, but {twinName} is free.
+          </p>
+          <p className="mt-1">{twinName} is the identical studio chalet right next door, with the same view.</p>
+          <a href={twinHref} className="mt-3 inline-block bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90">
+            Book {twinName} for these dates
+          </a>
+        </div>
+      )}
+
+      {checkIn && checkOut && twinName && !freeHere && !freeTwin && (
+        <p className="border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+          Neither {property.name} nor {twinName} is free for all of these nights. Please choose other dates.
+        </p>
+      )}
 
       <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <legend className="mb-2 text-sm font-medium text-foreground-strong">Guests</legend>
@@ -261,24 +350,43 @@ export default function AvailabilityCalendar({
         </fieldset>
       )}
 
-      <label className="block text-sm">
-        <span className="font-medium text-foreground-strong">Discount code (optional)</span>
-        <input
-          value={discountCode}
-          onChange={(e) => {
-            setResult(null);
-            setDiscountCode(e.target.value);
-          }}
-          maxLength={32}
-          autoCapitalize="characters"
-          className="mt-1 block w-full max-w-xs border border-border bg-surface px-3 py-2 uppercase"
-        />
-      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="font-medium text-foreground-strong">Discount code (optional)</span>
+          <input
+            value={discountCode}
+            onChange={(e) => {
+              setResult(null);
+              setDiscountCode(e.target.value);
+            }}
+            maxLength={32}
+            autoCapitalize="characters"
+            className="mt-1 block w-full max-w-xs border border-border bg-surface px-3 py-2 uppercase"
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="font-medium text-foreground-strong">Gift voucher code (optional)</span>
+          <input
+            value={voucherCode}
+            onChange={(e) => {
+              setResult(null);
+              setVoucherCode(e.target.value);
+            }}
+            maxLength={40}
+            autoCapitalize="characters"
+            autoComplete="off"
+            className="mt-1 block w-full max-w-xs border border-border bg-surface px-3 py-2 uppercase"
+          />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            With a voucher, anything it doesn&apos;t cover is paid by card when you book.
+          </span>
+        </label>
+      </div>
 
       <button
         type="button"
         onClick={check}
-        disabled={!checkIn || !checkOut || checking}
+        disabled={!checkIn || !checkOut || checking || (twin !== null && !freeHere)}
         className="w-full bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
       >
         {checking ? "Checking…" : "Check availability and price"}
@@ -334,10 +442,12 @@ function Month({
   month,
   dayState,
   onChoose,
+  twinName,
 }: {
   month: string;
-  dayState: (d: string) => { selected: boolean; inRange: boolean; unavailable: boolean; selectable: boolean };
+  dayState: (d: string) => { selected: boolean; inRange: boolean; unavailable: boolean; twinFree: boolean; selectable: boolean };
   onChoose: (d: string) => void;
+  twinName?: string;
 }) {
   const first = new Date(`${month}T00:00:00Z`);
   const leadingBlanks = (first.getUTCDay() + 6) % 7; // Monday first
@@ -362,11 +472,13 @@ function Month({
             ? "bg-primary text-primary-foreground"
             : s.inRange
               ? "bg-primary/20 text-foreground-strong"
-              : s.unavailable
-                ? "bg-muted text-muted-foreground line-through"
-                : s.selectable
-                  ? "border border-border bg-surface hover:border-primary"
-                  : "text-muted-foreground/50";
+              : s.twinFree
+                ? "bg-oak/40 text-foreground-strong line-through hover:outline hover:outline-primary"
+                : s.unavailable
+                  ? "bg-muted text-muted-foreground line-through"
+                  : s.selectable
+                    ? "border border-border bg-surface hover:border-primary"
+                    : "text-muted-foreground/50";
           return (
             <button
               key={d}
@@ -375,7 +487,7 @@ function Month({
               disabled={!s.selectable && !s.selected}
               onClick={() => onChoose(d)}
               aria-pressed={s.selected}
-              aria-label={`${show(d)}${s.unavailable ? ", booked" : ""}`}
+              aria-label={`${show(d)}${s.twinFree ? `, booked, ${twinName} free` : s.unavailable ? ", booked" : ""}`}
               className={`aspect-square text-sm disabled:cursor-default ${cls}`}
             >
               {i + 1}
@@ -414,6 +526,11 @@ function Counter({
       </div>
     </div>
   );
+}
+
+/** Whole months from one YYYY-MM-01 to another. */
+function monthsBetween(from: string, to: string) {
+  return (Number(to.slice(0, 4)) - Number(from.slice(0, 4))) * 12 + Number(to.slice(5, 7)) - Number(from.slice(5, 7));
 }
 
 /** First day of the month `n` months after `month` (YYYY-MM-01). */

@@ -106,9 +106,11 @@ export default function BookingStatus({ reservationId, cancelled }: { reservatio
           <PriceBreakdown quote={q} />
         </div>
         <p className="text-sm text-muted-foreground">
-          {q.balanceDueDate
-            ? `We've taken your deposit of ${formatPence(q.dueNowPence, q.currency)}. The balance of ${formatPence(q.balancePence, q.currency)} will be charged to the same card on ${show(q.balanceDueDate)}.`
-            : `We've taken your payment of ${formatPence(q.dueNowPence, q.currency)}.`}{" "}
+          {q.voucher
+            ? `Your gift voucher has paid ${formatPence(q.voucher.pence, q.currency)}${q.dueNowPence > 0 ? ` and we've taken ${formatPence(q.dueNowPence, q.currency)} by card` : ""}.`
+            : q.balanceDueDate
+              ? `We've taken your deposit of ${formatPence(q.dueNowPence, q.currency)}. The balance of ${formatPence(q.balancePence, q.currency)} will be charged to the same card on ${show(q.balanceDueDate)}.`
+              : `We've taken your payment of ${formatPence(q.dueNowPence, q.currency)}.`}{" "}
           A confirmation email is on its way.
         </p>
       </div>

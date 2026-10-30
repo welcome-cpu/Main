@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PropertyMedia from "@/components/PropertyMedia";
 import LodgifyBookingWidget from "@/components/LodgifyBookingWidget";
 import TwinChaletCalendar from "@/components/TwinChaletCalendar";
+import { isDirectBookingEnabled } from "@/lib/booking/feature";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 import { pageOpenGraph, pageTwitter, socialImage } from "@/lib/metadata";
@@ -184,8 +185,27 @@ export default async function PropertyPage({
                   Book now for stays from that date.
                 </p>
               )}
-              <LodgifyBookingWidget rentalId={property.lodgifyRentalId} />
-              {twin && (
+              {/* Where direct booking is on (the dev site; decided at build
+                  time), guests book through our own pages, which also offer
+                  the chalet next door. Production keeps Lodgify. */}
+              {isDirectBookingEnabled() ? (
+                <div className="rounded-2xl border border-border bg-muted px-5 py-6 sm:px-8 sm:py-8">
+                  <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Book {property.name} direct</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    See which dates are free, get the full price and pay securely by card.
+                    {twin && ` If your dates are taken, we'll show you whether ${twin.name} next door is free.`}
+                  </p>
+                  <Link
+                    href={`/book/${property.slug}`}
+                    className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Check availability and book
+                  </Link>
+                </div>
+              ) : (
+                <LodgifyBookingWidget rentalId={property.lodgifyRentalId} />
+              )}
+              {twin && !isDirectBookingEnabled() && (
                 <section className="mt-10 rounded-2xl border border-border bg-muted px-5 py-6 sm:px-8 sm:py-8">
                   <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
                     Dates taken? Check both studio chalets

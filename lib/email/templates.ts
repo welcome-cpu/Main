@@ -64,11 +64,15 @@ function priceRows(q: Quote): [string, string][] {
   for (const x of q.extras) rows.push([x.quantity > 1 ? `${x.name} × ${x.quantity}` : x.name, m(x.totalPence)]);
   if (q.discount) rows.push([`Discount (${q.discount.code})`, `−${m(q.discount.pence)}`]);
   rows.push(["Total", m(q.totalPence)]);
+  if (q.voucher) rows.push([`Gift voucher (${q.voucher.code})`, `−${m(q.voucher.pence)}`]);
   return rows;
 }
 
 function paymentSummary(q: Quote) {
   const m = (p: number) => formatPence(p, q.currency);
+  if (q.voucher) {
+    return `Your gift voucher has paid ${m(q.voucher.pence)}${q.dueNowPence > 0 ? ` and we've taken ${m(q.dueNowPence)} by card` : ""}. Nothing more is due.`;
+  }
   return q.balanceDueDate
     ? `We've taken a deposit of ${m(q.dueNowPence)}. The balance of ${m(q.balancePence)} will be charged automatically to the same card on ${showDate(q.balanceDueDate)}.`
     : `We've taken your payment of ${m(q.dueNowPence)} in full.`;

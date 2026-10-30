@@ -18,6 +18,7 @@ export type StayPayload = {
   pets: number;
   extras: { id: string; quantity: number }[];
   discountCode: string | null;
+  voucherCode: string | null;
 };
 
 type Hold = {

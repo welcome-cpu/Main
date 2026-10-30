@@ -1,3 +1,4 @@
+import { runAfterResponse } from "@/lib/after-response";
 import { guardPublicRequest, json, readJsonBody, validationError } from "@/lib/booking/api";
 import { createHold, GUEST_FACING_HOLD_MINUTES, HOLD_MINUTES } from "@/lib/booking/holds";
 import { getPublicProperty } from "@/lib/booking/public";
@@ -6,6 +7,13 @@ import { startCheckout } from "@/lib/payments/checkout";
 import { isPaymentConfigured, paymentConfigProblem, stripeGateway } from "@/lib/payments/gateway";
 import { clientIp } from "@/lib/rate-limit";
 import { passesTurnstile } from "@/lib/turnstile";
+import { lookupVoucher } from "@/lib/vouchers/giftup";
+import {
+  confirmVoucherOnlyBooking,
+  redeemHoldVoucher,
+  releaseHoldAndVoucher,
+  reverseAbandonedVouchers,
+} from "@/lib/vouchers/redemption";
 
 /**
  * Starts checkout: holds the dates for 30 minutes while the guest pays.
@@ -38,10 +46,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     return json({ error: "Online payment is unavailable on this site at the moment." }, 503);
   }
 
-  const { stay, guest } = parsed.data;
+  const { stay: { voucherCode, ...stay }, guest } = parsed.data;
+  // Gift vouchers are checked with Gift Up here; the browser's view of the
+  // balance is never used.
+  const voucher = voucherCode ? await lookupVoucher(voucherCode) : null;
+  if (voucher && !voucher.ok) return json({ error: voucher.message }, 409);
+
   const result = await createHold(
     property.id,
-    { ...stay, discountCode: stay.discountCode ?? null },
+    { ...stay, discountCode: stay.discountCode ?? null, voucher },
     { ...guest, email: guest.email.toLowerCase() },
     { ip }
   );
@@ -56,14 +69,30 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     );
   }
 
-  // Send the guest straight to Stripe's payment page. Without Stripe
-  // configured (local development) the hold is returned on its own.
+  // Tidy up vouchers from holds that didn't go ahead (also a scheduled job).
+  runAfterResponse(() => reverseAbandonedVouchers());
+
+  const origin = new URL(request.url).origin;
   let checkoutUrl: string | null = null;
-  if (isPaymentConfigured()) {
+  if (result.quote.voucher) {
+    const redeemed = await redeemHoldVoucher(result);
+    if (!redeemed.ok) return json({ error: redeemed.message }, 409);
+  }
+
+  if (result.quote.voucher && result.quote.dueNowPence === 0) {
+    // Paid in full by the voucher: confirmed now, no card needed.
+    if (!(await confirmVoucherOnlyBooking(result.reservationId))) {
+      await releaseHoldAndVoucher(result.reservationId, "Voucher-only booking could not be confirmed");
+      return json({ error: "We couldn't confirm your booking. Your gift voucher hasn't been used; please try again." }, 409);
+    }
+    checkoutUrl = `${origin}/book/${property.slug}/confirmation?reservation=${result.reservationId}`;
+  } else if (isPaymentConfigured()) {
+    // Send the guest straight to Stripe's payment page. Without Stripe
+    // configured (local development) the hold is returned on its own.
     const checkout = await startCheckout(stripeGateway, result, {
       propertyName: property.name,
       guestEmail: guest.email.toLowerCase(),
-      origin: new URL(request.url).origin,
+      origin,
       slug: property.slug,
     });
     if (!checkout.ok) return json({ error: checkout.message }, 502);

@@ -3,6 +3,7 @@ import { getPublicProperty } from "@/lib/booking/public";
 import { quoteBodySchema } from "@/lib/booking/public-validation";
 import { db } from "@/lib/db/client";
 import { quoteStay } from "@/lib/pricing/quote-service";
+import { lookupVoucher } from "@/lib/vouchers/giftup";
 
 /**
  * Availability and a server-calculated price for a stay. The response is
@@ -21,8 +22,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const property = await getPublicProperty((await params).slug);
   if (!property) return json({ error: "Not found" }, 404);
 
-  const result = await quoteStay(db(), property.id, parsed.data);
+  const { voucherCode, ...stay } = parsed.data;
+  // The voucher's balance comes from Gift Up, never from the browser.
+  const voucher = voucherCode ? await lookupVoucher(voucherCode) : null;
+  const result = await quoteStay(db(), property.id, { ...stay, voucher: voucher?.ok ? voucher : null });
   if (!result) return json({ error: "Not found" }, 404);
+  if (voucher && !voucher.ok && result.pricing?.ok) {
+    result.pricing = { ok: false, error: { code: "VOUCHER_INVALID", message: voucher.message } };
+  }
 
   return json({
     available: result.availability.available,

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import AvailabilityCalendar from "@/components/booking/AvailabilityCalendar";
+import AvailabilityCalendar, { type InitialStay } from "@/components/booking/AvailabilityCalendar";
 import { directBookingProblem } from "@/lib/booking/feature";
 import { getPublicCalendar, getPublicProperty } from "@/lib/booking/public";
 import { addDays, todayInZone } from "@/lib/dates";
 import { db } from "@/lib/db/client";
 import { loadExtras } from "@/lib/pricing/quote-service";
+import { properties } from "@/lib/properties";
 
 export const metadata: Metadata = {
   title: "Book direct",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
+export default async function BookPage({ params, searchParams }: PageProps<"/book/[slug]">) {
   await connection();
   const problem = directBookingProblem();
   if (problem) {
@@ -37,9 +38,14 @@ export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
   const today = todayInZone(property.timezone);
   const from = `${today.slice(0, 7)}-01`;
   const to = addDays(today, property.bookingWindowDays + property.defaultMaxNights + property.turnoverNights + 31);
-  const [calendar, extras] = await Promise.all([
+  // The identical chalet next door, shown alongside so a guest whose dates
+  // are taken here can book it instead. Only once it's open for booking.
+  const twinSlug = properties.find((p) => p.slug === property.slug)?.twinSlug;
+  const twinProperty = twinSlug ? await getPublicProperty(twinSlug) : null;
+  const [calendar, extras, twinCalendar] = await Promise.all([
     getPublicCalendar(property, { start: from, end: to }),
     loadExtras(db(), property.id),
+    twinProperty?.isActive ? getPublicCalendar(twinProperty, { start: from, end: to }) : null,
   ]);
 
   return (
@@ -49,12 +55,14 @@ export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
       </Link>
       <h1 className="mt-2 text-3xl font-semibold text-foreground-strong">Book {property.name} direct</h1>
       <p className="mt-2 text-muted-foreground">
-        Choose your dates and guests to see availability and the full price. Online payment is coming next.
+        Choose your dates and guests to see availability and the full price, then pay securely by card.
       </p>
       <div className="mt-8">
         <AvailabilityCalendar
           calendar={calendar}
           slug={property.slug}
+          twin={twinCalendar ? { slug: twinCalendar.property.slug, calendar: twinCalendar } : null}
+          initial={initialStay(await searchParams)}
           extras={extras.map(({ id, name, description, pricePence, pricingType, maxQuantity }) => ({
             id,
             name,
@@ -67,4 +75,21 @@ export default async function BookPage({ params }: PageProps<"/book/[slug]">) {
       </div>
     </div>
   );
+}
+
+/** Dates and guests carried over from a search or the chalet next door. */
+function initialStay(params: Record<string, string | string[] | undefined>): InitialStay | null {
+  const date = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+  const count = (v: unknown) => (typeof v === "string" && /^\d{1,2}$/.test(v) ? Number(v) : undefined);
+  const checkIn = date(params.checkIn);
+  const checkOut = date(params.checkOut);
+  if (!checkIn || !checkOut || checkOut <= checkIn) return null;
+  return {
+    checkIn,
+    checkOut,
+    adults: count(params.adults),
+    children: count(params.children),
+    infants: count(params.infants),
+    pets: count(params.pets),
+  };
 }

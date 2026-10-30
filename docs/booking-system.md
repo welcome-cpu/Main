@@ -13,11 +13,12 @@ live site keeps the Lodgify widget until the switch-over below is done.
 | Pricing | `lib/pricing/*` | Rate rules > nightly rates (Lodgify copy or admin) > base rate; integer pence |
 | Holds | `lib/booking/holds.ts` | 30 min for guests (35 internally); per-property lock + database exclusion constraint |
 | Payments | `lib/payments/*` | Stripe Checkout, manual capture, webhooks confirm bookings, daily balance charges |
+| Gift vouchers | `lib/vouchers/*` | Gift Up! codes, redeemed at checkout; see below |
 | Email | `lib/email/*` | Microsoft Graph from welcome@ via an outbox (sent exactly once, retried) |
 | Calendar import | `lib/calendar/*` | iCal feeds, every 15 min on production; not real-time |
 | Calendar export | `/api/ical/<token>.ics` | Bookings taken here + owner blocks for other channels; no guest details; links revocable |
 | Admin | `/admin` | Microsoft 365 sign-in, allowlist in `admin_users` |
-| Public pages | `/book/[slug]`, `/book/[slug]/confirmation` | Only exist where `DIRECT_BOOKING_ENABLED=true` |
+| Public pages | `/book/[slug]`, `/book/[slug]/confirmation` | Only exist where `DIRECT_BOOKING_ENABLED=true`; there, property pages and search link here instead of Lodgify |
 
 The double-booking guarantees, from strongest down:
 
@@ -57,17 +58,48 @@ never touch dev or production data.
 | `LODGIFY_API_KEY` | ✓ | ✓ | Read-only price import |
 | `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `CONTACT_MAILBOX` | ✓ | ✓ | Contact-form app registration; sends from welcome@ |
 | `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | ✓ | optional | Required on production: protects holds from abuse |
+| `GIFTUP_API_KEY` | ✓ | ✓ | Gift Up! API key. Everywhere but production uses Gift Up's test mode, so dev bookings can't spend real vouchers |
 
 ## Scheduled jobs (production only, `vercel.json`)
 
 | Job | When | Does |
 |---|---|---|
 | `/api/cron/sync-calendars` | every 15 min | Imports external iCal feeds |
-| `/api/cron/expire-holds` | every 5 min | Tidies lapsed holds (availability ignores them anyway) |
+| `/api/cron/expire-holds` | every 5 min | Tidies lapsed holds (availability ignores them anyway) and gives back their gift vouchers |
 | `/api/cron/send-emails` | every 5 min | Sends/retries queued email |
 | `/api/cron/import-rates` | 04:00 daily | Copies nightly prices and stay limits from Lodgify |
 | `/api/cron/import-lodgify-bookings` | 04:30 daily | Copies Lodgify's bookings (guest name, party size, country from the phone's dialling code; no contact details) for the admin bookings list |
 | `/api/cron/charge-balances` | 09:00 daily | Charges balances due, to the saved card |
+
+## Gift vouchers
+
+Vouchers are sold by Gift Up! (the embed on /gift-vouchers) and redeemed when
+a guest books here. Only money-value vouchers work online; vouchers for a set
+stay still go through the contact form.
+
+1. The quote and hold endpoints look the code up at Gift Up; the browser's
+   idea of the balance is never trusted.
+2. A voucher pays what it can of the total. Anything left is paid by card
+   in full when booking: no deposit, so there's never a later balance for a
+   guest whose card wasn't taken.
+3. The hold is created first (dates reserved), then the amount is redeemed at
+   Gift Up. If Gift Up refuses, or doesn't answer clearly, the hold is
+   released. An unclear answer is listed under *Needs attention* to check
+   by hand in Gift Up.
+4. Fully covered: confirmed straight away, no Stripe. Otherwise the guest
+   pays the rest on Stripe, and the booking is confirmed only if the voucher
+   redemption still stands.
+5. Holds that don't become bookings (released, expired, payment failed) have
+   their redemption undone at Gift Up. This runs when a hold is released,
+   every time a new hold is made, and in the expire-holds job; failures are
+   retried and listed under *Needs attention*.
+6. Cancelling a confirmed booking in the admin area does **not** give the
+   voucher back, like card payments aren't refunded automatically. Do it
+   in Gift Up if you want to.
+
+In the database a voucher is a payment with provider `GIFTUP` and kind
+`VOUCHER` (states described in `db/migrations/0010_gift_vouchers.sql`), so
+it counts towards what's been paid.
 
 ## Switch-over checklist
 
