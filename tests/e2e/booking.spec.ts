@@ -46,37 +46,37 @@ test("won't let a stay run into booked nights", async ({ page }) => {
 
 test("prices a stay on the server, with a pet fee and discount code", async ({ page }) => {
   await chooseStay(page, inDays(60), inDays(62));
+  // Priced as soon as the dates are chosen, again when guests change.
+  await expect(page.getByText("Available for 2 nights")).toBeVisible();
   await page.getByRole("button", { name: "More pets" }).click();
-  await page.getByRole("button", { name: "Check availability and price" }).click();
 
-  const result = page.getByText("Good news: these dates are available for 2 nights.");
+  const result = page.getByText("Available for 2 nights");
   await expect(result).toBeVisible();
   await expect(page.getByText("2 nights × £120.00")).toBeVisible();
   await expect(page.getByText("Pet fee (per stay)")).toBeVisible();
   await expect(page.getByText("£280.00")).toBeVisible(); // £240 + £40 pet fee
   await expect(page.getByText("Pay now (deposit)")).toBeVisible();
 
-  await page.getByLabel("Discount code (optional)").fill("e2e10");
-  await page.getByRole("button", { name: "Check availability and price" }).click();
+  await page.getByRole("button", { name: "Have a discount code or gift voucher?" }).click();
+  await page.getByLabel("Discount code").fill("e2e10");
+  await page.getByRole("button", { name: "Apply" }).click();
   await expect(page.getByText("Discount (E2E10)")).toBeVisible();
   await expect(page.getByText("−£24.00")).toBeVisible();
   await expect(page.getByText("£256.00")).toBeVisible();
 
-  await page.getByLabel("Discount code (optional)").fill("NOTACODE");
-  await page.getByRole("button", { name: "Check availability and price" }).click();
+  await page.getByLabel("Discount code").fill("NOTACODE");
+  await page.getByRole("button", { name: "Apply" }).click();
   await expect(page.getByText("We don't recognise that code.")).toBeVisible();
 });
 
 test("enforces the minimum stay from the server", async ({ page }) => {
   await chooseStay(page, inDays(70), inDays(71));
-  await page.getByRole("button", { name: "Check availability and price" }).click();
   await expect(page.getByText("The minimum stay for these dates is 2 nights.")).toBeVisible();
 });
 
 test("holds the dates while the guest pays, and releases them on request", async ({ page }) => {
   await chooseStay(page, inDays(80), inDays(83));
-  await page.getByRole("button", { name: "Check availability and price" }).click();
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Book now" }).click();
 
   await page.getByLabel("First name").fill("Playwright");
   await page.getByLabel("Last name").fill("Tester");
@@ -100,7 +100,7 @@ test("holds the dates while the guest pays, and releases them on request", async
 
   // Releasing frees them again.
   await page.getByRole("button", { name: "Cancel and change dates" }).click();
-  await expect(page.getByRole("button", { name: "Check availability and price" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Book now" })).toBeVisible();
   await other.reload();
   await showMonthWith(other, inDays(81));
   await expect(other.locator(`[data-date="${inDays(81)}"]`)).toBeEnabled();

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PropertyMedia from "@/components/PropertyMedia";
 import LodgifyBookingWidget from "@/components/LodgifyBookingWidget";
 import TwinChaletCalendar from "@/components/TwinChaletCalendar";
+import PropertyBooking from "@/components/booking/PropertyBooking";
 import { isDirectBookingEnabled } from "@/lib/booking/feature";
 import { properties } from "@/lib/properties";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
@@ -189,19 +190,19 @@ export default async function PropertyPage({
                   time), guests book through our own pages, which also offer
                   the chalet next door. Production keeps Lodgify. */}
               {isDirectBookingEnabled() ? (
-                <div className="rounded-2xl border border-border bg-muted px-5 py-6 sm:px-8 sm:py-8">
-                  <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Book {property.name} direct</h2>
+                <section id="book" className="scroll-mt-24 rounded-2xl border border-border bg-background px-4 py-6 sm:px-8 sm:py-8">
+                  <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
+                    {twin ? `Book ${property.name} or ${twin.name}` : `Book ${property.name}`}
+                  </h2>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    See which dates are free, get the full price and pay securely by card.
-                    {twin && ` If your dates are taken, we'll show you whether ${twin.name} next door is free.`}
+                    {twin
+                      ? `Pick your dates to see the price for both identical studio chalets, then book whichever is free.`
+                      : "Pick your dates to see the full price, then book and pay securely by card."}
                   </p>
-                  <Link
-                    href={`/book/${property.slug}`}
-                    className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                  >
-                    Check availability and book
-                  </Link>
-                </div>
+                  <div className="mt-6">
+                    <PropertyBooking slug={property.slug} />
+                  </div>
+                </section>
               ) : (
                 <LodgifyBookingWidget rentalId={property.lodgifyRentalId} />
               )}

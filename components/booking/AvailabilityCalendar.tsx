@@ -1,21 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CheckoutStep, { type StayPayload } from "@/components/booking/CheckoutStep";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import type { PublicCalendar } from "@/lib/booking/public";
+import type { ChaletSetup, PublicExtra } from "@/lib/booking/setup";
 import { addDays, daysBetween } from "@/lib/dates";
 import { formatPence } from "@/lib/money";
 import type { Quote, QuoteError } from "@/lib/pricing/quote";
-
-export type PublicExtra = {
-  id: string;
-  name: string;
-  description: string | null;
-  pricePence: number;
-  pricingType: "PER_STAY" | "PER_NIGHT" | "PER_GUEST" | "PER_GUEST_PER_NIGHT";
-  maxQuantity: number;
-};
 
 type QuoteResponse = {
   available: boolean;
@@ -24,6 +16,13 @@ type QuoteResponse = {
   quote: Quote | null;
   quoteError: QuoteError | null;
 };
+
+/** One chalet's answer for the chosen stay. */
+type ChaletResult =
+  | { state: "loading" }
+  | { state: "taken" }
+  | { state: "error"; message: string }
+  | { state: "done"; response: QuoteResponse };
 
 const PRICING_LABELS: Record<PublicExtra["pricingType"], string> = {
   PER_STAY: "per stay",
@@ -74,23 +73,27 @@ function latestCheckOutFrom(checkIn: string, calendar: PublicCalendar, booked: S
   return limit;
 }
 
+/**
+ * Dates, guests and price for a property and, for the studio chalets, the
+ * identical one next door: one calendar showing both, prices for each as
+ * soon as dates are chosen, and booking either without leaving the page.
+ * `chalets[0]` is the property the page is about.
+ */
 export default function AvailabilityCalendar({
-  calendar,
-  slug,
-  extras,
-  twin = null,
+  chalets,
   initial = null,
 }: {
-  calendar: PublicCalendar;
-  slug: string;
-  extras: PublicExtra[];
-  /** The identical chalet next door, offered when dates are taken here. */
-  twin?: { slug: string; calendar: PublicCalendar } | null;
-  /** Dates and guests carried over from a search or the chalet next door. */
+  chalets: ChaletSetup[];
+  /** Dates and guests carried over from a search. */
   initial?: InitialStay | null;
 }) {
-  const { property, today } = calendar;
+  const primary = chalets[0].calendar;
+  const { today } = primary;
   const firstMonth = `${today.slice(0, 7)}-01`;
+  // Guest limits that suit every chalet shown; they're identical in practice.
+  const maxGuests = Math.min(...chalets.map((c) => c.calendar.property.maxGuests));
+  const maxPets = Math.min(...chalets.map((c) => c.calendar.property.maxPets));
+
   const [monthIndex, setMonthIndex] = useState(() =>
     initial ? Math.max(0, monthsBetween(firstMonth, `${initial.checkIn.slice(0, 7)}-01`)) : 0
   );
@@ -99,122 +102,138 @@ export default function AvailabilityCalendar({
   const [guests, setGuests] = useState<Guests>(() => {
     const clamp = (v: number | undefined, min: number, max: number, fallback: number) =>
       v === undefined ? fallback : Math.max(min, Math.min(max, v));
-    const adults = clamp(initial?.adults, 1, property.maxGuests, Math.min(2, property.maxGuests));
+    const adults = clamp(initial?.adults, 1, maxGuests, Math.min(2, maxGuests));
     return {
       adults,
-      children: clamp(initial?.children, 0, property.maxGuests - adults, 0),
+      children: clamp(initial?.children, 0, maxGuests - adults, 0),
       infants: clamp(initial?.infants, 0, 2, 0),
-      pets: clamp(initial?.pets, 0, property.maxPets, 0),
+      pets: clamp(initial?.pets, 0, maxPets, 0),
     };
   });
-  // Any change invalidates the price shown, so it must be fetched again.
-  const updateGuests = (g: Guests) => {
-    setResult(null);
-    setGuests(g);
-  };
   const [chosenExtras, setChosenExtras] = useState<Record<string, number>>({});
-  const [discountCode, setDiscountCode] = useState("");
-  const [voucherCode, setVoucherCode] = useState("");
-  const [result, setResult] = useState<QuoteResponse | null>(null);
-  const [checkout, setCheckout] = useState<{ stay: StayPayload; quote: Quote } | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Codes take effect when applied, so typing doesn't look anything up.
+  const [codesOpen, setCodesOpen] = useState(false);
+  const [discountInput, setDiscountInput] = useState("");
+  const [voucherInput, setVoucherInput] = useState("");
+  const [codes, setCodes] = useState({ discount: "", voucher: "" });
+  const [results, setResults] = useState<Record<string, ChaletResult>>({});
+  const [checkout, setCheckout] = useState<{ slug: string; name: string; stay: StayPayload; quote: Quote } | null>(null);
 
-  const unavailable = useMemo(() => nightSet(calendar.unavailable), [calendar.unavailable]);
-  const twinUnavailable = useMemo(() => (twin ? nightSet(twin.calendar.unavailable) : null), [twin]);
-
-  // Dates can be chosen if they're free here or next door; which chalet
-  // they suit is shown once both are chosen.
-  const latestHere = checkIn ? latestCheckOutFrom(checkIn, calendar, unavailable) : null;
-  const latestTwin =
-    checkIn && twin && twinUnavailable ? latestCheckOutFrom(checkIn, twin.calendar, twinUnavailable) : null;
-  const latestCheckOut = [latestHere, latestTwin].filter((d): d is string => d !== null).sort().at(-1) ?? null;
-  const freeHere = Boolean(checkOut && latestHere && checkOut <= latestHere);
-  const freeTwin = Boolean(checkOut && latestTwin && checkOut <= latestTwin);
-
-  const twinFree = (d: string) => Boolean(twin && twinUnavailable && canCheckInAt(d, twin.calendar, twinUnavailable));
-  const canCheckIn = (d: string) => canCheckInAt(d, calendar, unavailable) || twinFree(d);
-  const canCheckOut = (d: string) =>
-    checkIn !== null && latestCheckOut !== null && d > checkIn && d <= latestCheckOut;
-
-  function choose(d: string) {
-    setResult(null);
-    setError(null);
-    if (checkIn && !checkOut && canCheckOut(d)) {
-      setCheckOut(d);
-    } else if (canCheckIn(d)) {
-      setCheckIn(d);
-      setCheckOut(null);
+  const booked = useMemo(() => chalets.map((c) => nightSet(c.calendar.unavailable)), [chalets]);
+  const top = useRef<HTMLDivElement>(null);
+  // Moving between choosing and checkout swaps the content; keep its top in view.
+  const inCheckout = checkout !== null;
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
     }
-  }
+    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [inCheckout]);
 
-  function stayPayload(): StayPayload {
+  const latest = checkIn ? chalets.map((c, i) => latestCheckOutFrom(checkIn, c.calendar, booked[i])) : [];
+  const latestCheckOut = latest.filter((d): d is string => d !== null).sort().at(-1) ?? null;
+  const freeFor = (i: number) => Boolean(checkOut && latest[i] && checkOut <= latest[i]!);
+
+  const freeSomewhere = (d: string) => chalets.some((c, i) => canCheckInAt(d, c.calendar, booked[i]));
+  const canCheckOut = (d: string) => checkIn !== null && latestCheckOut !== null && d > checkIn && d <= latestCheckOut;
+
+  // Extras can differ between chalets; each is quoted with its own.
+  const allExtras = useMemo(() => {
+    const byId = new Map<string, PublicExtra>();
+    for (const c of chalets) for (const x of c.extras) byId.set(x.id, x);
+    return [...byId.values()];
+  }, [chalets]);
+
+  function stayFor(chalet: ChaletSetup): StayPayload {
+    const offered = new Set(chalet.extras.map((x) => x.id));
     return {
       checkIn: checkIn!,
       checkOut: checkOut!,
       ...guests,
       extras: Object.entries(chosenExtras)
-        .filter(([, quantity]) => quantity > 0)
+        .filter(([id, quantity]) => quantity > 0 && offered.has(id))
         .map(([id, quantity]) => ({ id, quantity })),
-      discountCode: discountCode.trim() || null,
-      voucherCode: voucherCode.trim() || null,
+      discountCode: codes.discount || null,
+      voucherCode: codes.voucher || null,
     };
   }
 
-  async function check() {
-    if (!checkIn || !checkOut) return;
-    setChecking(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/quote/${slug}`, {
-        method: "POST",
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(stayPayload()),
+  // Price every chalet that's free as soon as the stay is complete, and
+  // again whenever guests, extras or codes change. Latest answer wins.
+  const stayKey = checkIn && checkOut ? JSON.stringify([checkIn, checkOut, guests, chosenExtras, codes]) : null;
+  useEffect(() => {
+    if (!stayKey) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      chalets.forEach(async (chalet, i) => {
+        const slug = chalet.slug;
+        if (!freeFor(i)) {
+          setResults((r) => ({ ...r, [slug]: { state: "taken" } }));
+          return;
+        }
+        setResults((r) => ({ ...r, [slug]: { state: "loading" } }));
+        try {
+          const res = await fetch(`/api/quote/${slug}`, {
+            method: "POST",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stayFor(chalet)),
+            signal: controller.signal,
+          });
+          const body = await res.json();
+          setResults((r) => ({
+            ...r,
+            [slug]: res.ok ? { state: "done", response: body as QuoteResponse } : { state: "error", message: body.error ?? "Something went wrong." },
+          }));
+        } catch (error) {
+          if ((error as Error).name === "AbortError") return;
+          setResults((r) => ({ ...r, [slug]: { state: "error", message: "Couldn't reach the server. Please check your connection." } }));
+        }
       });
-      const body = await res.json();
-      if (!res.ok) setError(body.error ?? "Something went wrong. Please try again.");
-      else setResult(body as QuoteResponse);
-    } catch {
-      setError("Couldn't reach the server. Please check your connection and try again.");
-    } finally {
-      setChecking(false);
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+    // stayKey captures everything the quotes depend on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stayKey]);
+
+  function choose(d: string) {
+    setResults({});
+    if (checkIn && !checkOut && canCheckOut(d)) {
+      setCheckOut(d);
+    } else if (freeSomewhere(d)) {
+      setCheckIn(d);
+      setCheckOut(null);
     }
   }
 
   if (checkout) {
     return (
-      <CheckoutStep
-        slug={slug}
-        propertyName={property.name}
-        stay={checkout.stay}
-        quote={checkout.quote}
-        onBack={() => {
-          setCheckout(null);
-          setResult(null);
-        }}
-      />
+      <div ref={top} className="scroll-mt-24">
+        <CheckoutStep
+          slug={checkout.slug}
+          propertyName={checkout.name}
+          stay={checkout.stay}
+          quote={checkout.quote}
+          onBack={() => setCheckout(null)}
+        />
+      </div>
     );
   }
 
   const months = [0, 1].map((i) => addMonths(firstMonth, monthIndex + i));
-  const lastCheckIn = [calendar.lastCheckIn, twin?.calendar.lastCheckIn ?? ""].sort().at(-1)!;
+  const lastCheckIn = chalets.map((c) => c.calendar.lastCheckIn).sort().at(-1)!;
   const lastMonth = `${lastCheckIn.slice(0, 7)}-01`;
-  const twinName = twin?.calendar.property.name;
-  const twinHref =
-    twin && checkIn && checkOut
-      ? `/book/${twin.slug}?${new URLSearchParams({
-          checkIn,
-          checkOut,
-          adults: String(guests.adults),
-          children: String(guests.children),
-          infants: String(guests.infants),
-          pets: String(guests.pets),
-        })}`
-      : null;
+  const twins = chalets.slice(1);
+  const twinName = twins[0]?.calendar.property.name;
+  const minNights = primary.property.defaultMinNights;
 
   return (
-    <div className="space-y-6">
+    <div ref={top} className="scroll-mt-24 space-y-6">
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -242,12 +261,13 @@ export default function AvailabilityCalendar({
             dayState={(d) => {
               const inRange = checkIn && checkOut && d > checkIn && d < checkOut;
               const selected = d === checkIn || d === checkOut;
-              const selectable = checkIn && !checkOut ? canCheckOut(d) || canCheckIn(d) : canCheckIn(d);
+              const selectable = checkIn && !checkOut ? canCheckOut(d) || freeSomewhere(d) : freeSomewhere(d);
+              const bookedHere = booked[0].has(d);
               return {
                 selected: Boolean(selected),
                 inRange: Boolean(inRange),
-                unavailable: unavailable.has(d),
-                twinFree: unavailable.has(d) && twinFree(d),
+                unavailable: bookedHere,
+                twinFree: bookedHere && twins.some((c, i) => canCheckInAt(d, c.calendar, booked[i + 1])),
                 selectable,
               };
             }}
@@ -258,12 +278,12 @@ export default function AvailabilityCalendar({
       </div>
 
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <span><span className="inline-block h-3 w-3 border border-border bg-surface align-middle" /> Available</span>
-        <span><span className="inline-block h-3 w-3 bg-muted align-middle" /> Booked</span>
-        <span><span className="inline-block h-3 w-3 bg-primary align-middle" /> Your dates</span>
+        <span><span className="inline-block h-3 w-3 border border-border bg-white align-middle" /> Available</span>
+        <span><span className="text-muted-foreground/60 line-through">12</span> Booked</span>
         {twinName && (
           <span><span className="inline-block h-3 w-3 bg-oak/40 align-middle" /> Booked here, {twinName} free</span>
         )}
+        <span><span className="inline-block h-3 w-3 bg-primary align-middle" /> Your dates</span>
       </div>
 
       <div className="border border-border bg-surface p-4 text-sm">
@@ -271,7 +291,7 @@ export default function AvailabilityCalendar({
         {checkIn && !checkOut && (
           <p>
             Check-in {show(checkIn)}. Now choose your check-out date
-            {property.defaultMinNights > 1 && ` (minimum stay usually ${property.defaultMinNights} nights)`}.
+            {minNights > 1 && ` (minimum stay usually ${minNights} nights)`}.
           </p>
         )}
         {checkIn && checkOut && (
@@ -279,53 +299,27 @@ export default function AvailabilityCalendar({
             {show(checkIn)} → {show(checkOut)} · {daysBetween(checkIn, checkOut)} nights
           </p>
         )}
-        {checkIn && checkOut && twinName && freeHere && freeTwin && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {twinName}, the identical chalet next door, is free for these dates too.
-          </p>
-        )}
         <p className="mt-1 text-xs text-muted-foreground">
-          Check-in from {property.checkInTime}, check-out by {property.checkOutTime}.
+          Check-in from {primary.property.checkInTime}, check-out by {primary.property.checkOutTime}.
         </p>
       </div>
 
-      {checkIn && checkOut && !freeHere && freeTwin && twinHref && (
-        <div className="border border-oak bg-oak/15 p-4 text-sm">
-          <p className="font-semibold text-foreground-strong">
-            {property.name} is booked for some of these nights, but {twinName} is free.
-          </p>
-          <p className="mt-1">{twinName} is the identical studio chalet right next door, with the same view.</p>
-          <a href={twinHref} className="mt-3 inline-block bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90">
-            Book {twinName} for these dates
-          </a>
-        </div>
-      )}
-
-      {checkIn && checkOut && twinName && !freeHere && !freeTwin && (
-        <p className="border border-red-300 bg-red-50 p-4 text-sm text-red-900">
-          Neither {property.name} nor {twinName} is free for all of these nights. Please choose other dates.
-        </p>
-      )}
-
       <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <legend className="mb-2 text-sm font-medium text-foreground-strong">Guests</legend>
-        <Counter label="Adults" value={guests.adults} min={1} max={property.maxGuests - guests.children} onChange={(adults) => updateGuests({ ...guests, adults })} />
-        <Counter label="Children" value={guests.children} min={0} max={property.maxGuests - guests.adults} onChange={(children) => updateGuests({ ...guests, children })} />
-        <Counter label="Infants (under 2)" value={guests.infants} min={0} max={2} onChange={(infants) => updateGuests({ ...guests, infants })} />
-        <Counter label="Pets" value={guests.pets} min={0} max={property.maxPets} onChange={(pets) => updateGuests({ ...guests, pets })} />
+        <Counter label="Adults" value={guests.adults} min={1} max={maxGuests - guests.children} onChange={(adults) => setGuests({ ...guests, adults })} />
+        <Counter label="Children" value={guests.children} min={0} max={maxGuests - guests.adults} onChange={(children) => setGuests({ ...guests, children })} />
+        <Counter label="Infants (under 2)" value={guests.infants} min={0} max={2} onChange={(infants) => setGuests({ ...guests, infants })} />
+        <Counter label="Pets" value={guests.pets} min={0} max={maxPets} onChange={(pets) => setGuests({ ...guests, pets })} />
       </fieldset>
 
-      {extras.length > 0 && (
+      {allExtras.length > 0 && (
         <fieldset className="space-y-3">
           <legend className="mb-2 text-sm font-medium text-foreground-strong">Extras</legend>
-          {extras.map((x) => {
+          {allExtras.map((x) => {
             const perGuest = x.pricingType === "PER_GUEST" || x.pricingType === "PER_GUEST_PER_NIGHT";
             const max = perGuest ? 1 : x.maxQuantity;
             const quantity = chosenExtras[x.id] ?? 0;
-            const setQuantity = (q: number) => {
-              setResult(null);
-              setChosenExtras({ ...chosenExtras, [x.id]: q });
-            };
+            const setQuantity = (q: number) => setChosenExtras({ ...chosenExtras, [x.id]: q });
             return (
               <div key={x.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <span>
@@ -350,90 +344,172 @@ export default function AvailabilityCalendar({
         </fieldset>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="font-medium text-foreground-strong">Discount code (optional)</span>
-          <input
-            value={discountCode}
-            onChange={(e) => {
-              setResult(null);
-              setDiscountCode(e.target.value);
+      <div className="text-sm">
+        {!codesOpen ? (
+          <button type="button" onClick={() => setCodesOpen(true)} className="underline">
+            Have a discount code or gift voucher?
+          </button>
+        ) : (
+          <form
+            className="flex flex-wrap items-end gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setCodes({ discount: discountInput.trim(), voucher: voucherInput.trim() });
             }}
-            maxLength={32}
-            autoCapitalize="characters"
-            className="mt-1 block w-full max-w-xs border border-border bg-surface px-3 py-2 uppercase"
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="font-medium text-foreground-strong">Gift voucher code (optional)</span>
-          <input
-            value={voucherCode}
-            onChange={(e) => {
-              setResult(null);
-              setVoucherCode(e.target.value);
-            }}
-            maxLength={40}
-            autoCapitalize="characters"
-            autoComplete="off"
-            className="mt-1 block w-full max-w-xs border border-border bg-surface px-3 py-2 uppercase"
-          />
-          <span className="mt-1 block text-xs text-muted-foreground">
-            With a voucher, anything it doesn&apos;t cover is paid by card when you book.
-          </span>
-        </label>
+          >
+            <label className="block">
+              <span className="font-medium text-foreground-strong">Discount code</span>
+              <input
+                value={discountInput}
+                onChange={(e) => setDiscountInput(e.target.value)}
+                maxLength={32}
+                autoCapitalize="characters"
+                className="mt-1 block w-48 border border-border bg-surface px-3 py-2 uppercase"
+              />
+            </label>
+            <label className="block">
+              <span className="font-medium text-foreground-strong">Gift voucher code</span>
+              <input
+                value={voucherInput}
+                onChange={(e) => setVoucherInput(e.target.value)}
+                maxLength={40}
+                autoCapitalize="characters"
+                autoComplete="off"
+                className="mt-1 block w-48 border border-border bg-surface px-3 py-2 uppercase"
+              />
+            </label>
+            <button type="submit" className="border border-primary px-4 py-2 font-medium text-primary hover:bg-primary/10">
+              Apply
+            </button>
+            <p className="w-full text-xs text-muted-foreground">
+              With a voucher, anything it doesn&apos;t cover is paid by card when you book.
+            </p>
+          </form>
+        )}
       </div>
 
-      <button
-        type="button"
-        onClick={check}
-        disabled={!checkIn || !checkOut || checking || (twin !== null && !freeHere)}
-        className="w-full bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-      >
-        {checking ? "Checking…" : "Check availability and price"}
-      </button>
-
-      <div aria-live="polite">
-        {error && <p className="text-sm text-red-700">{error}</p>}
-        {result && (
-          <div className={`border p-4 text-sm ${result.available ? "border-green-300 bg-green-50 text-green-900" : "border-red-300 bg-red-50 text-red-900"}`}>
-            {result.available ? (
-              <>
-                <p className="font-semibold">Good news: these dates are available for {result.nights} nights.</p>
-                {result.quote && (
-                  <div className="mt-3 border-t border-green-300 pt-3 text-foreground">
-                    <PriceBreakdown quote={result.quote} />
-                  </div>
-                )}
-                {result.quoteError && <p className="mt-2 text-red-800">{result.quoteError.message}</p>}
-                {result.quote && (
-                  <button
-                    type="button"
-                    onClick={() => setCheckout({ stay: stayPayload(), quote: result.quote! })}
-                    className="mt-4 w-full bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90"
-                  >
-                    Continue
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="font-semibold">Sorry, we can&apos;t take this booking:</p>
-                <ul className="mt-1 list-disc pl-5">
-                  {result.reasons.map((r) => (
-                    <li key={r.code}>{r.message}</li>
-                  ))}
-                </ul>
-              </>
+      <div aria-live="polite" className="space-y-4">
+        {checkIn && checkOut && (
+          <>
+            {chalets.every((c) => results[c.slug]?.state === "taken") && (
+              <p className="border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+                {chalets.length > 1
+                  ? `Neither ${chalets.map((c) => c.calendar.property.name).join(" nor ")} is free for all of these nights.`
+                  : "These dates aren't free."}{" "}
+                Please choose other dates.
+              </p>
             )}
-          </div>
+            <div className={`grid gap-4 ${chalets.length > 1 ? "md:grid-cols-2" : ""}`}>
+              {chalets.map((chalet, i) => (
+                <ChaletCard
+                  key={chalet.slug}
+                  name={chalet.calendar.property.name}
+                  isThisPage={i === 0}
+                  showName={chalets.length > 1}
+                  result={results[chalet.slug] ?? { state: "loading" }}
+                  hideIfTaken={chalets.length > 1}
+                  onBook={(quote) =>
+                    setCheckout({ slug: chalet.slug, name: chalet.calendar.property.name, stay: stayFor(chalet), quote })
+                  }
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
       <p className="text-xs text-muted-foreground">
         Bookings made on other websites can take a little while to show here
-        {calendar.calendarsSyncedAt && ` (last updated ${new Date(calendar.calendarsSyncedAt).toLocaleString("en-GB", { timeZone: property.timezone, hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })})`}
+        {primary.calendarsSyncedAt &&
+          ` (last updated ${new Date(primary.calendarsSyncedAt).toLocaleString("en-GB", { timeZone: primary.property.timezone, hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })})`}
         . We always confirm availability again before taking payment.
       </p>
+    </div>
+  );
+}
+
+function ChaletCard({
+  name,
+  isThisPage,
+  showName,
+  result,
+  hideIfTaken,
+  onBook,
+}: {
+  name: string;
+  isThisPage: boolean;
+  showName: boolean;
+  result: ChaletResult;
+  hideIfTaken: boolean;
+  onBook: (quote: Quote) => void;
+}) {
+  if (result.state === "taken" && hideIfTaken) {
+    return (
+      <div className="self-start border border-border bg-muted p-4 text-sm text-muted-foreground" data-chalet={name}>
+        <p className="font-semibold text-foreground-strong">{name}</p>
+        <p className="mt-1">Booked for some of these nights.</p>
+      </div>
+    );
+  }
+  const heading = showName && (
+    <p className="font-semibold text-foreground-strong">
+      {name}
+      {!isThisPage && <span className="ml-2 text-xs font-normal text-muted-foreground">the identical chalet next door</span>}
+    </p>
+  );
+
+  if (result.state === "loading") {
+    return (
+      <div className="border border-border bg-surface p-4 text-sm" data-chalet={name}>
+        {heading}
+        <p className="mt-1 text-muted-foreground">Checking the price…</p>
+      </div>
+    );
+  }
+  if (result.state === "error") {
+    return (
+      <div className="border border-red-300 bg-red-50 p-4 text-sm text-red-900" data-chalet={name}>
+        {heading}
+        <p className="mt-1">{result.message}</p>
+      </div>
+    );
+  }
+  if (result.state === "taken" || !result.response.available) {
+    return (
+      <div className="border border-red-300 bg-red-50 p-4 text-sm text-red-900" data-chalet={name}>
+        {heading}
+        <p className="font-semibold">Sorry, we can&apos;t take this booking:</p>
+        <ul className="mt-1 list-disc pl-5">
+          {result.state === "taken" ? (
+            <li>These dates aren&apos;t free.</li>
+          ) : (
+            result.response.reasons.map((r) => <li key={r.code}>{r.message}</li>)
+          )}
+        </ul>
+      </div>
+    );
+  }
+
+  const { quote, quoteError, nights } = result.response;
+  return (
+    <div className="border border-green-300 bg-green-50 p-4 text-sm" data-chalet={name}>
+      {heading}
+      <p className="font-semibold text-green-900">Available for {nights} nights</p>
+      {quote && (
+        <div className="mt-3 border-t border-green-300 pt-3 text-foreground">
+          <PriceBreakdown quote={quote} />
+        </div>
+      )}
+      {quoteError && <p className="mt-2 text-red-800">{quoteError.message}</p>}
+      {quote && (
+        <button
+          type="button"
+          onClick={() => onBook(quote)}
+          className="mt-4 w-full bg-primary px-4 py-3 font-medium text-primary-foreground hover:opacity-90"
+        >
+          {showName ? `Book ${name}` : "Book now"}
+        </button>
+      )}
     </div>
   );
 }
@@ -473,11 +549,11 @@ function Month({
             : s.inRange
               ? "bg-primary/20 text-foreground-strong"
               : s.twinFree
-                ? "bg-oak/40 text-foreground-strong line-through hover:outline hover:outline-primary"
+                ? "bg-oak/40 text-foreground-strong hover:outline hover:outline-primary"
                 : s.unavailable
-                  ? "bg-muted text-muted-foreground line-through"
+                  ? "text-muted-foreground/60 line-through"
                   : s.selectable
-                    ? "border border-border bg-surface hover:border-primary"
+                    ? "border border-border bg-white font-medium text-foreground-strong hover:border-primary"
                     : "text-muted-foreground/50";
           return (
             <button

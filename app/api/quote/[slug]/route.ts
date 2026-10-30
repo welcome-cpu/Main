@@ -11,7 +11,7 @@ import { lookupVoucher } from "@/lib/vouchers/giftup";
  * accepts a price from the browser.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const blocked = await guardPublicRequest(request, "quote", 30);
+  const blocked = await guardPublicRequest(request, "quote", 60);
   if (blocked) return blocked;
 
   const read = await readJsonBody(request);
