@@ -84,16 +84,30 @@ function latestCheckOutFrom(checkIn: string, calendar: PublicCalendar, booked: S
 }
 
 /**
- * Dates a stay can start on. Only these show as available: a free night
- * that a stay can't start on (in a gap too short for the minimum, or the
- * last night or two before a booking) would only confuse guests.
+ * Which dates are part of some bookable stay at one chalet, and the
+ * shortest such stay for each: its check-in day, any night of it, or its
+ * check-out day. Only these dates show as available, so a free night in a
+ * gap too short for the minimum stay never does. For a date that can't be
+ * a check-in itself, `stayFor` is the shortest stay starting as late as
+ * possible that includes it, picked when the guest clicks it.
  */
-function checkInDates(calendar: PublicCalendar, booked: Set<string>) {
-  const dates = new Set<string>();
-  for (let d = calendar.firstCheckIn; d <= calendar.lastCheckIn; d = addDays(d, 1)) {
-    if (latestCheckOutFrom(d, calendar, booked)) dates.add(d);
+function bookableDates(calendar: PublicCalendar, booked: Set<string>) {
+  const checkIns = new Set<string>();
+  const stayFor = new Map<string, { checkIn: string; checkOut: string }>();
+  for (let s = calendar.firstCheckIn; s <= calendar.lastCheckIn; s = addDays(s, 1)) {
+    const latest = latestCheckOutFrom(s, calendar, booked);
+    if (!latest) continue;
+    checkIns.add(s);
+    const shortest = addDays(s, minNightsAt(calendar, s));
+    // Later check-ins overwrite earlier ones: the nearest start wins.
+    for (let d = addDays(s, 1); d <= latest; d = addDays(d, 1)) {
+      // A night is included (check out the next day at the earliest); the
+      // last date can only be the check-out day.
+      const end = d === latest ? d : addDays(d, 1);
+      stayFor.set(d, { checkIn: s, checkOut: end > shortest ? end : shortest });
+    }
   }
-  return dates;
+  return { checkIns, stayFor };
 }
 
 /**
@@ -143,7 +157,8 @@ export default function AvailabilityCalendar({
   const [checkout, setCheckout] = useState<{ slug: string; name: string; stay: StayPayload; quote: Quote } | null>(null);
 
   const booked = useMemo(() => chalets.map((c) => nightSet(c.calendar.unavailable)), [chalets]);
-  const startable = useMemo(() => chalets.map((c, i) => checkInDates(c.calendar, booked[i])), [chalets, booked]);
+  const bookable = useMemo(() => chalets.map((c, i) => bookableDates(c.calendar, booked[i])), [chalets, booked]);
+  const availableAt = (i: number, d: string) => bookable[i].checkIns.has(d) || bookable[i].stayFor.has(d);
   const top = useRef<HTMLDivElement>(null);
   // Moving between choosing and checkout swaps the content; keep its top in view.
   const inCheckout = checkout !== null;
@@ -161,7 +176,7 @@ export default function AvailabilityCalendar({
 
   // A check-in is offered only where a long enough stay can start, and a
   // check-out only where the stay meets the minimum at a chalet that's free.
-  const freeSomewhere = (d: string) => startable.some((dates) => dates.has(d));
+  const freeSomewhere = (d: string) => bookable.some((b) => b.checkIns.has(d));
   const canCheckOut = (d: string) =>
     checkIn !== null &&
     chalets.some(
@@ -244,6 +259,14 @@ export default function AvailabilityCalendar({
     } else if (freeSomewhere(d)) {
       setCheckIn(d);
       setCheckOut(null);
+    } else {
+      // Part of a stay but not a possible check-in: pick the shortest stay
+      // that includes it, this chalet first.
+      const stay = bookable.map((b) => b.stayFor.get(d)).find(Boolean);
+      if (stay) {
+        setCheckIn(stay.checkIn);
+        setCheckOut(stay.checkOut);
+      }
     }
   }
 
@@ -304,16 +327,16 @@ export default function AvailabilityCalendar({
               // the available ones; otherwise, the days a stay can start.
               const choosingCheckOut = Boolean(checkIn && !checkOut);
               const checkOutOption = choosingCheckOut && canCheckOut(d);
-              const selectable = checkOutOption || freeSomewhere(d);
+              const selectable = checkOutOption || chalets.some((_, i) => availableAt(i, d));
               // Nights inside the stay before the minimum is reached aren't unavailable, just not a check-out.
               const withinStay = choosingCheckOut && d > checkIn! && chalets.some((_, i) => latest[i] !== null && d < latest[i]!);
-              const unavailableHere = !checkOutOption && !withinStay && !startable[0].has(d);
+              const unavailableHere = !checkOutOption && !withinStay && !availableAt(0, d);
               return {
                 selected: Boolean(selected),
                 inRange: Boolean(inRange),
                 unavailable: unavailableHere,
                 booked: booked[0].has(d),
-                twinFree: unavailableHere && !choosingCheckOut && twins.some((_, i) => startable[i + 1].has(d)),
+                twinFree: unavailableHere && !choosingCheckOut && twins.some((_, i) => availableAt(i + 1, d)),
                 checkOutOption,
                 selectable,
               };
@@ -618,7 +641,7 @@ function Month({
               disabled={!s.selectable && !s.selected}
               onClick={() => onChoose(d)}
               aria-pressed={s.selected}
-              aria-label={`${show(d)}${s.checkOutOption ? ", check-out" : s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : s.booked ? ", booked" : s.unavailable ? ", not available" : ""}`}
+              aria-label={`${show(d)}${s.checkOutOption ? ", check-out" : s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : !s.unavailable ? "" : s.booked ? ", booked" : ", not available"}`}
               className={`aspect-square text-sm disabled:cursor-default ${cls}`}
             >
               {i + 1}

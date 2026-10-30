@@ -45,11 +45,21 @@ test("a single free night between bookings isn't offered", async ({ page }) => {
   await expect(lonelyNight).toBeDisabled();
   await expect(page.locator(`[data-date="${inDays(150)}"]`)).toHaveAttribute("aria-label", /booked/);
 
-  // The last free night before a booking can't start a 2-night stay either.
-  await showMonthWith(page, inDays(147));
-  await expect(page.locator(`[data-date="${inDays(147)}"]`)).toHaveAttribute("aria-label", /not available/);
-  await expect(page.locator(`[data-date="${inDays(147)}"]`)).toBeDisabled();
-  await expect(page.locator(`[data-date="${inDays(146)}"]`)).toBeEnabled();
+});
+
+test("every date of a bookable stay shows as available, and clicking one picks that stay", async ({ page }) => {
+  await page.goto(`/book/${E2E_SLUG}`);
+  await showMonthWith(page, inDays(146));
+  // Days 146–148: check in 146, check out 148 (when the block starts).
+  for (const d of [146, 147, 148]) {
+    await expect(page.locator(`[data-date="${inDays(d)}"]`)).toBeEnabled();
+    await expect(page.locator(`[data-date="${inDays(d)}"]`)).not.toHaveAttribute("aria-label", /booked|not available/);
+  }
+  // 147 can't be a check-in (one night before the block), so it picks 146–148.
+  await page.locator(`[data-date="${inDays(147)}"]`).click();
+  await expect(page.locator(`[data-date="${inDays(146)}"]`)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(`[data-date="${inDays(148)}"]`)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Available for 2 nights")).toBeVisible();
 });
 
 test("check-out isn't offered before the minimum stay", async ({ page }) => {
