@@ -66,6 +66,7 @@ never touch dev or production data.
 | `/api/cron/expire-holds` | every 5 min | Tidies lapsed holds (availability ignores them anyway) |
 | `/api/cron/send-emails` | every 5 min | Sends/retries queued email |
 | `/api/cron/import-rates` | 04:00 daily | Copies nightly prices and stay limits from Lodgify |
+| `/api/cron/import-lodgify-bookings` | 04:30 daily | Copies Lodgify's bookings (guest name, party size, country from the phone's dialling code; no contact details) for the admin bookings list |
 | `/api/cron/charge-balances` | 09:00 daily | Charges balances due, to the saved card |
 
 ## Switch-over checklist

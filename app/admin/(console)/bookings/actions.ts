@@ -13,6 +13,7 @@ import { requireAdmin } from "@/lib/admin/dal";
 import { isUuid } from "@/lib/admin/properties";
 import { cancelBookingSchema, fieldErrors, manualPaymentSchema } from "@/lib/admin/validation";
 import { processOutbox } from "@/lib/email/outbox";
+import { importLodgifyBookings } from "@/lib/guests/lodgify-import";
 import { chargeDueBalances } from "@/lib/payments/balance";
 import { isPaymentConfigured, stripeGateway } from "@/lib/payments/gateway";
 
@@ -65,4 +66,13 @@ export async function retryBalanceAction(id: string): Promise<FormState> {
   if (!scheduled.paymentId) return { message: scheduled.error ?? "Couldn't retry." };
   const [outcome] = await chargeDueBalances(stripeGateway, new Date(), scheduled.paymentId);
   return done(id, outcome?.ok ? "Balance charged successfully." : "The card was declined again. The guest has been emailed.");
+}
+
+export async function importLodgifyBookingsAction(): Promise<FormState> {
+  const admin = await requireAdmin();
+  const outcome = await importLodgifyBookings("MANUAL", admin.email);
+  revalidatePath("/admin/bookings");
+  return outcome.ok
+    ? { ok: true, message: `Imported ${outcome.imported} bookings from Lodgify.` }
+    : { message: `Import failed: ${outcome.error}` };
 }

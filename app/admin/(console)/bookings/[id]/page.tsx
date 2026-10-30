@@ -11,6 +11,7 @@ import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import { getBooking } from "@/lib/admin/bookings";
 import { requireAdmin } from "@/lib/admin/dal";
 import { isUuid } from "@/lib/admin/properties";
+import { countryName } from "@/lib/countries";
 import { formatPence } from "@/lib/money";
 
 const day = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -64,6 +65,7 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
                   </a>
                 </p>
               )}
+              {b.guest.country && <p>{countryName(b.guest.country)}</p>}
             </>
           ) : (
             <p className="text-muted-foreground">No guest details.</p>

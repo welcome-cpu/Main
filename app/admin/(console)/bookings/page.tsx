@@ -1,14 +1,19 @@
 import Link from "next/link";
+import { importLodgifyBookingsAction } from "@/app/admin/(console)/bookings/actions";
+import { ActionButton } from "@/components/admin/BookingActions";
 import { listBookings, needsAttention, type BookingFilters } from "@/lib/admin/bookings";
 import { listConflicts } from "@/lib/admin/calendars";
 import { requireAdmin } from "@/lib/admin/dal";
 import { isUuid, listProperties } from "@/lib/admin/properties";
+import { countryName } from "@/lib/countries";
 import { isValidDate } from "@/lib/dates";
+import { guestCountries, lastBookingImport } from "@/lib/guests/lodgify-import";
 import { formatPence } from "@/lib/money";
 
 const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" });
 const show = (iso: string) => day.format(new Date(`${iso}T00:00:00Z`));
 const money = (p: number | null) => (p === null ? "—" : formatPence(p));
+const at = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
 
 const STATUSES = ["CONFIRMED", "HOLD", "CANCELLED", "EXPIRED", "ALL"] as const;
 const SOURCES = [
@@ -38,11 +43,14 @@ function parseFilters(q: Record<string, string | string[] | undefined>): Booking
 export default async function AdminBookingsPage({ searchParams }: PageProps<"/admin/bookings">) {
   await requireAdmin();
   const filters = parseFilters(await searchParams);
-  const [rows, properties, attention, allConflicts] = await Promise.all([
+  const year = Number(new Intl.DateTimeFormat("en-GB", { year: "numeric", timeZone: "Europe/London" }).format(new Date()));
+  const [rows, properties, attention, allConflicts, countries, lastImport] = await Promise.all([
     listBookings(filters),
     listProperties(),
     needsAttention(),
     listConflicts(),
+    guestCountries(year),
+    lastBookingImport(),
   ]);
   // Exact-date matches are our own bookings reflected back by a channel.
   const conflicts = allConflicts.filter((c) => !c.exactMatch);
@@ -140,7 +148,8 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
         </form>
         <p className="mt-2 text-xs text-muted-foreground">
           Without dates, shows stays from today onwards. Imported bookings come from other channels&apos; calendars and have
-          no payment details here.
+          no payment details here. Their guest names and countries are copied from Lodgify each morning; a country is worked
+          out from the guest&apos;s phone number, as Airbnb and Booking.com don&apos;t share addresses.
         </p>
       </section>
 
@@ -151,7 +160,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border text-muted-foreground">
               <tr>
-                {["Ref", "Guest", "Property", "Check-in", "Check-out", "Guests", "Source", "Total", "Paid", "Balance", "Payment", "Status"].map((h) => (
+                {["Ref", "Guest", "Country", "Property", "Check-in", "Check-out", "Guests", "Source", "Total", "Paid", "Balance", "Payment", "Status"].map((h) => (
                   <th key={h} className="py-2 pr-3 font-medium whitespace-nowrap">
                     {h}
                   </th>
@@ -183,6 +192,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                       </a>
                     )}
                   </td>
+                  <td className="py-2 pr-3 whitespace-nowrap">{r.guestCountry ? countryName(r.guestCountry) : "—"}</td>
                   <td className="py-2 pr-3">{r.propertyName}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{show(r.checkIn)}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{show(r.checkOut)}</td>
@@ -197,6 +207,51 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
               ))}
             </tbody>
           </table>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground-strong">Where guests are from</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Confirmed bookings by year of arrival, from Lodgify (all channels) and this site. For Lodgify bookings the
+            country comes from the guest&apos;s phone number, so it&apos;s where their phone is registered.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <ActionButton action={importLodgifyBookingsAction} label="Import from Lodgify now" />
+          <span className="text-muted-foreground">
+            {lastImport
+              ? lastImport.status === "ERROR"
+                ? `Last import failed ${at.format(new Date(lastImport.startedAt))}: ${lastImport.error}`
+                : `Last imported ${at.format(new Date(lastImport.startedAt))}${lastImport.bookingsImported !== null ? ` (${lastImport.bookingsImported} bookings)` : ""}`
+              : "Not imported yet."}
+          </span>
+        </div>
+        {countries.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="text-left text-sm">
+              <thead className="border-b border-border text-muted-foreground">
+                <tr>
+                  {["Country", String(year), String(year - 1), "All time"].map((h) => (
+                    <th key={h} className="py-2 pr-6 font-medium whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {countries.map((c) => (
+                  <tr key={c.country ?? "unknown"} className="border-b border-border">
+                    <td className="py-2 pr-6">{c.country ? countryName(c.country) : "Unknown"}</td>
+                    <td className="py-2 pr-6 tabular-nums">{c.thisYear}</td>
+                    <td className="py-2 pr-6 tabular-nums">{c.lastYear}</td>
+                    <td className="py-2 pr-6 tabular-nums">{c.allTime}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>

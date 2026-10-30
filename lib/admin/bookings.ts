@@ -4,6 +4,7 @@ import { lockPropertyAvailability } from "@/lib/booking/locks";
 import { db } from "@/lib/db/client";
 import { enqueueBookingCancelledEmail, enqueueBookingConfirmedEmails } from "@/lib/email/booking-emails";
 import type { AdminUser } from "@/lib/admin/users";
+import { CHANNEL_FOR_SOURCE, channelLabel } from "@/lib/guests/lodgify-bookings";
 import type { Quote } from "@/lib/pricing/quote";
 
 export type BookingFilters = {
@@ -23,6 +24,8 @@ export type BookingRow = {
   guestName: string | null;
   guestEmail: string | null;
   guestPhone: string | null;
+  /** Given by direct guests; for Lodgify bookings, worked out from the phone number. */
+  guestCountry: string | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -38,7 +41,9 @@ export type BookingRow = {
 
 /**
  * Bookings taken here plus (optionally) bookings imported from other
- * channels' calendars, which have no guest or payment details.
+ * channels' calendars. Calendars carry no guest details; where a calendar
+ * entry matches a booking copied from Lodgify, its guest name, country and
+ * channel are shown.
  */
 export async function listBookings(f: BookingFilters): Promise<BookingRow[]> {
   const sql = db();
@@ -53,7 +58,7 @@ export async function listBookings(f: BookingFilters): Promise<BookingRow[]> {
     ? await sql<BookingRow[]>`
         SELECT 'RESERVATION' AS kind, r.id, r.reference,
                CASE WHEN g.id IS NULL THEN NULL ELSE g.first_name || ' ' || g.last_name END AS guest_name,
-               g.email AS guest_email, g.phone AS guest_phone,
+               g.email AS guest_email, g.phone AS guest_phone, g.country AS guest_country,
                p.name AS property_name, r.check_in, r.check_out,
                r.adults || ' ad' || CASE WHEN r.children > 0 THEN ', ' || r.children || ' ch' ELSE '' END
                  || CASE WHEN r.infants > 0 THEN ', ' || r.infants || ' inf' ELSE '' END
@@ -75,27 +80,45 @@ export async function listBookings(f: BookingFilters): Promise<BookingRow[]> {
       `
     : [];
 
+  // Airbnb and Booking.com bookings usually arrive through Lodgify's calendar,
+  // so filtering by those channels also matches on the Lodgify copy.
+  const channel = f.source ? (CHANNEL_FOR_SOURCE[f.source] ?? null) : null;
   const external = includeExternal
-    ? await sql<BookingRow[]>`
-        SELECT 'EXTERNAL' AS kind, e.id, NULL AS reference, e.summary AS guest_name,
-               NULL AS guest_email, NULL AS guest_phone, p.name AS property_name,
-               e.start_date AS check_in, e.end_date AS check_out, NULL AS guests,
-               f.source, s.label AS source_label,
+    ? await sql<(BookingRow & { channel: string | null })[]>`
+        SELECT 'EXTERNAL' AS kind, e.id, NULL AS reference, COALESCE(lb.guest_name, e.summary) AS guest_name,
+               NULL AS guest_email, NULL AS guest_phone, lb.country AS guest_country, p.name AS property_name,
+               e.start_date AS check_in, e.end_date AS check_out,
+               CASE WHEN lb.lodgify_booking_id IS NULL THEN NULL ELSE
+                 lb.adults || ' ad' || CASE WHEN lb.children > 0 THEN ', ' || lb.children || ' ch' ELSE '' END
+                   || CASE WHEN lb.infants > 0 THEN ', ' || lb.infants || ' inf' ELSE '' END
+                   || CASE WHEN lb.pets > 0 THEN ', ' || lb.pets || ' pet' ELSE '' END
+               END AS guests,
+               f.source, s.label AS source_label, lb.channel,
                NULL AS total_pence, NULL AS paid_pence, NULL AS balance_pence, NULL AS payment_status,
                'CONFIRMED' AS status
         FROM external_events e
         JOIN calendar_feeds f ON f.id = e.feed_id AND f.is_active
         JOIN properties p ON p.id = e.property_id
         JOIN booking_sources s ON s.code = f.source
+        LEFT JOIN LATERAL (
+          SELECT * FROM lodgify_bookings b
+          WHERE b.property_id = e.property_id AND b.arrival = e.start_date AND b.departure = e.end_date
+            AND b.status = 'Booked'
+          ORDER BY b.imported_at DESC
+          LIMIT 1
+        ) lb ON true
         WHERE e.status = 'ACTIVE' AND e.nights && daterange(${from}::date, ${to}::date, '[)')
           ${f.propertyId ? sql`AND e.property_id = ${f.propertyId}` : sql``}
-          ${f.source && f.source !== "EXTERNAL" ? sql`AND f.source = ${f.source}` : sql``}
+          ${f.source && f.source !== "EXTERNAL" ? (channel ? sql`AND (f.source = ${f.source} OR lb.channel = ${channel})` : sql`AND f.source = ${f.source}`) : sql``}
         ORDER BY e.start_date
         LIMIT 500
       `
     : [];
 
-  return [...reservations, ...external].sort((a, b) => (a.checkIn < b.checkIn ? -1 : a.checkIn > b.checkIn ? 1 : 0));
+  const labelled: BookingRow[] = external.map(({ channel: ch, ...row }) =>
+    ch ? { ...row, sourceLabel: `${channelLabel(ch)} (via Lodgify)` } : row
+  );
+  return [...reservations, ...labelled].sort((a, b) => (a.checkIn < b.checkIn ? -1 : a.checkIn > b.checkIn ? 1 : 0));
 }
 
 export type BookingDetail = {
@@ -112,7 +135,7 @@ export type BookingDetail = {
   children: number;
   infants: number;
   pets: number;
-  guest: { firstName: string; lastName: string; email: string; phone: string | null } | null;
+  guest: { firstName: string; lastName: string; email: string; phone: string | null; country: string | null } | null;
   guestMessage: string | null;
   quote: Quote | null;
   totalPence: number;
@@ -149,13 +172,15 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
     guestLastName: string | null;
     guestEmail: string | null;
     guestPhone: string | null;
+    guestCountry: string | null;
   })[]>`
     SELECT r.id, r.reference, r.status, r.source, s.label AS source_label, r.property_id, p.name AS property_name,
            r.check_in, r.check_out, r.adults, r.children, r.infants, r.pets, r.guest_message,
            r.price_breakdown AS quote, fin.total_pence, fin.paid_pence, fin.balance_pence, fin.payment_status,
            r.balance_due_date, r.hold_expires_at, r.confirmed_at, r.cancelled_at, r.cancellation_reason,
            r.terms_accepted_at, r.created_at,
-           g.first_name AS guest_first_name, g.last_name AS guest_last_name, g.email AS guest_email, g.phone AS guest_phone
+           g.first_name AS guest_first_name, g.last_name AS guest_last_name, g.email AS guest_email, g.phone AS guest_phone,
+           g.country AS guest_country
     FROM reservations r
     JOIN properties p ON p.id = r.property_id
     JOIN booking_sources s ON s.code = r.source
@@ -183,11 +208,11 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
     `,
   ]);
 
-  const { guestFirstName, guestLastName, guestEmail, guestPhone, ...rest } = r;
+  const { guestFirstName, guestLastName, guestEmail, guestPhone, guestCountry, ...rest } = r;
   return {
     ...rest,
     quote: (rest.quote && Object.keys(rest.quote).length > 0 ? rest.quote : null) as Quote | null,
-    guest: guestFirstName && guestLastName && guestEmail ? { firstName: guestFirstName, lastName: guestLastName, email: guestEmail, phone: guestPhone } : null,
+    guest: guestFirstName && guestLastName && guestEmail ? { firstName: guestFirstName, lastName: guestLastName, email: guestEmail, phone: guestPhone, country: guestCountry } : null,
     payments,
     emails,
     history,

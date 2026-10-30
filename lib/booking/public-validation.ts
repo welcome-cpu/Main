@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isCountryCode } from "@/lib/countries";
 import { daysBetween, isValidDate } from "@/lib/dates";
 
 const date = z.string().refine(isValidDate, "Use a date like 2027-08-05");
@@ -59,7 +60,7 @@ export const holdBodySchema = z.object({
       .regex(/^[0-9+()\-.\s]+$/, "Enter a valid phone number"),
     country: z.preprocess(
       (v) => (v === "" || v == null ? null : v),
-      z.string().regex(/^[A-Z]{2}$/).nullable()
+      z.string().refine(isCountryCode, "Choose a country from the list").nullable()
     ),
     message: z.preprocess((v) => (v === "" || v == null ? null : v), z.string().trim().max(2000).nullable()),
   }),

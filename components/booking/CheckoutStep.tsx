@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import Turnstile from "@/components/Turnstile";
+import { countryOptions } from "@/lib/countries";
 import { formatPence } from "@/lib/money";
 import type { Quote } from "@/lib/pricing/quote";
 
@@ -90,7 +91,7 @@ function DetailsForm({
             lastName: form.get("lastName"),
             email: form.get("email"),
             phone: form.get("phone"),
-            country: null,
+            country: form.get("country"),
             message: form.get("message"),
           },
           acceptTerms: form.get("acceptTerms") === "on",
@@ -149,6 +150,17 @@ function DetailsForm({
         <label className="block text-sm">
           Phone
           <input name="phone" type="tel" required maxLength={40} autoComplete="tel" className={input} />
+        </label>
+        <label className="block text-sm">
+          Country you live in (optional)
+          <select name="country" defaultValue="" autoComplete="country" className={input}>
+            <option value="">Choose…</option>
+            {countryOptions().map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="block text-sm sm:col-span-2">
           Anything we should know? (optional)
