@@ -40,6 +40,13 @@ export type PublicCalendar = {
   /** Unavailable nights as merged half-open ranges [start, end). */
   unavailable: DateRange[];
   /**
+   * Minimum nights for stays arriving on a date, where it isn't the
+   * property's usual minimum (rate rules, Lodgify's per-date minimums). The
+   * same rule the server applies (loadStayRules), so the calendar never
+   * offers a stay the server would refuse for being too short.
+   */
+  minNightsByArrival: Record<string, number>;
+  /**
    * When the least recently synced external calendar last synced, so guests
    * (and we) can see how fresh the imported availability is. Null if none.
    */
@@ -71,11 +78,27 @@ export async function getPublicCalendar(
   now: Date = new Date()
 ): Promise<PublicCalendar> {
   const sql = db();
-  const [occupancy, [sync]] = await Promise.all([
+  const [occupancy, [sync], minNights] = await Promise.all([
     loadOccupancy(sql, property.id, window),
     sql<{ syncedAt: Date | null }[]>`
       SELECT min(last_success_at) AS synced_at FROM calendar_feeds
       WHERE property_id = ${property.id} AND is_active
+    `,
+    sql<{ date: string; minNights: number }[]>`
+      SELECT d::date::text AS date, m.min_nights
+      FROM properties p
+      CROSS JOIN generate_series(${window.start}::date, ${window.end}::date - 1, interval '1 day') d
+      CROSS JOIN LATERAL (
+        SELECT COALESCE(
+          (SELECT r.min_nights FROM rate_rules r
+            WHERE r.property_id = p.id AND r.is_active AND r.min_nights IS NOT NULL AND r.nights @> d::date
+            ORDER BY r.priority DESC, r.created_at DESC LIMIT 1),
+          (SELECT n.min_nights FROM nightly_rates n
+            WHERE n.property_id = p.id AND n.night = d::date AND (n.source = 'ADMIN' OR p.rate_source = 'LODGIFY')),
+          p.default_min_nights
+        ) AS min_nights
+      ) m
+      WHERE p.id = ${property.id} AND m.min_nights <> p.default_min_nights
     `,
   ]);
 
@@ -86,6 +109,7 @@ export async function getPublicCalendar(
     firstCheckIn: firstCheckInDate(property, today, now),
     lastCheckIn: addDays(today, property.bookingWindowDays),
     unavailable: mergeRanges(occupancy, window),
+    minNightsByArrival: Object.fromEntries(minNights.map((m) => [m.date, m.minNights])),
     calendarsSyncedAt: sync?.syncedAt ? new Date(sync.syncedAt).toISOString() : null,
   };
 }

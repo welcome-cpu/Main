@@ -62,19 +62,39 @@ function nightSet(ranges: PublicCalendar["unavailable"]) {
 const canCheckInAt = (d: string, c: PublicCalendar, booked: Set<string>) =>
   d >= c.firstCheckIn && d <= c.lastCheckIn && !booked.has(d);
 
+/** Minimum nights for a stay arriving on `d`. */
+const minNightsAt = (c: PublicCalendar, d: string) => c.minNightsByArrival[d] ?? c.property.defaultMinNights;
+
 /**
- * The latest check-out from `checkIn` at one chalet, or null if it can't be
- * a check-in there: the stay plus its own turnover nights must end before
- * the next booked night.
+ * The latest check-out from `checkIn` at one chalet, or null if no stay can
+ * start there: the stay plus its own turnover nights must end before the
+ * next booked night, and that must leave room for the minimum stay.
  */
 function latestCheckOutFrom(checkIn: string, calendar: PublicCalendar, booked: Set<string>) {
   if (!canCheckInAt(checkIn, calendar, booked)) return null;
   const { defaultMaxNights, turnoverNights } = calendar.property;
-  const limit = addDays(checkIn, defaultMaxNights);
-  for (let d = checkIn; d < limit; d = addDays(d, 1)) {
-    if (booked.has(d)) return addDays(d, -turnoverNights);
+  let latest = addDays(checkIn, defaultMaxNights);
+  for (let d = checkIn; d < latest; d = addDays(d, 1)) {
+    if (booked.has(d)) {
+      latest = addDays(d, -turnoverNights);
+      break;
+    }
   }
-  return limit;
+  return daysBetween(checkIn, latest) >= minNightsAt(calendar, checkIn) ? latest : null;
+}
+
+/**
+ * Nights that some bookable stay can include. A free night in a gap too
+ * short for the minimum stay can't be booked, so it isn't one of these.
+ */
+function bookableNights(calendar: PublicCalendar, booked: Set<string>) {
+  const nights = new Set<string>();
+  for (let d = calendar.firstCheckIn; d <= calendar.lastCheckIn; d = addDays(d, 1)) {
+    const latest = latestCheckOutFrom(d, calendar, booked);
+    if (!latest) continue;
+    for (let n = d; n < latest; n = addDays(n, 1)) nights.add(n);
+  }
+  return nights;
 }
 
 /**
@@ -124,6 +144,7 @@ export default function AvailabilityCalendar({
   const [checkout, setCheckout] = useState<{ slug: string; name: string; stay: StayPayload; quote: Quote } | null>(null);
 
   const booked = useMemo(() => chalets.map((c) => nightSet(c.calendar.unavailable)), [chalets]);
+  const bookable = useMemo(() => chalets.map((c, i) => bookableNights(c.calendar, booked[i])), [chalets, booked]);
   const top = useRef<HTMLDivElement>(null);
   // Moving between choosing and checkout swaps the content; keep its top in view.
   const inCheckout = checkout !== null;
@@ -137,11 +158,16 @@ export default function AvailabilityCalendar({
   }, [inCheckout]);
 
   const latest = checkIn ? chalets.map((c, i) => latestCheckOutFrom(checkIn, c.calendar, booked[i])) : [];
-  const latestCheckOut = latest.filter((d): d is string => d !== null).sort().at(-1) ?? null;
   const freeFor = (i: number) => Boolean(checkOut && latest[i] && checkOut <= latest[i]!);
 
-  const freeSomewhere = (d: string) => chalets.some((c, i) => canCheckInAt(d, c.calendar, booked[i]));
-  const canCheckOut = (d: string) => checkIn !== null && latestCheckOut !== null && d > checkIn && d <= latestCheckOut;
+  // A check-in is offered only where a long enough stay can start, and a
+  // check-out only where the stay meets the minimum at a chalet that's free.
+  const freeSomewhere = (d: string) => chalets.some((c, i) => latestCheckOutFrom(d, c.calendar, booked[i]) !== null);
+  const canCheckOut = (d: string) =>
+    checkIn !== null &&
+    chalets.some(
+      (c, i) => latest[i] !== null && d <= latest[i]! && daysBetween(checkIn, d) >= minNightsAt(c.calendar, checkIn)
+    );
 
   // Extras can differ between chalets; each is quoted with its own.
   const allExtras = useMemo(() => {
@@ -241,7 +267,7 @@ export default function AvailabilityCalendar({
   const lastMonth = `${lastCheckIn.slice(0, 7)}-01`;
   const twins = chalets.slice(1);
   const twinName = twins[0]?.calendar.property.name;
-  const minNights = primary.property.defaultMinNights;
+  const minNights = checkIn ? minNightsAt(primary, checkIn) : primary.property.defaultMinNights;
   // The chalet next door is only offered when this one can't take the stay.
   const offerTwins = twins.length > 0 && takenAt(results[chalets[0].slug]);
   const shown = offerTwins ? chalets : chalets.slice(0, 1);
@@ -276,12 +302,13 @@ export default function AvailabilityCalendar({
               const inRange = checkIn && checkOut && d > checkIn && d < checkOut;
               const selected = d === checkIn || d === checkOut;
               const selectable = checkIn && !checkOut ? canCheckOut(d) || freeSomewhere(d) : freeSomewhere(d);
-              const bookedHere = booked[0].has(d);
+              const unavailableHere = !bookable[0].has(d);
               return {
                 selected: Boolean(selected),
                 inRange: Boolean(inRange),
-                unavailable: bookedHere,
-                twinFree: bookedHere && twins.some((c, i) => canCheckInAt(d, c.calendar, booked[i + 1])),
+                unavailable: unavailableHere,
+                booked: booked[0].has(d),
+                twinFree: unavailableHere && twins.some((_, i) => bookable[i + 1].has(d)),
                 selectable,
               };
             }}
@@ -293,7 +320,7 @@ export default function AvailabilityCalendar({
 
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
         <span><span className="inline-block h-3 w-3 border border-border bg-white align-middle" /> Available</span>
-        <span><span className="text-muted-foreground/60 line-through">12</span> Booked</span>
+        <span><span className="text-muted-foreground/60 line-through">12</span> Not available</span>
         {twinName && (
           <span><span className="inline-block h-3 w-3 bg-oak/40 align-middle" /> Booked here, {twinName} free</span>
         )}
@@ -305,7 +332,7 @@ export default function AvailabilityCalendar({
         {checkIn && !checkOut && (
           <p>
             Check-in {show(checkIn)}. Now choose your check-out date
-            {minNights > 1 && ` (minimum stay usually ${minNights} nights)`}.
+            {minNights > 1 && ` (minimum stay ${minNights} nights)`}.
           </p>
         )}
         {checkIn && checkOut && (
@@ -533,7 +560,14 @@ function Month({
   twinName,
 }: {
   month: string;
-  dayState: (d: string) => { selected: boolean; inRange: boolean; unavailable: boolean; twinFree: boolean; selectable: boolean };
+  dayState: (d: string) => {
+    selected: boolean;
+    inRange: boolean;
+    unavailable: boolean;
+    booked: boolean;
+    twinFree: boolean;
+    selectable: boolean;
+  };
   onChoose: (d: string) => void;
   twinName?: string;
 }) {
@@ -575,7 +609,7 @@ function Month({
               disabled={!s.selectable && !s.selected}
               onClick={() => onChoose(d)}
               aria-pressed={s.selected}
-              aria-label={`${show(d)}${s.twinFree ? `, booked, ${twinName} free` : s.unavailable ? ", booked" : ""}`}
+              aria-label={`${show(d)}${s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : s.booked ? ", booked" : s.unavailable ? ", not available" : ""}`}
               className={`aspect-square text-sm disabled:cursor-default ${cls}`}
             >
               {i + 1}

@@ -70,7 +70,9 @@ test("prices a stay on the server, with a pet fee and discount code", async ({ p
 });
 
 test("enforces the minimum stay from the server", async ({ page }) => {
-  await chooseStay(page, inDays(70), inDays(71));
+  // The calendar won't offer a one-night stay; arriving with one in the
+  // address must still be refused by the server.
+  await page.goto(`/book/${E2E_SLUG}?checkIn=${inDays(70)}&checkOut=${inDays(71)}`);
   await expect(page.getByText("The minimum stay for these dates is 2 nights.")).toBeVisible();
 });
 
