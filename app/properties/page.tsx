@@ -23,7 +23,7 @@ export default function PropertiesPage() {
         The Chalets
       </p>
       <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-foreground sm:text-5xl">
-        Two Properties,
+        Three Properties,
         <br />
         One Extraordinary Spot
       </h1>

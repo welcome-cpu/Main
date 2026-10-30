@@ -91,6 +91,7 @@ const muckleView = bookableProperties.find((p) => p.slug === "muckle-view")!;
 const murrayCottage = bookableProperties.find(
   (p) => p.slug === "murray-cottage"
 )!;
+const mohrRest = bookableProperties.find((p) => p.slug === "mohr-rest")!;
 
 export default function Home() {
   return (
@@ -281,10 +282,10 @@ export default function Home() {
           Choose Your Clifftop Stay
         </h2>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-foreground">
-          Two special properties. One unforgettable setting above the Moray
+          Three special properties. One unforgettable setting above the Moray
           Firth. Here&apos;s how to pick the one that suits you.
         </p>
-        <div className="mt-10 grid gap-10 sm:grid-cols-2">
+        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
           <a href="/properties/muckle-view" className="group block">
             <PropertyMedia
@@ -332,6 +333,30 @@ export default function Home() {
               </p>
               <span className="mt-3 inline-block text-xs font-medium tracking-wide text-primary uppercase group-hover:underline">
                 Discover Murray Cottage →
+              </span>
+            </div>
+          </a>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
+          <a href="/properties/mohr-rest" className="group block">
+            <PropertyMedia
+              image={mohrRest.image}
+              name={mohrRest.name}
+              index={2}
+            />
+            <div className="mt-4">
+              <p className="text-xs font-semibold tracking-wide text-accent uppercase">
+                For couples and dogs · New for 2027
+              </p>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">
+                Mohr Rest
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Our newest studio chalet, built to the same design as Muckle
+                View, with the same clifftop views and log burner. Welcoming
+                its first guests from 1 January 2027.
+              </p>
+              <span className="mt-3 inline-block text-xs font-medium tracking-wide text-primary uppercase group-hover:underline">
+                Discover Mohr Rest →
               </span>
             </div>
           </a>
