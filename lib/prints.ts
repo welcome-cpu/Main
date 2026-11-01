@@ -34,7 +34,7 @@ export const prints: Print[] = [
     title: "In for Repair",
     artist: "Joyce Taylor",
     description: "A limited edition print of the picture on display in Murray Cottage.",
-    pricePence: 7500,
+    pricePence: 9500,
     image: { src: "/prints/in-for-repair.jpeg", width: 1920, height: 1440 },
     guideSlug: "murray-cottage",
     chaletName: "Murray Cottage",
