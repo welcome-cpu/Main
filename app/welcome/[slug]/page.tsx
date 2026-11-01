@@ -387,13 +387,24 @@ export default async function WelcomeGuidePage({
         ))}
       </nav>
 
-      <a
-        href="#review-rebook"
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-      >
-        <StarIcon className="h-4 w-4" />
-        Loved your stay? Review &amp; rebook
-      </a>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <a
+          href="#review-rebook"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <StarIcon className="h-4 w-4" />
+          Loved your stay? Review &amp; rebook
+        </a>
+        {guidePrints.length > 0 && (
+          <a
+            href="#art"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <FrameIcon className="h-4 w-4" />
+            Love the picture on the wall? Buy the print
+          </a>
+        )}
+      </div>
 
       <Section id="overview" icon={<HomeIcon className="h-5 w-5" />} title="Chalet Overview">
         <FeatureList items={guide.overview} />
