@@ -87,8 +87,8 @@ function stripe() {
 
 /**
  * A Checkout for buying a print from a welcome guide. Paid in one go (no
- * booking, so nothing to re-check before capture); Stripe collects the UK
- * delivery address. The webhook tells the owner who to post it to.
+ * booking, so nothing to re-check before capture). Guests take the print
+ * with them, so there's no delivery address; the webhook tells the owner.
  */
 export async function createPrintCheckout(r: {
   printSlug: string;
@@ -107,7 +107,6 @@ export async function createPrintCheckout(r: {
         price_data: { currency: "gbp", unit_amount: r.amountPence, product_data: { name: r.name, images: [r.imageUrl] } },
       },
     ],
-    shipping_address_collection: { allowed_countries: ["GB"] },
     phone_number_collection: { enabled: true },
     payment_intent_data: { description: r.name, metadata: { kind: "print", print: r.printSlug } },
     metadata: { kind: "print", print: r.printSlug },

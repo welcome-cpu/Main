@@ -11,6 +11,8 @@ export type Print = {
   image: { src: string; width: number; height: number };
   /** The welcome guide (chalet) it hangs in. */
   guideSlug: string;
+  /** The chalet guests take it home from. */
+  chaletName: string;
 };
 
 export const prints: Print[] = [
@@ -22,6 +24,7 @@ export const prints: Print[] = [
     pricePence: 7500,
     image: { src: "/prints/first-view-of-crovie.png", width: 493, height: 485 },
     guideSlug: "muckle-view",
+    chaletName: "Muckle View",
   },
 ];
 

@@ -279,8 +279,8 @@ export type PrintSaleEmailData = {
   buyerName: string;
   buyerEmail: string;
   buyerPhone: string | null;
-  /** Delivery address, one line per entry. */
-  address: string[];
+  /** The chalet they take it home from. */
+  chaletName: string;
   contactEmail: string;
 };
 
@@ -288,24 +288,22 @@ function printRows(d: PrintSaleEmailData): [string, string][] {
   return [
     ["Print", `${d.printTitle} by ${d.artist}`],
     ["Paid", formatPence(d.amountPence, "GBP")],
-    ["Deliver to", [d.buyerName, ...d.address].join(", ")],
+    ["Bought by", d.buyerName],
   ];
 }
 
 export function ownerPrintSold(d: PrintSaleEmailData): RenderedEmail {
   const subject = `Print sold: ${d.printTitle} to ${d.buyerName}`;
   const rows: [string, string][] = [...printRows(d), ["Email", d.buyerEmail], ["Phone", d.buyerPhone ?? "—"]];
-  const html = layout(
-    "A print has been sold",
-    detailsTable(rows) + p("Paid in full by card through Stripe. Please post it to the address above.")
-  );
-  const text = [textTable(rows), "", "Paid in full by card through Stripe. Please post it to the address above."].join("\n");
+  const note = `Paid in full by card through Stripe. They're taking the print with them from ${d.chaletName}.`;
+  const html = layout("A print has been sold", detailsTable(rows) + p(escapeHtml(note)));
+  const text = [textTable(rows), "", note].join("\n");
   return { subject, html, text };
 }
 
 export function guestPrintReceipt(d: PrintSaleEmailData): RenderedEmail {
   const subject = `Thank you for buying ${d.printTitle}`;
-  const body = `Thank you for buying ${d.printTitle} by ${d.artist}. We've received your payment and will post your print to the address below.`;
+  const body = `Thank you for buying ${d.printTitle} by ${d.artist}. We've received your payment, and the print is yours to take home with you from ${d.chaletName}.`;
   const html = layout(
     "Thank you for your order",
     p(`Dear ${escapeHtml(d.buyerName)},`) +

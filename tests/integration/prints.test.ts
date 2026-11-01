@@ -26,9 +26,6 @@ const printEvent = (sessionId: string, paymentStatus = "paid") =>
         amount_total: 7500,
         metadata: { kind: "print", print: "first-view-of-crovie" },
         customer_details: { email: "buyer@example.com", name: "Jo Buyer", phone: "+447700900000", address: null },
-        collected_information: {
-          shipping_details: { name: "Jo Buyer", address: { line1: "1 High St", line2: null, city: "Banff", state: null, postal_code: "AB45 1AA", country: "GB" } },
-        },
       },
     },
   }) as unknown as Stripe.Event;
@@ -45,7 +42,7 @@ describe.runIf(enabled)("print sales (database)", () => {
     await dbMod?.db().end();
   });
 
-  it("emails the buyer and the owner once, with the delivery address", async () => {
+  it("emails the buyer and the owner once", async () => {
     const sessionId = `cs_test_${randomUUID().replaceAll("-", "")}`;
     await webhook.handleStripeEvent(printEvent(sessionId), gateway);
     await webhook.handleStripeEvent(printEvent(sessionId), gateway); // a second delivery under a new event id
@@ -57,7 +54,7 @@ describe.runIf(enabled)("print sales (database)", () => {
       ["OWNER_PRINT_SOLD", "owner@example.com"],
       ["PRINT_RECEIPT", "buyer@example.com"],
     ]);
-    expect(sent[0].textBody).toContain("Jo Buyer, 1 High St, Banff, AB45 1AA");
+    expect(sent[0].textBody).toContain("taking the print with them from Muckle View");
     expect(sent[0].textBody).toContain("£75.00");
 
     await dbMod.db()`DELETE FROM emails WHERE dedupe_key LIKE ${`%${sessionId}`}`;

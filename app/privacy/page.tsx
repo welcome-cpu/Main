@@ -66,8 +66,8 @@ export default function PrivacyPage() {
             You can unsubscribe at any time using the link in every email.
           </p>
           <p>
-            <strong>When you buy a print.</strong> Your name, email address, phone number and delivery address,
-            collected by Stripe when you pay, so we can post your print and contact you about your order. The legal
+            <strong>When you buy a print.</strong> Your name, email address and phone number, collected by Stripe
+            when you pay, so we can contact you about your order. The legal
             basis is the contract between us. We keep these records as part of our accounting records.
           </p>
           <p>

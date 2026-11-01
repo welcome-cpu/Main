@@ -15,7 +15,7 @@ export default function PrintThanks() {
   if (!show) return null;
   return (
     <p role="status" className="mt-4 rounded-lg border border-green-700/30 bg-green-50 px-4 py-3 text-sm text-green-900">
-      Thank you for your order! We&apos;ve emailed you a receipt and will post your print to you.
+      Thank you for your order! We&apos;ve emailed you a receipt, and the print is yours to take home with you.
     </p>
   );
 }

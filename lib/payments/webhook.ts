@@ -99,18 +99,15 @@ async function onPrintSold(session: Stripe.Checkout.Session) {
   const email = customer?.email;
   if (!email) return "no buyer email";
 
-  const shipping = session.collected_information?.shipping_details;
-  const a = shipping?.address ?? customer.address;
-  const address = [a?.line1, a?.line2, a?.city, a?.state, a?.postal_code].filter((x): x is string => Boolean(x));
   await db().begin(async (tx) => {
     await enqueuePrintSoldEmails(tx, session.id, {
       printTitle: print.title,
       artist: print.artist,
+      chaletName: print.chaletName,
       amountPence: session.amount_total ?? print.pricePence,
-      buyerName: shipping?.name ?? customer.name ?? "Customer",
+      buyerName: customer.name ?? "Customer",
       buyerEmail: email,
       buyerPhone: customer.phone ?? null,
-      address,
     });
     await recordAudit(tx, {
       actorType: "STRIPE",
