@@ -174,6 +174,14 @@ function MapPinIcon({ className }: IconProps) {
   );
 }
 
+function StarIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3z" />
+    </Icon>
+  );
+}
+
 function HeartIcon({ className }: IconProps) {
   return (
     <Icon className={className}>
@@ -360,6 +368,14 @@ export default async function WelcomeGuidePage({
           </a>
         ))}
       </nav>
+
+      <a
+        href="#review-rebook"
+        className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+      >
+        <StarIcon className="h-4 w-4" />
+        Loved your stay? Review &amp; rebook
+      </a>
 
       <Section id="overview" icon={<HomeIcon className="h-5 w-5" />} title="Chalet Overview">
         <FeatureList items={guide.overview} />
@@ -554,7 +570,7 @@ export default async function WelcomeGuidePage({
           </a>
         </div>
 
-        <div className="mt-6 rounded-xl border border-border bg-muted px-5 py-5">
+        <div id="review-rebook" className="mt-6 scroll-mt-24 rounded-xl border border-border bg-muted px-5 py-5">
           <p className="text-sm font-semibold text-foreground">Enjoyed your stay?</p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             We&apos;d love it if you left us a Google review. It only takes a minute and helps other
