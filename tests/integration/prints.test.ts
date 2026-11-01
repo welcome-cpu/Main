@@ -48,16 +48,18 @@ describe.runIf(enabled)("print sales (database)", () => {
     await webhook.handleStripeEvent(printEvent(sessionId), gateway); // a second delivery under a new event id
 
     const sent = await dbMod.db()<{ kind: string; recipient: string; textBody: string }[]>`
-      SELECT kind, recipient, text_body FROM emails WHERE dedupe_key LIKE ${`%${sessionId}`} ORDER BY kind
+      SELECT kind, recipient, text_body FROM emails WHERE dedupe_key LIKE ${`%${sessionId}%`} ORDER BY kind
     `;
     expect(sent.map((e) => [e.kind, e.recipient])).toEqual([
       ["OWNER_PRINT_SOLD", "owner@example.com"],
       ["PRINT_RECEIPT", "buyer@example.com"],
+      ["PRINT_REPLACE", "shaun@donaldson.co.uk"],
     ]);
+    expect(sent[2].textBody).toContain("needs replacing at the next changeover");
     expect(sent[0].textBody).toContain("taking the print with them from Muckle View");
     expect(sent[0].textBody).toContain("£75.00");
 
-    await dbMod.db()`DELETE FROM emails WHERE dedupe_key LIKE ${`%${sessionId}`}`;
+    await dbMod.db()`DELETE FROM emails WHERE dedupe_key LIKE ${`%${sessionId}%`}`;
   });
 
   it("does nothing until the payment is actually paid", async () => {
@@ -65,7 +67,7 @@ describe.runIf(enabled)("print sales (database)", () => {
     const outcome = await webhook.handleStripeEvent(printEvent(sessionId, "unpaid"), gateway);
     expect(outcome.ignored).toBe("print payment is unpaid");
     const [{ count }] = await dbMod.db()<{ count: number }[]>`
-      SELECT count(*)::int AS count FROM emails WHERE dedupe_key LIKE ${`%${sessionId}`}
+      SELECT count(*)::int AS count FROM emails WHERE dedupe_key LIKE ${`%${sessionId}%`}
     `;
     expect(count).toBe(0);
   });

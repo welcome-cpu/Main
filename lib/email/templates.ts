@@ -301,6 +301,19 @@ export function ownerPrintSold(d: PrintSaleEmailData): RenderedEmail {
   return { subject, html, text };
 }
 
+export function printNeedsReplacing(d: PrintSaleEmailData): RenderedEmail {
+  const subject = `Replace the print at changeover: ${d.printTitle} in ${d.chaletName}`;
+  const note = `A guest has bought ${d.printTitle} by ${d.artist} and is taking it home with them, so the print in ${d.chaletName} needs replacing at the next changeover.`;
+  const rows: [string, string][] = [
+    ["Chalet", d.chaletName],
+    ["Print", `${d.printTitle} by ${d.artist}`],
+    ["Bought by", d.buyerName],
+  ];
+  const html = layout("A print needs replacing", p(escapeHtml(note)) + detailsTable(rows));
+  const text = [note, "", textTable(rows)].join("\n");
+  return { subject, html, text };
+}
+
 export function guestPrintReceipt(d: PrintSaleEmailData): RenderedEmail {
   const subject = `Thank you for buying ${d.printTitle}`;
   const body = `Thank you for buying ${d.printTitle} by ${d.artist}. We've received your payment, and the print is yours to take home with you from ${d.chaletName}.`;

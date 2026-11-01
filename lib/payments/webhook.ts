@@ -108,7 +108,7 @@ async function onPrintSold(session: Stripe.Checkout.Session) {
       buyerName: customer.name ?? "Customer",
       buyerEmail: email,
       buyerPhone: customer.phone ?? null,
-    });
+    }, print.replaceNotify);
     await recordAudit(tx, {
       actorType: "STRIPE",
       action: "print.sold",

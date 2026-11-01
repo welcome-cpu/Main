@@ -13,6 +13,8 @@ export type Print = {
   guideSlug: string;
   /** The chalet guests take it home from. */
   chaletName: string;
+  /** Told when one sells, so the print on the wall is replaced at changeover. */
+  replaceNotify: string[];
 };
 
 export const prints: Print[] = [
@@ -25,6 +27,7 @@ export const prints: Print[] = [
     image: { src: "/prints/first-view-of-crovie.png", width: 493, height: 485 },
     guideSlug: "muckle-view",
     chaletName: "Muckle View",
+    replaceNotify: ["shaun@donaldson.co.uk"],
   },
 ];
 

@@ -14,6 +14,7 @@ import {
   ownerNewBooking,
   ownerPaymentProblem,
   ownerPrintSold,
+  printNeedsReplacing,
   type BookingEmailData,
   type PrintSaleEmailData,
 } from "@/lib/email/templates";
@@ -121,7 +122,12 @@ export async function enqueueBookingCancelledEmail(sql: Sql | Tx, reservationId:
 }
 
 /** A print bought from a welcome guide: tell the owner where to post it, and thank the buyer. */
-export async function enqueuePrintSoldEmails(sql: Sql | Tx, sessionId: string, d: Omit<PrintSaleEmailData, "contactEmail">) {
+export async function enqueuePrintSoldEmails(
+  sql: Sql | Tx,
+  sessionId: string,
+  d: Omit<PrintSaleEmailData, "contactEmail">,
+  replaceNotify: string[] = []
+) {
   const data = { ...d, contactEmail: ownerMailbox() || "welcome@gamriechalets.co.uk" };
   await enqueueEmail(sql, { reservationId: null, kind: "PRINT_RECEIPT", dedupeKey: `print-receipt:${sessionId}`, to: d.buyerEmail, ...guestPrintReceipt(data) });
   if (ownerMailbox()) {
@@ -132,6 +138,15 @@ export async function enqueuePrintSoldEmails(sql: Sql | Tx, sessionId: string, d
       to: ownerMailbox(),
       replyTo: d.buyerEmail,
       ...ownerPrintSold(data),
+    });
+  }
+  for (const to of replaceNotify) {
+    await enqueueEmail(sql, {
+      reservationId: null,
+      kind: "PRINT_REPLACE",
+      dedupeKey: `print-replace:${sessionId}:${to.toLowerCase()}`,
+      to,
+      ...printNeedsReplacing(data),
     });
   }
 }
