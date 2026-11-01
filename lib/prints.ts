@@ -29,6 +29,17 @@ export const prints: Print[] = [
     chaletName: "Muckle View",
     replaceNotify: ["shaun@donaldson.co.uk"],
   },
+  {
+    slug: "in-for-repair",
+    title: "In for Repair",
+    artist: "Joyce Taylor",
+    description: "A limited edition print of the picture on display in Murray Cottage.",
+    pricePence: 7500,
+    image: { src: "/prints/in-for-repair.jpeg", width: 1920, height: 1440 },
+    guideSlug: "murray-cottage",
+    chaletName: "Murray Cottage",
+    replaceNotify: ["shaun@donaldson.co.uk"],
+  },
 ];
 
 export const printsForGuide = (guideSlug: string) => prints.filter((p) => p.guideSlug === guideSlug);
