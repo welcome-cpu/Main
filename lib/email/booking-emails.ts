@@ -1,6 +1,7 @@
 import "server-only";
 import type { Sql, Tx } from "@/lib/db/client";
 import { ownerMailbox } from "@/lib/email/graph";
+import { isLodgifyPushEnabled } from "@/lib/booking/lodgify-push";
 import { enqueueEmail } from "@/lib/email/outbox";
 import {
   guestBalanceFailed,
@@ -8,6 +9,7 @@ import {
   guestBookingCancelled,
   guestBookingConfirmed,
   guestNotCharged,
+  guestPaymentReceipt,
   ownerNewBooking,
   ownerPaymentProblem,
   type BookingEmailData,
@@ -47,7 +49,9 @@ export async function enqueueBookingConfirmedEmails(
   if (!d) return;
   // A resend gets its own key so it's sent again; the first send never repeats.
   const key = options.resendKey ? `booking-confirmed:${reservationId}:resend:${options.resendKey}` : `booking-confirmed:${reservationId}`;
-  await enqueueEmail(sql, { reservationId, kind: "BOOKING_CONFIRMED", dedupeKey: key, to: d.guestEmail, ...guestBookingConfirmed(d) });
+  // With bookings going to Lodgify, Lodgify sends the confirmation and ours is the payment receipt.
+  const email = isLodgifyPushEnabled() ? guestPaymentReceipt(d) : guestBookingConfirmed(d);
+  await enqueueEmail(sql, { reservationId, kind: "BOOKING_CONFIRMED", dedupeKey: key, to: d.guestEmail, ...email });
   if (ownerMailbox() && !options.guestOnly) {
     await enqueueEmail(sql, {
       reservationId,

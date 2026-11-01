@@ -62,7 +62,7 @@ function priceRows(q: Quote): [string, string][] {
   if (q.cleaningFeePence) rows.push(["Cleaning fee", m(q.cleaningFeePence)]);
   if (q.petFeePence) rows.push(["Pet fee", m(q.petFeePence)]);
   for (const x of q.extras) rows.push([x.quantity > 1 ? `${x.name} × ${x.quantity}` : x.name, m(x.totalPence)]);
-  if (q.discount) rows.push([`Discount (${q.discount.code})`, `−${m(q.discount.pence)}`]);
+  if (q.discount) rows.push([`${q.discount.name ?? "Discount"} (${q.discount.code})`, `−${m(q.discount.pence)}`]);
   rows.push(["Total", m(q.totalPence)]);
   if (q.voucher) rows.push([`Gift voucher (${q.voucher.code})`, `−${m(q.voucher.pence)}`]);
   return rows;
@@ -138,6 +138,42 @@ export function guestBookingConfirmed(d: BookingEmailData): RenderedEmail {
     paymentSummary(d.quote),
     "",
     "All payments are non-refundable, so we recommend travel insurance. We'll be in touch before your stay with arrival details.",
+    "",
+    `Questions? Reply to this email or write to ${d.contactEmail}.`,
+  ].join("\n");
+  return { subject, html, text };
+}
+
+/**
+ * Sent instead of guestBookingConfirmed when bookings go on to Lodgify,
+ * which sends the confirmation itself. Lodgify can't see payments, so this
+ * is where the guest learns what's been paid and when the balance is due.
+ */
+export function guestPaymentReceipt(d: BookingEmailData): RenderedEmail {
+  const subject = `Payment receipt: ${d.propertyName}, ${showDate(d.checkIn)} (${d.reference})`;
+  const intro = `Thank you for your payment for your stay at ${d.propertyName}. Your booking confirmation comes in a separate email.`;
+  const html = layout(
+    "Payment received",
+    p(`Dear ${escapeHtml(d.guestFirstName)},`) +
+      p(escapeHtml(intro)) +
+      detailsTable(stayRows(d)) +
+      detailsTable(priceRows(d.quote)) +
+      p(escapeHtml(paymentSummary(d.quote))) +
+      p("All payments are non-refundable, so we recommend travel insurance.") +
+      p(`If you have any questions, just reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a>.`)
+  );
+  const text = [
+    `Dear ${d.guestFirstName},`,
+    "",
+    intro,
+    "",
+    textTable(stayRows(d)),
+    "",
+    textTable(priceRows(d.quote)),
+    "",
+    paymentSummary(d.quote),
+    "",
+    "All payments are non-refundable, so we recommend travel insurance.",
     "",
     `Questions? Reply to this email or write to ${d.contactEmail}.`,
   ].join("\n");

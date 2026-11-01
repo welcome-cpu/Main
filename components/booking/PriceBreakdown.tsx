@@ -24,7 +24,7 @@ export default function PriceBreakdown({ quote }: { quote: Quote }) {
         <Row key={x.extraId} label={x.quantity > 1 ? `${x.name} × ${x.quantity}` : x.name} value={money(x.totalPence)} />
       ))}
       {quote.discount && (
-        <Row label={`Discount (${quote.discount.code})`} value={`−${money(quote.discount.pence)}`} />
+        <Row label={`${quote.discount.name ?? "Discount"} (${quote.discount.code})`} value={`−${money(quote.discount.pence)}`} />
       )}
       <div className="border-t border-border pt-2">
         <Row label="Total" value={money(quote.totalPence)} strong />

@@ -8,6 +8,8 @@ import { startCheckout } from "@/lib/payments/checkout";
 import { isPaymentConfigured, paymentConfigProblem, stripeGateway } from "@/lib/payments/gateway";
 import { clientIp } from "@/lib/rate-limit";
 import { passesTurnstile } from "@/lib/turnstile";
+import { db } from "@/lib/db/client";
+import { lookupLodgifyPromotion } from "@/lib/pricing/lodgify-promotions";
 import { lookupVoucher } from "@/lib/vouchers/giftup";
 import {
   confirmVoucherOnlyBooking,
@@ -50,12 +52,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const { stay: { voucherCode, ...stay }, guest } = parsed.data;
   // Gift vouchers are checked with Gift Up here; the browser's view of the
   // balance is never used.
-  const voucher = voucherCode ? await lookupVoucher(voucherCode) : null;
+  const [voucher, lodgifyPromotion] = await Promise.all([
+    voucherCode ? lookupVoucher(voucherCode) : null,
+    lookupLodgifyPromotion(db(), property.id, stay, stay.discountCode),
+  ]);
   if (voucher && !voucher.ok) return json({ error: voucher.message }, 409);
 
   const result = await createHold(
     property.id,
-    { ...stay, discountCode: stay.discountCode ?? null, voucher },
+    { ...stay, discountCode: stay.discountCode ?? null, voucher, lodgifyPromotion },
     { ...guest, email: guest.email.toLowerCase() },
     { ip }
   );

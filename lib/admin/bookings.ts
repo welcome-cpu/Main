@@ -152,6 +152,9 @@ export type BookingDetail = {
   lodgifyBookingId: number | null;
   lodgifyPushStatus: string | null;
   lodgifyPushError: string | null;
+  lodgifyMismatch: string | null;
+  lodgifyMismatchDetail: string | null;
+  lodgifyMismatchIgnored: boolean;
   newsletterOptIn: boolean;
   newsletterStatus: string | null;
   guestMessage: string | null;
@@ -204,6 +207,7 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
            g.country AS guest_country,
            NULLIF(concat_ws(', ', g.address_line1, g.address_line2, g.city, g.postal_code), '') AS guest_address,
            r.lodgify_booking_id, r.lodgify_push_status, r.lodgify_push_error, r.newsletter_opt_in,
+           r.lodgify_mismatch, r.lodgify_mismatch_detail, r.lodgify_mismatch_ignored,
            (SELECT ns.status FROM newsletter_signups ns WHERE ns.reservation_id = r.id) AS newsletter_status
     FROM reservations r
     JOIN properties p ON p.id = r.property_id
@@ -426,11 +430,15 @@ export async function needsAttention(): Promise<Attention> {
     `,
     sql<Attention["lodgifyProblems"]>`
       SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
-             r.lodgify_push_status AS status, r.lodgify_push_error AS message
+             CASE WHEN r.lodgify_mismatch IS NOT NULL AND NOT r.lodgify_mismatch_ignored THEN r.lodgify_mismatch ELSE r.lodgify_push_status END AS status,
+             CASE WHEN r.lodgify_mismatch IS NOT NULL AND NOT r.lodgify_mismatch_ignored
+               THEN r.lodgify_mismatch_detail || ' Its balance won''t be charged until you deal with it.'
+               ELSE r.lodgify_push_error END AS message
       FROM reservations r JOIN properties p ON p.id = r.property_id
       WHERE r.status = 'CONFIRMED'
         AND (r.lodgify_push_status IN ('FAILED', 'CHECK')
-          OR (r.lodgify_push_status = 'PUSHED' AND r.lodgify_push_error IS NOT NULL AND r.check_out >= current_date))
+          OR (r.lodgify_push_status = 'PUSHED' AND r.lodgify_push_error IS NOT NULL AND r.check_out >= current_date)
+          OR (r.lodgify_mismatch IS NOT NULL AND NOT r.lodgify_mismatch_ignored))
       ORDER BY r.check_in
     `,
   ]);

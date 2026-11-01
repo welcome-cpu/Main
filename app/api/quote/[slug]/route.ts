@@ -2,6 +2,7 @@ import { guardPublicRequest, json, readJsonBody, validationError } from "@/lib/b
 import { getPublicProperty } from "@/lib/booking/public";
 import { quoteBodySchema } from "@/lib/booking/public-validation";
 import { db } from "@/lib/db/client";
+import { lookupLodgifyPromotion } from "@/lib/pricing/lodgify-promotions";
 import { quoteStay } from "@/lib/pricing/quote-service";
 import { lookupVoucher } from "@/lib/vouchers/giftup";
 
@@ -24,8 +25,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
 
   const { voucherCode, ...stay } = parsed.data;
   // The voucher's balance comes from Gift Up, never from the browser.
-  const voucher = voucherCode ? await lookupVoucher(voucherCode) : null;
-  const result = await quoteStay(db(), property.id, { ...stay, voucher: voucher?.ok ? voucher : null });
+  // So are Lodgify promotion codes, checked with Lodgify.
+  const [voucher, lodgifyPromotion] = await Promise.all([
+    voucherCode ? lookupVoucher(voucherCode) : null,
+    lookupLodgifyPromotion(db(), property.id, stay, stay.discountCode),
+  ]);
+  const result = await quoteStay(db(), property.id, { ...stay, voucher: voucher?.ok ? voucher : null, lodgifyPromotion });
   if (!result) return json({ error: "Not found" }, 404);
   if (voucher && !voucher.ok && result.pricing?.ok) {
     result.pricing = { ok: false, error: { code: "VOUCHER_INVALID", message: voucher.message } };

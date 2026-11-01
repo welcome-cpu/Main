@@ -12,6 +12,7 @@ import {
 import { requireAdmin } from "@/lib/admin/dal";
 import { isUuid } from "@/lib/admin/properties";
 import { cancelBookingSchema, fieldErrors, manualPaymentSchema } from "@/lib/admin/validation";
+import { keepDespiteLodgify } from "@/lib/booking/lodgify-check";
 import { isLodgifyPushEnabled, pushReservationToLodgify, resolveLodgifyPush } from "@/lib/booking/lodgify-push";
 import { processOutbox } from "@/lib/email/outbox";
 import { importLodgifyBookings } from "@/lib/guests/lodgify-import";
@@ -66,7 +67,9 @@ export async function retryBalanceAction(id: string): Promise<FormState> {
   const scheduled = await scheduleBalanceRetry(admin, id);
   if (!scheduled.paymentId) return { message: scheduled.error ?? "Couldn't retry." };
   const [outcome] = await chargeDueBalances(stripeGateway, new Date(), scheduled.paymentId);
-  return done(id, outcome?.ok ? "Balance charged successfully." : "The card was declined again. The guest has been emailed.");
+  if (!outcome) return { message: "Couldn't retry." };
+  if (!outcome.ok && outcome.message) return { message: outcome.message };
+  return done(id, outcome.ok ? "Balance charged successfully." : "The card was declined again. The guest has been emailed.");
 }
 
 export async function retryLodgifyPushAction(id: string): Promise<FormState> {
@@ -76,6 +79,13 @@ export async function retryLodgifyPushAction(id: string): Promise<FormState> {
   if (!(await resolveLodgifyPush(id, admin.email, { retry: true }))) return { message: "This booking can't be sent again." };
   const outcome = await pushReservationToLodgify(id);
   return done(id, outcome === "PUSHED" ? "Booking created in Lodgify." : "Lodgify didn't take it: see the message below.");
+}
+
+export async function keepDespiteLodgifyAction(id: string): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(id)) return { message: "Unknown booking." };
+  if (!(await keepDespiteLodgify(id, admin.email))) return { message: "Nothing to keep." };
+  return done(id, "Kept. The balance will be charged as normal.");
 }
 
 export async function linkLodgifyBookingAction(id: string, _: FormState, formData: FormData): Promise<FormState> {

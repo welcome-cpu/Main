@@ -35,8 +35,11 @@ export type ExtraDefinition = {
 };
 
 export type DiscountDefinition = {
-  id: string;
+  /** Our discount code's id; null for a Lodgify promotion. */
+  id: string | null;
   code: string;
+  /** Shown to the guest, e.g. a Lodgify promotion's name. */
+  name?: string | null;
   discountType: "PERCENT" | "FIXED";
   /** Percent as a number, e.g. 10 or 12.5. */
   percentOff: number | null;
@@ -83,7 +86,7 @@ export type Quote = {
   petFeePence: number;
   extras: QuoteExtra[];
   extrasPence: number;
-  discount: { id: string; code: string; pence: number } | null;
+  discount: { id: string | null; code: string; name?: string | null; pence: number } | null;
   totalPence: number;
   /** Paid from a gift voucher. Absent on quotes stored before vouchers existed. */
   voucher?: { code: string; pence: number } | null;
@@ -190,7 +193,7 @@ export function buildQuote(input: {
       d.discountType === "PERCENT"
         ? percentOf(accommodationPence, d.percentOff!)
         : Math.min(d.amountOffPence!, accommodationPence);
-    discount = { id: d.id, code: d.code, pence };
+    discount = { id: d.id, code: d.code, ...(d.name ? { name: d.name } : {}), pence };
   }
 
   // --- Totals and payment schedule --------------------------------------------

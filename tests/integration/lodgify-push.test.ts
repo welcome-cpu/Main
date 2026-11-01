@@ -14,6 +14,7 @@ let dbMod: typeof import("@/lib/db/client");
 let holds: typeof import("@/lib/booking/holds");
 let redemption: typeof import("@/lib/vouchers/redemption");
 let push: typeof import("@/lib/booking/lodgify-push");
+let check: typeof import("@/lib/booking/lodgify-check");
 let newsletter: typeof import("@/lib/newsletter/emailoctopus");
 
 const guest = {
@@ -34,6 +35,8 @@ class FakeServices {
   lodgifyBodies: Record<string, unknown>[] = [];
   noteBodies: { path: string; body: Record<string, unknown> }[] = [];
   noteStatus = 200;
+  /** What Lodgify says about a booking when we look it up. */
+  lookup: (id: string) => Response = () => new Response("", { status: 404 });
   octopusBodies: Record<string, unknown>[] = [];
   lastLodgifyId = 0;
   lodgify: () => Response | Promise<Response> = () => new Response(String((this.lastLodgifyId = lodgifyNumber())), { status: 201 });
@@ -41,6 +44,9 @@ class FakeServices {
   fetch = async (input: string | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const body = init?.body ? JSON.parse(String(init.body)) : {};
+    if (url.host === "api.lodgify.com" && (init?.method ?? "GET") === "GET") {
+      return this.lookup(url.pathname.split("/").pop()!);
+    }
     if (url.host === "api.lodgify.com" && init?.method === "PUT") {
       this.noteBodies.push({ path: url.pathname, body });
       return new Response("", { status: this.noteStatus });
@@ -87,6 +93,8 @@ async function paidBooking(options: { newsletter?: boolean } = {}) {
   if (!hold.ok) throw new Error(`expected a hold: ${JSON.stringify(hold)}`);
   expect(await redemption.redeemHoldVoucher(hold)).toEqual({ ok: true });
   expect(await redemption.confirmVoucherOnlyBooking(hold.reservationId)).toBe(true);
+  // Straight away, so the email tests' senders never pick these up.
+  await dbMod.db()`DELETE FROM emails WHERE reservation_id = ${hold.reservationId}`;
   return { property: p, reservationId: hold.reservationId, reference: hold.reference };
 }
 
@@ -105,6 +113,7 @@ describe.runIf(enabled)("sending bookings to Lodgify (database)", () => {
     holds = await import("@/lib/booking/holds");
     redemption = await import("@/lib/vouchers/redemption");
     push = await import("@/lib/booking/lodgify-push");
+    check = await import("@/lib/booking/lodgify-check");
     newsletter = await import("@/lib/newsletter/emailoctopus");
   });
   beforeEach(() => {
@@ -190,6 +199,33 @@ describe.runIf(enabled)("sending bookings to Lodgify (database)", () => {
     expect((await pushState(b.reservationId)).lodgifyPushError).toContain("payment note couldn't be added");
     await push.pushPendingLodgifyBookings();
     expect(services.lodgifyBodies).toHaveLength(1);
+  });
+
+  it("holds back the balance of a booking cancelled in Lodgify until the owner decides", async () => {
+    const b = await paidBooking();
+    expect(await push.pushReservationToLodgify(b.reservationId)).toBe("PUSHED");
+    const lodgifyId = String(services.lastLodgifyId);
+    const lodgifyCopy = { status: "Booked", is_deleted: false, canceled_at: null, arrival: "2036-05-01", departure: "2036-05-03", property_id: b.property.lodgifyId };
+
+    services.lookup = (id) => new Response(JSON.stringify(id === lodgifyId ? lodgifyCopy : {}), { status: id === lodgifyId ? 200 : 404 });
+    expect(await check.lodgifyAllowsBalanceCharge(b.reservationId)).toBe(true);
+
+    services.lookup = (id) => new Response(JSON.stringify({ ...lodgifyCopy, status: "Declined" }), { status: id === lodgifyId ? 200 : 404 });
+    expect(await check.lodgifyAllowsBalanceCharge(b.reservationId)).toBe(false);
+    const [flagged] = await dbMod.db()<{ lodgifyMismatch: string; lodgifyMismatchDetail: string }[]>`
+      SELECT lodgify_mismatch, lodgify_mismatch_detail FROM reservations WHERE id = ${b.reservationId}
+    `;
+    expect(flagged).toEqual({ lodgifyMismatch: "CANCELLED", lodgifyMismatchDetail: "Lodgify shows it as declined." });
+
+    expect(await check.keepDespiteLodgify(b.reservationId, "owner@example.com")).toBe(true);
+    expect(await check.lodgifyAllowsBalanceCharge(b.reservationId)).toBe(true);
+  });
+
+  it("doesn't charge a balance when Lodgify can't be checked and hasn't been lately", async () => {
+    const b = await paidBooking();
+    expect(await push.pushReservationToLodgify(b.reservationId)).toBe("PUSHED");
+    services.lookup = () => new Response("", { status: 503 });
+    expect(await check.lodgifyAllowsBalanceCharge(b.reservationId)).toBe(false);
   });
 
   it("records bookings as not sent when sending is switched off", async () => {

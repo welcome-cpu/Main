@@ -72,7 +72,7 @@ never touch dev or production data.
 | `/api/cron/import-rates` | 04:00 daily | Copies nightly prices and stay limits from Lodgify |
 | `/api/cron/import-lodgify-bookings` | 04:30 daily | Copies Lodgify's bookings (guest name, party size, country from the phone's dialling code; no contact details) for the admin bookings list |
 | `/api/cron/charge-balances` | 09:00 daily | Charges balances due, to the saved card |
-| `/api/cron/send-to-lodgify` | every 5 min | Sends paid direct bookings to Lodgify and newsletter sign-ups to EmailOctopus that weren't sent straight after payment |
+| `/api/cron/send-to-lodgify` | every 5 min | Sends paid direct bookings to Lodgify and newsletter sign-ups to EmailOctopus that weren't sent straight after payment, and compares upcoming bookings with Lodgify |
 
 ## Gift vouchers
 
@@ -124,6 +124,22 @@ email as the receipt.
   attention*. Check Lodgify, then on the booking page either send it again or
   enter its Lodgify booking number.
 - Cancelling here doesn't cancel it in Lodgify: the admin page reminds you to.
+- Cancelling or changing it **in Lodgify** is spotted: upcoming bookings are
+  compared with Lodgify about every 6 hours (send-to-lodgify job) and again
+  just before the balance is charged. A booking cancelled, deleted or with
+  different dates or chalet in Lodgify is listed under *Needs attention* and
+  its balance isn't charged until you cancel it here or choose "Keep charging
+  as normal". If Lodgify can't be reached and hasn't been checked in the last
+  day, the balance waits until it can be.
+- With sending switched on, Lodgify's email is the guest's booking
+  confirmation and ours becomes a **payment receipt** (what's been paid and
+  when the balance is due). With it off, ours stays the confirmation.
+
+Promotion codes are managed in Lodgify. A code typed at checkout that isn't
+one of our own discount codes (admin area → Discounts) is checked with
+Lodgify's quote for the same stay, which applies Lodgify's own rules and gives
+the discount; we take the same percentage off the accommodation. Lodgify's
+automatic promotions without a code aren't applied here.
 - Lodgify's calendar then contains our own booking too. The admin area
   recognises it by its Lodgify booking number and doesn't list it twice or as
   a clash. Availability still counts it, which is harmless and keeps the dates
@@ -140,8 +156,9 @@ Nothing here is reversible-by-accident: each step can be checked before the next
 
 **Before (no guest-visible change)**
 
-1. Update the privacy policy to cover storing guests' booking details and address, Stripe
-   processing, passing bookings to Lodgify, and the EmailOctopus mailing list.
+1. Review the privacy policy at /privacy (new; check the retention periods suit you), and
+   decide on a cookie consent banner: Google Analytics sets cookies on the live site, which
+   UK rules say need consent first.
 2. In Stripe **live** mode: set the public business name (shown on the payment page and
    statements) to Gamrie Chalets; create a webhook endpoint
    `https://gamriechalets.co.uk/api/stripe/webhook` with the 7 events listed in the code

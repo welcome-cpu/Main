@@ -3,6 +3,7 @@ import {
   escapeHtml,
   guestBalanceFailed,
   guestBookingConfirmed,
+  guestPaymentReceipt,
   guestNotCharged,
   ownerNewBooking,
   type BookingEmailData,
@@ -90,5 +91,15 @@ describe("email templates", () => {
 
   it("asks for the balance when the automatic charge fails", () => {
     expect(guestBalanceFailed(data, 26750).text).toContain("balance of £267.50");
+  });
+});
+
+describe("payment receipt", () => {
+  it("is a receipt rather than a second confirmation, with the payment details", () => {
+    const e = guestPaymentReceipt(data);
+    expect(e.subject).toMatch(/^Payment receipt: /);
+    expect(e.text).toContain("Your booking confirmation comes in a separate email.");
+    expect(e.text).toContain("We've taken a deposit of £267.50.");
+    expect(e.html).toContain("Payment received");
   });
 });

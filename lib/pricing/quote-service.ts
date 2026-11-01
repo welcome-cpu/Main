@@ -12,12 +12,15 @@ import {
   type QuoteResult,
   type VoucherDefinition,
 } from "@/lib/pricing/quote";
+import type { LodgifyPromotionLookup } from "@/lib/pricing/lodgify-promotions";
 
 export type StayQuoteRequest = StayRequest & {
   extras: { id: string; quantity: number }[];
   discountCode?: string | null;
   /** Checked with Gift Up by the caller; never taken from the browser. */
   voucher?: VoucherDefinition | null;
+  /** A code checked with Lodgify by the caller (lookupLodgifyPromotion), used when it isn't one of ours. */
+  lodgifyPromotion?: LodgifyPromotionLookup | null;
 };
 
 export type StayQuote = {
@@ -49,7 +52,7 @@ export async function quoteStay(
   const policy: PricingPolicy = { ...policyRow, requireRates: policyRow.rateSource === "LODGIFY" };
 
   const lastNight = addDays(request.checkOut, -1);
-  const [nights, extras, discount] = await Promise.all([
+  const [nights, extras, ownDiscount] = await Promise.all([
     sql<NightPriceInput[]>`
       SELECT d::date::text AS date,
         (SELECT r.price_pence FROM rate_rules r
@@ -65,11 +68,28 @@ export async function quoteStay(
     request.discountCode ? loadDiscount(sql, propertyId, request.discountCode) : Promise.resolve(null),
   ]);
 
+  const promo = request.lodgifyPromotion;
+  const discount: DiscountDefinition | null =
+    ownDiscount ??
+    (promo?.ok && promo.promotion.code === request.discountCode?.trim().toUpperCase()
+      ? {
+          id: null,
+          code: promo.promotion.code,
+          name: promo.promotion.name,
+          discountType: "PERCENT",
+          percentOff: promo.promotion.percentOff,
+          amountOffPence: null,
+          // Lodgify has already checked its own conditions for this stay.
+          minNights: null,
+          stayWindow: null,
+          bookingWindow: null,
+          maxRedemptions: null,
+          redemptions: 0,
+        }
+      : null);
   if (request.discountCode && !discount) {
-    return {
-      availability,
-      pricing: { ok: false, error: { code: "DISCOUNT_INVALID", message: "We don't recognise that code." } },
-    };
+    const message = promo && !promo.ok ? promo.message : "We don't recognise that code.";
+    return { availability, pricing: { ok: false, error: { code: "DISCOUNT_INVALID", message } } };
   }
 
   return {

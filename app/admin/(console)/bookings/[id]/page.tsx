@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   cancelBookingAction,
+  keepDespiteLodgifyAction,
   linkLodgifyBookingAction,
   retryLodgifyPushAction,
   recordPaymentAction,
@@ -112,6 +113,12 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
                 LODGIFY_STATUS[b.lodgifyPushStatus] ?? words(b.lodgifyPushStatus)
               )}
               {b.lodgifyPushError && <span className="block text-red-800">{b.lodgifyPushError}</span>}
+              {b.lodgifyMismatch && (
+                <span className={`block ${b.lodgifyMismatchIgnored ? "text-muted-foreground" : "text-red-800"}`}>
+                  {b.lodgifyMismatchDetail}
+                  {b.lodgifyMismatchIgnored ? " You chose to keep the booking as it is here." : " Its balance won't be charged until you deal with it."}
+                </span>
+              )}
             </p>
           )}
           {b.cancelledAt && (
@@ -178,6 +185,20 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
                 Received the balance another way (e.g. bank transfer)? Record it here. This stops the automatic charge.
               </p>
               <ManualPaymentForm action={recordPaymentAction.bind(null, b.id)} />
+            </div>
+          )}
+          {b.lodgifyMismatch && !b.lodgifyMismatchIgnored && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {b.lodgifyMismatch === "CANCELLED"
+                  ? "This booking is cancelled in Lodgify. Cancel it here too (below) to release the dates and stop the balance, and refund in Stripe if due."
+                  : "This booking is different in Lodgify. If that's expected, keep it as it is here and the balance will be charged as normal; otherwise cancel it below."}
+              </p>
+              <ActionButton
+                action={keepDespiteLodgifyAction.bind(null, b.id)}
+                label="Keep charging as normal"
+                confirmText="Keep this booking as it is here and charge its balance as normal?"
+              />
             </div>
           )}
           {(b.lodgifyPushStatus === "FAILED" || b.lodgifyPushStatus === "CHECK" || b.lodgifyPushStatus === "OFF") && (

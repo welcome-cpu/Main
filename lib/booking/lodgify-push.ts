@@ -77,7 +77,10 @@ export function lodgifyNote(r: LodgifyPushRow) {
   if (r.quote.extras.length > 0) {
     lines.push(`Extras: ${r.quote.extras.map((x) => `${x.name}${x.quantity > 1 ? ` × ${x.quantity}` : ""}`).join(", ")}.`);
   }
-  if (r.quote.discount) lines.push(`Discount code ${r.quote.discount.code}: −${money(r.quote.discount.pence)}.`);
+  if (r.quote.discount) {
+    const name = r.quote.discount.name ? ` (${r.quote.discount.name})` : "";
+    lines.push(`Discount code ${r.quote.discount.code}${name}: −${money(r.quote.discount.pence)}.`);
+  }
   return lines.join("\n");
 }
 

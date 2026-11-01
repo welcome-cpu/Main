@@ -1,5 +1,6 @@
 import "server-only";
 import { recordAudit } from "@/lib/audit";
+import { lodgifyAllowsBalanceCharge } from "@/lib/booking/lodgify-check";
 import { todayInZone } from "@/lib/dates";
 import { db } from "@/lib/db/client";
 import { enqueueBalanceFailedEmails, enqueueBalanceReceivedEmail } from "@/lib/email/booking-emails";
@@ -12,7 +13,8 @@ export type BalanceOutcome = { paymentId: string; reference: string; ok: boolean
  * when paying the deposit. Safe to run repeatedly: each balance uses a
  * Stripe idempotency key, so it can only ever be charged once. Failures
  * (e.g. the bank asks the guest to authenticate) are recorded for
- * follow-up; the booking itself stays confirmed.
+ * follow-up; the booking itself stays confirmed. Bookings also in Lodgify
+ * are checked there first, and wait if they've been cancelled or changed.
  */
 export async function chargeDueBalances(
   gateway: PaymentGateway,
@@ -44,6 +46,7 @@ export async function chargeDueBalances(
     JOIN properties p ON p.id = r.property_id
     WHERE pay.kind = 'BALANCE' AND pay.status = 'PENDING' AND pay.due_date <= ${today}
       AND r.status = 'CONFIRMED'
+      AND (r.lodgify_mismatch IS NULL OR r.lodgify_mismatch_ignored)
       AND pay.stripe_customer_id IS NOT NULL AND pay.stripe_payment_method_id IS NOT NULL
       ${onlyPaymentId ? sql`AND pay.id = ${onlyPaymentId}` : sql``}
     ORDER BY pay.due_date
@@ -51,6 +54,15 @@ export async function chargeDueBalances(
 
   const outcomes: BalanceOutcome[] = [];
   for (const b of due) {
+    if (!(await lodgifyAllowsBalanceCharge(b.reservationId))) {
+      outcomes.push({
+        paymentId: b.id,
+        reference: b.reference,
+        ok: false,
+        message: "Not charged: the booking is cancelled or changed in Lodgify, or Lodgify couldn't be checked. See the booking.",
+      });
+      continue;
+    }
     const result = await gateway.chargeOffSession({
       paymentId: b.id,
       reservationId: b.reservationId,

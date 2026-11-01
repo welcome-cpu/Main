@@ -194,7 +194,11 @@ function DetailsForm({
         <input name="newsletter" type="checkbox" className="mt-1 h-4 w-4" />
         <span>
           Send me the Gamrie Chalets newsletter, with news and occasional discounts. You can unsubscribe at any
-          time.
+          time. See our{" "}
+          <a href="/privacy" target="_blank" className="underline">
+            privacy policy
+          </a>
+          .
         </span>
       </label>
 

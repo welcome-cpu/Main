@@ -76,6 +76,9 @@ export default function Footer() {
           <Link href="/gift-vouchers" className="hover:text-primary">
             Gift Vouchers
           </Link>
+          <Link href="/privacy" className="hover:text-primary">
+            Privacy
+          </Link>
           <Link href="/contact" className="hover:text-primary">
             Contact
           </Link>
