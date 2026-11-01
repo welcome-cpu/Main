@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { welcomeGuides } from "@/lib/welcomeGuides";
 import { properties } from "@/lib/properties";
+
+// Opens Gamrie Chalets' reviews on Google, where guests can add their own.
+const GOOGLE_REVIEW_URL =
+  "https://www.google.com/travel/search?q=gamrie%20chalets&g2lb=4965990%2C72471280%2C72573224%2C72647020%2C72686036%2C72803964%2C72882230%2C73064764%2C121529350%2C121608706%2C121738283%2C121921501%2C121951222%2C121960737%2C122078727%2C122093076%2C122097177%2C122192361&hl=en-GB&gl=uk&cs=1&ssta=1&ts=CAEaKwopEicyJTB4NDg4NDhiNmQ4ZjZmOTk1OToweDRhOTQxZDhkMTJmNzRlNGU&qs=CAEyE0Nnb0l6cHpkbDlHeGg4cEtFQUU4Ag&ap=ugEHcmV2aWV3cw&ictx=111&ved=0CAAQ5JsGahcKEwiIlMbgv-eXAxUAAAAAHQAAAAAQBg";
 
 export async function generateStaticParams() {
   return welcomeGuides.map((guide) => ({ slug: guide.slug }));
@@ -547,6 +552,34 @@ export default async function WelcomeGuidePage({
           >
             Facebook · Gamrie Chalets
           </a>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-border bg-muted px-5 py-5">
+          <p className="text-sm font-semibold text-foreground">Enjoyed your stay?</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            We&apos;d love it if you left us a Google review. It only takes a minute and helps other
+            guests find us. Every review is entered into our annual prize draw for a free night,
+            drawn once a year.
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            And if you&apos;re already missing the view, book your return visit directly with us.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <a
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex justify-center rounded-full border border-primary px-6 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              Leave a Google review
+            </a>
+            <Link
+              href={property ? `/properties/${property.slug}#book` : "/properties#availability"}
+              className="inline-flex justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Book a return visit
+            </Link>
+          </div>
         </div>
       </Section>
     </div>
