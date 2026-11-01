@@ -85,6 +85,39 @@ function stripe() {
   return client;
 }
 
+/**
+ * A Checkout for buying a print from a welcome guide. Paid in one go (no
+ * booking, so nothing to re-check before capture); Stripe collects the UK
+ * delivery address. The webhook tells the owner who to post it to.
+ */
+export async function createPrintCheckout(r: {
+  printSlug: string;
+  name: string;
+  amountPence: number;
+  imageUrl: string;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<string> {
+  const session = await stripe().checkout.sessions.create({
+    mode: "payment",
+    allowed_payment_method_types: ["card"],
+    line_items: [
+      {
+        quantity: 1,
+        price_data: { currency: "gbp", unit_amount: r.amountPence, product_data: { name: r.name, images: [r.imageUrl] } },
+      },
+    ],
+    shipping_address_collection: { allowed_countries: ["GB"] },
+    phone_number_collection: { enabled: true },
+    payment_intent_data: { description: r.name, metadata: { kind: "print", print: r.printSlug } },
+    metadata: { kind: "print", print: r.printSlug },
+    success_url: r.successUrl,
+    cancel_url: r.cancelUrl,
+  });
+  if (!session.url) throw new Error("Stripe didn't return a checkout URL.");
+  return session.url;
+}
+
 const webhookVerifier = new Stripe("sk_test_signature_verification_only");
 
 const id = (value: string | { id: string } | null | undefined) =>

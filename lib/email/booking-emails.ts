@@ -10,9 +10,12 @@ import {
   guestBookingConfirmed,
   guestNotCharged,
   guestPaymentReceipt,
+  guestPrintReceipt,
   ownerNewBooking,
   ownerPaymentProblem,
+  ownerPrintSold,
   type BookingEmailData,
+  type PrintSaleEmailData,
 } from "@/lib/email/templates";
 import type { Quote } from "@/lib/pricing/quote";
 import { SITE_URL } from "@/lib/site";
@@ -115,4 +118,20 @@ export async function enqueueBookingCancelledEmail(sql: Sql | Tx, reservationId:
   const d = await loadBookingEmailData(sql, reservationId);
   if (!d) return;
   await enqueueEmail(sql, { reservationId, kind: "BOOKING_CANCELLED", dedupeKey: `booking-cancelled:${reservationId}`, to: d.guestEmail, ...guestBookingCancelled(d) });
+}
+
+/** A print bought from a welcome guide: tell the owner where to post it, and thank the buyer. */
+export async function enqueuePrintSoldEmails(sql: Sql | Tx, sessionId: string, d: Omit<PrintSaleEmailData, "contactEmail">) {
+  const data = { ...d, contactEmail: ownerMailbox() || "welcome@gamriechalets.co.uk" };
+  await enqueueEmail(sql, { reservationId: null, kind: "PRINT_RECEIPT", dedupeKey: `print-receipt:${sessionId}`, to: d.buyerEmail, ...guestPrintReceipt(data) });
+  if (ownerMailbox()) {
+    await enqueueEmail(sql, {
+      reservationId: null,
+      kind: "OWNER_PRINT_SOLD",
+      dedupeKey: `owner-print-sold:${sessionId}`,
+      to: ownerMailbox(),
+      replyTo: d.buyerEmail,
+      ...ownerPrintSold(data),
+    });
+  }
 }

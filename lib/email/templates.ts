@@ -268,3 +268,51 @@ export function guestBookingCancelled(d: BookingEmailData): RenderedEmail {
   const text = [`Dear ${d.guestFirstName},`, "", body, "", textTable(stayRows(d)), "", `Reply or write to ${d.contactEmail}.`].join("\n");
   return { subject, html, text };
 }
+
+// ---------------------------------------------------------------------------
+// Print sales (from the welcome guides)
+
+export type PrintSaleEmailData = {
+  printTitle: string;
+  artist: string;
+  amountPence: number;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone: string | null;
+  /** Delivery address, one line per entry. */
+  address: string[];
+  contactEmail: string;
+};
+
+function printRows(d: PrintSaleEmailData): [string, string][] {
+  return [
+    ["Print", `${d.printTitle} by ${d.artist}`],
+    ["Paid", formatPence(d.amountPence, "GBP")],
+    ["Deliver to", [d.buyerName, ...d.address].join(", ")],
+  ];
+}
+
+export function ownerPrintSold(d: PrintSaleEmailData): RenderedEmail {
+  const subject = `Print sold: ${d.printTitle} to ${d.buyerName}`;
+  const rows: [string, string][] = [...printRows(d), ["Email", d.buyerEmail], ["Phone", d.buyerPhone ?? "—"]];
+  const html = layout(
+    "A print has been sold",
+    detailsTable(rows) + p("Paid in full by card through Stripe. Please post it to the address above.")
+  );
+  const text = [textTable(rows), "", "Paid in full by card through Stripe. Please post it to the address above."].join("\n");
+  return { subject, html, text };
+}
+
+export function guestPrintReceipt(d: PrintSaleEmailData): RenderedEmail {
+  const subject = `Thank you for buying ${d.printTitle}`;
+  const body = `Thank you for buying ${d.printTitle} by ${d.artist}. We've received your payment and will post your print to the address below.`;
+  const html = layout(
+    "Thank you for your order",
+    p(`Dear ${escapeHtml(d.buyerName)},`) +
+      p(escapeHtml(body)) +
+      detailsTable(printRows(d)) +
+      p(`If you have any questions, reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a>.`)
+  );
+  const text = [`Dear ${d.buyerName},`, "", body, "", textTable(printRows(d)), "", `Questions? Reply or write to ${d.contactEmail}.`].join("\n");
+  return { subject, html, text };
+}

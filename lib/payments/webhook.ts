@@ -11,8 +11,10 @@ import {
   enqueueBalanceReceivedEmail,
   enqueueBookingConfirmedEmails,
   enqueueNotChargedEmails,
+  enqueuePrintSoldEmails,
 } from "@/lib/email/booking-emails";
 import type { PaymentGateway, PaymentIntentInfo } from "@/lib/payments/gateway";
+import { findPrint } from "@/lib/prints";
 import { cancelHoldVoucher } from "@/lib/vouchers/cancel";
 
 // Stripe webhooks are the ONLY thing that confirms a booking or marks money
@@ -67,6 +69,7 @@ export async function handleStripeEvent(event: Stripe.Event, gateway: PaymentGat
 async function dispatch(event: Stripe.Event, gateway: PaymentGateway): Promise<string | undefined> {
   switch (event.type) {
     case "checkout.session.completed":
+      if (event.data.object.metadata?.kind === "print") return onPrintSold(event.data.object);
       return onCheckoutCompleted(event.data.object, gateway);
     case "checkout.session.expired":
     case "checkout.session.async_payment_failed":
@@ -82,6 +85,42 @@ async function dispatch(event: Stripe.Event, gateway: PaymentGateway): Promise<s
     default:
       return `unhandled type ${event.type}`;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Prints bought from a welcome guide (paid in full, no booking involved)
+// ---------------------------------------------------------------------------
+
+async function onPrintSold(session: Stripe.Checkout.Session) {
+  const print = findPrint(session.metadata?.print ?? "");
+  if (!print) return "unknown print";
+  if (session.payment_status !== "paid") return `print payment is ${session.payment_status}`;
+  const customer = session.customer_details;
+  const email = customer?.email;
+  if (!email) return "no buyer email";
+
+  const shipping = session.collected_information?.shipping_details;
+  const a = shipping?.address ?? customer.address;
+  const address = [a?.line1, a?.line2, a?.city, a?.state, a?.postal_code].filter((x): x is string => Boolean(x));
+  await db().begin(async (tx) => {
+    await enqueuePrintSoldEmails(tx, session.id, {
+      printTitle: print.title,
+      artist: print.artist,
+      amountPence: session.amount_total ?? print.pricePence,
+      buyerName: shipping?.name ?? customer.name ?? "Customer",
+      buyerEmail: email,
+      buyerPhone: customer.phone ?? null,
+      address,
+    });
+    await recordAudit(tx, {
+      actorType: "STRIPE",
+      action: "print.sold",
+      entityType: "print",
+      entityId: print.slug,
+      details: { checkoutSessionId: session.id, amountPence: session.amount_total },
+    });
+  });
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------

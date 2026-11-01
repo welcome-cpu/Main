@@ -66,6 +66,11 @@ export default function PrivacyPage() {
             You can unsubscribe at any time using the link in every email.
           </p>
           <p>
+            <strong>When you buy a print.</strong> Your name, email address, phone number and delivery address,
+            collected by Stripe when you pay, so we can post your print and contact you about your order. The legal
+            basis is the contract between us. We keep these records as part of our accounting records.
+          </p>
+          <p>
             <strong>Our prize draw.</strong> If you enter our annual free-night draw, the name on your Google review
             and your email address, so we can check your review and contact you if you win. The legal basis is our
             legitimate interest in running the draw. We delete entries after the draw for that year.

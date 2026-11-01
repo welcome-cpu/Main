@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PrintThanks from "@/components/PrintThanks";
 import PrizeDrawForm from "@/components/PrizeDrawForm";
+import { formatPence } from "@/lib/money";
+import { printsForGuide } from "@/lib/prints";
 import { welcomeGuides } from "@/lib/welcomeGuides";
 import { properties } from "@/lib/properties";
 
@@ -183,6 +186,16 @@ function StarIcon({ className }: IconProps) {
   );
 }
 
+function FrameIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-5-5L5 21" />
+    </Icon>
+  );
+}
+
 function HeartIcon({ className }: IconProps) {
   return (
     <Icon className={className}>
@@ -269,6 +282,7 @@ export default async function WelcomeGuidePage({
   if (!guide) {
     notFound();
   }
+  const guidePrints = printsForGuide(guide.slug);
 
   const navItems = [
     { id: "overview", label: "Overview", icon: <HomeIcon className="h-4 w-4" /> },
@@ -293,6 +307,9 @@ export default async function WelcomeGuidePage({
     { id: "shower-room", label: "Shower Room", icon: <DropletIcon className="h-4 w-4" /> },
     ...(property
       ? [{ id: "find-us", label: "How to Find Us", icon: <MapPinIcon className="h-4 w-4" /> }]
+      : []),
+    ...(guidePrints.length > 0
+      ? [{ id: "art", label: "Buy the Print", icon: <FrameIcon className="h-4 w-4" /> }]
       : []),
     { id: "connect", label: "Stay Connected", icon: <HeartIcon className="h-4 w-4" /> },
   ];
@@ -545,6 +562,43 @@ export default async function WelcomeGuidePage({
               Get Directions
             </a>
           </div>
+        </Section>
+      )}
+
+      {guidePrints.length > 0 && (
+        <Section id="art" icon={<FrameIcon className="h-5 w-5" />} title="Take the View Home">
+          <PrintThanks />
+          {guidePrints.map((print) => (
+            <div key={print.slug} className="mt-4 flex flex-col gap-5 rounded-xl border border-border bg-muted px-5 py-5 sm:flex-row">
+              <Image
+                src={print.image.src}
+                alt={`${print.title} by ${print.artist}`}
+                width={print.image.width}
+                height={print.image.height}
+                className="w-full max-w-[220px] flex-none rounded-lg border border-border object-cover"
+              />
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  &ldquo;{print.title}&rdquo; by {print.artist}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {print.description} If you&apos;ve fallen for it during your stay, you can buy your
+                  own copy and we&apos;ll post it to you.
+                </p>
+                <p className="mt-3 text-lg font-semibold text-foreground">{formatPence(print.pricePence, "GBP")}</p>
+                <form action="/api/prints/checkout" method="post" className="mt-3">
+                  <input type="hidden" name="print" value={print.slug} />
+                  <button
+                    type="submit"
+                    className="inline-flex justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Buy this print
+                  </button>
+                </form>
+                <p className="mt-2 text-xs text-muted-foreground">Secure card payment by Stripe. UK delivery.</p>
+              </div>
+            </div>
+          ))}
         </Section>
       )}
 
