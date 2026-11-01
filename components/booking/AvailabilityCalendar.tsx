@@ -45,6 +45,8 @@ const longDate = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
 });
 const show = (iso: string) => longDate.format(new Date(`${iso}T00:00:00Z`));
+/** "£165", or "£165.50" when there are pence: short enough for a calendar box. */
+const wholePounds = (pence: number) => (pence % 100 === 0 ? `£${pence / 100}` : formatPence(pence));
 
 type Guests = { adults: number; children: number; infants: number; pets: number };
 
@@ -159,6 +161,14 @@ export default function AvailabilityCalendar({
   const booked = useMemo(() => chalets.map((c) => nightSet(c.calendar.unavailable)), [chalets]);
   const bookable = useMemo(() => chalets.map((c, i) => bookableDates(c.calendar, booked[i])), [chalets, booked]);
   const availableAt = (i: number, d: string) => bookable[i].checkIns.has(d) || bookable[i].stayFor.has(d);
+  /** Whether a stay at chalet `i` can include the night of `d` (not just check out on it). */
+  const nightFreeAt = (i: number, d: string) =>
+    bookable[i].checkIns.has(d) || (bookable[i].stayFor.get(d)?.checkOut ?? d) > d;
+  /** The night's price at this chalet, or at the one next door if only that's free. */
+  const priceOn = (d: string) => {
+    const i = chalets.findIndex((_, j) => nightFreeAt(j, d));
+    return i === -1 ? null : (chalets[i].calendar.nightlyPence[d] ?? null);
+  };
   const top = useRef<HTMLDivElement>(null);
   // Moving between choosing and checkout swaps the content; keep its top in view.
   const inCheckout = checkout !== null;
@@ -339,6 +349,7 @@ export default function AvailabilityCalendar({
                 twinFree: unavailableHere && !choosingCheckOut && twins.some((_, i) => availableAt(i + 1, d)),
                 checkOutOption,
                 selectable,
+                pricePence: priceOn(d),
               };
             }}
             onChoose={choose}
@@ -597,6 +608,7 @@ function Month({
     twinFree: boolean;
     checkOutOption: boolean;
     selectable: boolean;
+    pricePence: number | null;
   };
   onChoose: (d: string) => void;
   twinName?: string;
@@ -620,6 +632,7 @@ function Month({
         {Array.from({ length: days }, (_, i) => {
           const d = addDays(month, i);
           const s = dayState(d);
+          const showPrice = s.pricePence !== null && (s.selectable || s.selected || s.inRange || s.twinFree);
           const cls = s.selected
             ? "bg-primary text-primary-foreground"
             : s.inRange
@@ -641,10 +654,15 @@ function Month({
               disabled={!s.selectable && !s.selected}
               onClick={() => onChoose(d)}
               aria-pressed={s.selected}
-              aria-label={`${show(d)}${s.checkOutOption ? ", check-out" : s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : !s.unavailable ? "" : s.booked ? ", booked" : ", not available"}`}
-              className={`aspect-square text-sm disabled:cursor-default ${cls}`}
+              aria-label={`${show(d)}${s.checkOutOption ? ", check-out" : s.twinFree ? `, ${s.booked ? "booked" : "not available"}, ${twinName} free` : !s.unavailable ? "" : s.booked ? ", booked" : ", not available"}${showPrice ? `, ${formatPence(s.pricePence!)} a night` : ""}`}
+              className={`flex aspect-square flex-col items-center justify-center text-sm leading-tight disabled:cursor-default ${cls}`}
             >
               {i + 1}
+              {showPrice && (
+                <span className={`text-[10px] font-normal sm:text-xs ${s.selected ? "" : "text-muted-foreground"}`}>
+                  {wholePounds(s.pricePence!)}
+                </span>
+              )}
             </button>
           );
         })}

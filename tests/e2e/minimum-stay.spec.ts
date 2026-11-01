@@ -55,6 +55,10 @@ test("every date of a bookable stay shows as available, and clicking one picks t
     await expect(page.locator(`[data-date="${inDays(d)}"]`)).toBeEnabled();
     await expect(page.locator(`[data-date="${inDays(d)}"]`)).not.toHaveAttribute("aria-label", /booked|not available/);
   }
+  // Each night shows its price; the check-out-only day and booked nights don't.
+  await expect(page.locator(`[data-date="${inDays(146)}"]`)).toContainText(/£\d+/);
+  await expect(page.locator(`[data-date="${inDays(148)}"]`)).not.toContainText("£");
+  await expect(page.locator(`[data-date="${inDays(150)}"]`)).not.toContainText("£");
   // 147 can't be a check-in (one night before the block), so it picks 146–148.
   await page.locator(`[data-date="${inDays(147)}"]`).click();
   await expect(page.locator(`[data-date="${inDays(146)}"]`)).toHaveAttribute("aria-pressed", "true");

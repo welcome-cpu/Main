@@ -47,6 +47,12 @@ export type PublicCalendar = {
    */
   minNightsByArrival: Record<string, number>;
   /**
+   * The price of each night in the window, in pence, by the same rules as a
+   * quote (rate rules, then nightly rates, then the base price unless the
+   * property needs imported rates). Nights with no price are left out.
+   */
+  nightlyPence: Record<string, number>;
+  /**
    * When the least recently synced external calendar last synced, so guests
    * (and we) can see how fresh the imported availability is. Null if none.
    */
@@ -78,7 +84,7 @@ export async function getPublicCalendar(
   now: Date = new Date()
 ): Promise<PublicCalendar> {
   const sql = db();
-  const [occupancy, [sync], minNights] = await Promise.all([
+  const [occupancy, [sync], minNights, prices] = await Promise.all([
     loadOccupancy(sql, property.id, window),
     sql<{ syncedAt: Date | null }[]>`
       SELECT min(last_success_at) AS synced_at FROM calendar_feeds
@@ -100,6 +106,22 @@ export async function getPublicCalendar(
       ) m
       WHERE p.id = ${property.id} AND m.min_nights <> p.default_min_nights
     `,
+    sql<{ date: string; pricePence: number }[]>`
+      SELECT d::date::text AS date, x.price_pence
+      FROM properties p
+      CROSS JOIN generate_series(${window.start}::date, ${window.end}::date - 1, interval '1 day') d
+      CROSS JOIN LATERAL (
+        SELECT COALESCE(
+          (SELECT r.price_pence FROM rate_rules r
+            WHERE r.property_id = p.id AND r.is_active AND r.price_pence IS NOT NULL AND r.nights @> d::date
+            ORDER BY r.priority DESC, r.created_at DESC LIMIT 1),
+          (SELECT n.price_pence FROM nightly_rates n
+            WHERE n.property_id = p.id AND n.night = d::date AND (n.source = 'ADMIN' OR p.rate_source = 'LODGIFY')),
+          CASE WHEN p.rate_source = 'LODGIFY' THEN NULL ELSE p.base_nightly_pence END
+        ) AS price_pence
+      ) x
+      WHERE p.id = ${property.id} AND x.price_pence IS NOT NULL
+    `,
   ]);
 
   const today = todayInZone(property.timezone, now);
@@ -110,6 +132,7 @@ export async function getPublicCalendar(
     lastCheckIn: addDays(today, property.bookingWindowDays),
     unavailable: mergeRanges(occupancy, window),
     minNightsByArrival: Object.fromEntries(minNights.map((m) => [m.date, m.minNights])),
+    nightlyPence: Object.fromEntries(prices.map((p) => [p.date, p.pricePence])),
     calendarsSyncedAt: sync?.syncedAt ? new Date(sync.syncedAt).toISOString() : null,
   };
 }
