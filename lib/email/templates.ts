@@ -193,7 +193,7 @@ export function ownerNewBooking(d: BookingEmailData): RenderedEmail {
       detailsTable(priceRows(d.quote)) +
       p(escapeHtml(paymentSummary(d.quote))) +
       (d.guestMessage ? p(`<strong>Guest's message:</strong><br>${escapeHtml(d.guestMessage).replaceAll("\n", "<br>")}`) : "") +
-      p(`Remember: if this property is also on Lodgify or other channels, those calendars only learn about this booking at their next sync.`)
+      p(`The booking is sent to Lodgify automatically; the admin area shows if it couldn't be. Other channels, like Airbnb, pick it up from Lodgify at their next calendar sync.`)
   );
   const text = [
     textTable([...stayRows(d), ...guestRows]),
