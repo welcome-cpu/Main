@@ -593,8 +593,9 @@ export default async function WelcomeGuidePage({
                   &ldquo;{print.title}&rdquo; by {print.artist}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {print.description} If you&apos;ve fallen for it during your stay, you can buy your
-                  own copy and take it home with you.
+                  A framed {print.medium}, hanging on the wall in {print.chaletName}. If you&apos;ve
+                  fallen for it during your stay, you can buy this very print, frame and all, and take
+                  it off the wall to bring home with you when you leave.
                 </p>
                 <p className="mt-3 text-lg font-semibold text-foreground">{formatPence(print.pricePence, "GBP")}</p>
                 <form action="/api/prints/checkout" method="post" className="mt-3">
@@ -606,7 +607,7 @@ export default async function WelcomeGuidePage({
                     Buy this print
                   </button>
                 </form>
-                <p className="mt-2 text-xs text-muted-foreground">Secure card payment by Stripe. Take it with you when you leave.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Secure card payment by Stripe. No postage: you take the framed print with you.</p>
               </div>
             </div>
           ))}

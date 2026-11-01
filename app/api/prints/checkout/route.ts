@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   try {
     const url = await createPrintCheckout({
       printSlug: print.slug,
-      name: `${print.title} by ${print.artist} (limited edition print)`,
+      name: `${print.title} by ${print.artist} (framed ${print.medium}, from the wall in ${print.chaletName})`,
       amountPence: print.pricePence,
       imageUrl: `${origin}${print.image.src}`,
       successUrl: `${guide}?print=thanks#art`,

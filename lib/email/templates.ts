@@ -316,7 +316,7 @@ export function printNeedsReplacing(d: PrintSaleEmailData): RenderedEmail {
 
 export function guestPrintReceipt(d: PrintSaleEmailData): RenderedEmail {
   const subject = `Thank you for buying ${d.printTitle}`;
-  const body = `Thank you for buying ${d.printTitle} by ${d.artist}. We've received your payment, and the print is yours to take home with you from ${d.chaletName}.`;
+  const body = `Thank you for buying ${d.printTitle} by ${d.artist}. We've received your payment, and the framed print on the wall in ${d.chaletName} is yours: please take it home with you when you leave.`;
   const html = layout(
     "Thank you for your order",
     p(`Dear ${escapeHtml(d.buyerName)},`) +

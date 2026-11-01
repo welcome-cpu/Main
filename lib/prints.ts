@@ -6,7 +6,8 @@ export type Print = {
   slug: string;
   title: string;
   artist: string;
-  description: string;
+  /** What it is, e.g. "limited edition lino cut print". Guests buy the framed one on the wall. */
+  medium: string;
   pricePence: number;
   image: { src: string; width: number; height: number };
   /** The welcome guide (chalet) it hangs in. */
@@ -22,7 +23,7 @@ export const prints: Print[] = [
     slug: "first-view-of-crovie",
     title: "First View of Crovie",
     artist: "Joyce Taylor",
-    description: "A limited edition print of the picture on display in Muckle View.",
+    medium: "limited edition print",
     pricePence: 7500,
     image: { src: "/prints/first-view-of-crovie.png", width: 493, height: 485 },
     guideSlug: "muckle-view",
@@ -33,7 +34,7 @@ export const prints: Print[] = [
     slug: "in-for-repair",
     title: "In for Repair",
     artist: "Joyce Taylor",
-    description: "A limited edition print of the picture on display in Murray Cottage.",
+    medium: "limited edition lino cut print",
     pricePence: 9500,
     image: { src: "/prints/in-for-repair.jpeg", width: 1920, height: 1440 },
     guideSlug: "murray-cottage",
