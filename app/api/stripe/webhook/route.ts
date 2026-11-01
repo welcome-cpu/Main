@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runAfterResponse } from "@/lib/after-response";
+import { sendQueuedAfterPayment } from "@/lib/booking/after-payment";
 import { isDatabaseConfigured } from "@/lib/db/client";
 import { logError } from "@/lib/log";
 import { processOutbox } from "@/lib/email/outbox";
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     const outcome = await handleStripeEvent(event, stripeGateway);
     // Send any emails this caused once Stripe has its answer; the 5-minute
     // job retries anything that fails.
-    runAfterResponse(() => processOutbox({ limit: 10 }));
+    runAfterResponse(() => Promise.all([processOutbox({ limit: 10 }), sendQueuedAfterPayment()]));
     return NextResponse.json({ received: true, ...outcome });
   } catch (error) {
     logError(`Stripe webhook ${event.type} (${event.id}) failed`, error);

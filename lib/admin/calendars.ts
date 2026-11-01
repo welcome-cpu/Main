@@ -128,6 +128,8 @@ export async function listConflicts(): Promise<Conflict[]> {
      AND r.status IN ('HOLD', 'CONFIRMED')
      AND r.stay && e.nights
     WHERE e.status = 'ACTIVE'
+      -- Lodgify's copy of the same booking, sent there by us, isn't a clash.
+      AND e.uid IS DISTINCT FROM 'lodgify-booking-' || r.lodgify_booking_id
     ORDER BY e.start_date
   `;
 }

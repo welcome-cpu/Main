@@ -108,6 +108,12 @@ export async function listBookings(f: BookingFilters): Promise<BookingRow[]> {
           LIMIT 1
         ) lb ON true
         WHERE e.status = 'ACTIVE' AND e.nights && daterange(${from}::date, ${to}::date, '[)')
+          -- Our own bookings sent to Lodgify come back in its calendar: list them once.
+          AND NOT EXISTS (
+        SELECT 1 FROM reservations own
+        WHERE own.property_id = e.property_id AND own.status = 'CONFIRMED'
+          AND e.uid = 'lodgify-booking-' || own.lodgify_booking_id
+      )
           ${f.propertyId ? sql`AND e.property_id = ${f.propertyId}` : sql``}
           ${f.source && f.source !== "EXTERNAL" ? (channel ? sql`AND (f.source = ${f.source} OR lb.channel = ${channel})` : sql`AND f.source = ${f.source}`) : sql``}
         ORDER BY e.start_date
@@ -135,7 +141,19 @@ export type BookingDetail = {
   children: number;
   infants: number;
   pets: number;
-  guest: { firstName: string; lastName: string; email: string; phone: string | null; country: string | null } | null;
+  guest: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    country: string | null;
+    address: string | null;
+  } | null;
+  lodgifyBookingId: number | null;
+  lodgifyPushStatus: string | null;
+  lodgifyPushError: string | null;
+  newsletterOptIn: boolean;
+  newsletterStatus: string | null;
   guestMessage: string | null;
   quote: Quote | null;
   totalPence: number;
@@ -175,6 +193,7 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
     guestEmail: string | null;
     guestPhone: string | null;
     guestCountry: string | null;
+    guestAddress: string | null;
   })[]>`
     SELECT r.id, r.reference, r.status, r.source, s.label AS source_label, r.property_id, p.name AS property_name,
            r.check_in, r.check_out, r.adults, r.children, r.infants, r.pets, r.guest_message,
@@ -182,7 +201,10 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
            r.balance_due_date, r.hold_expires_at, r.confirmed_at, r.cancelled_at, r.cancellation_reason,
            r.terms_accepted_at, r.created_at,
            g.first_name AS guest_first_name, g.last_name AS guest_last_name, g.email AS guest_email, g.phone AS guest_phone,
-           g.country AS guest_country
+           g.country AS guest_country,
+           NULLIF(concat_ws(', ', g.address_line1, g.address_line2, g.city, g.postal_code), '') AS guest_address,
+           r.lodgify_booking_id, r.lodgify_push_status, r.lodgify_push_error, r.newsletter_opt_in,
+           (SELECT ns.status FROM newsletter_signups ns WHERE ns.reservation_id = r.id) AS newsletter_status
     FROM reservations r
     JOIN properties p ON p.id = r.property_id
     JOIN booking_sources s ON s.code = r.source
@@ -210,11 +232,11 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
     `,
   ]);
 
-  const { guestFirstName, guestLastName, guestEmail, guestPhone, guestCountry, ...rest } = r;
+  const { guestFirstName, guestLastName, guestEmail, guestPhone, guestCountry, guestAddress, ...rest } = r;
   return {
     ...rest,
     quote: (rest.quote && Object.keys(rest.quote).length > 0 ? rest.quote : null) as Quote | null,
-    guest: guestFirstName && guestLastName && guestEmail ? { firstName: guestFirstName, lastName: guestLastName, email: guestEmail, phone: guestPhone, country: guestCountry } : null,
+    guest: guestFirstName && guestLastName && guestEmail ? { firstName: guestFirstName, lastName: guestLastName, email: guestEmail, phone: guestPhone, country: guestCountry, address: guestAddress } : null,
     payments,
     emails,
     history,
@@ -363,12 +385,14 @@ export type Attention = {
   failedEmails: { reservationId: string | null; reference: string | null; kind: string; recipient: string; error: string | null }[];
   /** Gift Up redemptions that may need sorting out by hand in Gift Up. */
   voucherProblems: { reservationId: string; reference: string; voucherCode: string; amountPence: number; message: string }[];
+  /** Paid bookings that didn't get into Lodgify. */
+  lodgifyProblems: { reservationId: string; reference: string; propertyName: string; checkIn: string; status: string; message: string | null }[];
 };
 
 /** Things the owner needs to deal with. */
 export async function needsAttention(): Promise<Attention> {
   const sql = db();
-  const [failedPayments, failingFeeds, failedEmails, voucherProblems] = await Promise.all([
+  const [failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems] = await Promise.all([
     sql<Attention["failedPayments"]>`
       SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
              pay.amount_pence, pay.failure_message AS message
@@ -400,6 +424,13 @@ export async function needsAttention(): Promise<Attention> {
           OR (pay.status = 'CANCELLED' AND pay.voucher_reversed_at IS NULL AND pay.failure_message IS NOT NULL))
       ORDER BY pay.created_at DESC
     `,
+    sql<Attention["lodgifyProblems"]>`
+      SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
+             r.lodgify_push_status AS status, r.lodgify_push_error AS message
+      FROM reservations r JOIN properties p ON p.id = r.property_id
+      WHERE r.status = 'CONFIRMED' AND r.lodgify_push_status IN ('FAILED', 'CHECK')
+      ORDER BY r.check_in
+    `,
   ]);
-  return { failedPayments, failingFeeds, failedEmails, voucherProblems };
+  return { failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems };
 }

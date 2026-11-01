@@ -84,6 +84,11 @@ test("holds the dates while the guest pays, and releases them on request", async
   await page.getByLabel("Last name").fill("Tester");
   await page.getByLabel("Email").fill("playwright@example.com");
   await page.getByLabel("Phone").fill("07700 900123");
+  await page.getByLabel("Address", { exact: true }).fill("1 Shore Street");
+  await page.getByLabel("Town or city").fill("Gardenstown");
+  await page.getByLabel("Postcode").fill("AB45 3YP");
+  await expect(page.getByLabel("Country")).toHaveValue("GB");
+  await expect(page.getByLabel(/newsletter/)).not.toBeChecked();
 
   // Terms must be accepted.
   await page.getByRole("button", { name: "Continue to secure payment" }).click();

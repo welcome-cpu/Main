@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { recordAudit } from "@/lib/audit";
+import { queueAfterFirstPayment } from "@/lib/booking/after-payment";
 import { checkAvailability } from "@/lib/booking/availability";
 import { lockPropertyAvailability } from "@/lib/booking/locks";
 import { db } from "@/lib/db/client";
@@ -281,7 +282,10 @@ async function markSucceeded(paymentId: string, paymentIntentId: string) {
     });
     // The booking emails go out once the money is actually taken.
     if (p.kind === "BALANCE") await enqueueBalanceReceivedEmail(tx, p.reservationId, paymentId, p.amountPence);
-    else await enqueueBookingConfirmedEmails(tx, p.reservationId);
+    else {
+      await enqueueBookingConfirmedEmails(tx, p.reservationId);
+      await queueAfterFirstPayment(tx, p.reservationId);
+    }
   });
 }
 

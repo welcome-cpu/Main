@@ -56,3 +56,14 @@ export function ManualPaymentForm({ action }: { action: FormAction }) {
     </form>
   );
 }
+
+export function LinkLodgifyForm({ action }: { action: FormAction }) {
+  const [state, formAction] = useActionState(action, {});
+  return (
+    <form action={formAction} className="flex flex-wrap items-end gap-3">
+      <Field label="Lodgify booking number" name="lodgifyBookingId" errors={state.errors} required />
+      <SubmitButton>Link</SubmitButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}

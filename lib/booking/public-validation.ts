@@ -59,11 +59,13 @@ export const holdBodySchema = z.object({
       .min(6, "Enter a phone number")
       .max(40)
       .regex(/^[0-9+()\-.\s]+$/, "Enter a valid phone number"),
-    country: z.preprocess(
-      (v) => (v === "" || v == null ? null : v),
-      z.string().refine(isCountryCode, "Choose a country from the list").nullable()
-    ),
+    addressLine1: z.string().trim().min(1, "Enter your address").max(200),
+    addressLine2: z.preprocess((v) => (v === "" || v == null ? null : v), z.string().trim().max(200).nullable()),
+    city: z.string().trim().min(1, "Enter your town or city").max(100),
+    postalCode: z.string().trim().min(1, "Enter your postcode").max(20),
+    country: z.string({ error: "Choose the country you live in" }).refine(isCountryCode, "Choose the country you live in"),
     message: z.preprocess((v) => (v === "" || v == null ? null : v), z.string().trim().max(2000).nullable()),
+    newsletter: z.boolean().default(false),
   }),
   acceptTerms: z.literal(true, "Please accept the booking terms"),
   turnstileToken: z.string().max(4096).optional().nullable(),

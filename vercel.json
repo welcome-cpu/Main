@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/send-emails",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/send-to-lodgify",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

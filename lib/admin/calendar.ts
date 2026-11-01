@@ -44,6 +44,11 @@ export async function loadAdminCalendar(from: string, to: string): Promise<Calen
              e.start_date::text, e.end_date::text, COALESCE(e.summary, f.name), NULL
       FROM external_events e JOIN calendar_feeds f ON f.id = e.feed_id AND f.is_active, win
       WHERE e.status = 'ACTIVE' AND e.nights && win.w
+        AND NOT EXISTS (
+        SELECT 1 FROM reservations own
+        WHERE own.property_id = e.property_id AND own.status = 'CONFIRMED'
+          AND e.uid = 'lodgify-booking-' || own.lodgify_booking_id
+      )
       UNION ALL
       SELECT b.property_id, 'BLOCK', b.start_date::text, b.end_date::text, COALESCE(b.reason, 'Blocked'), NULL
       FROM manual_blocks b, win

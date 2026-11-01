@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   cancelBookingAction,
+  linkLodgifyBookingAction,
+  retryLodgifyPushAction,
   recordPaymentAction,
   resendConfirmationAction,
   retryBalanceAction,
 } from "@/app/admin/(console)/bookings/actions";
-import { ActionButton, CancelBookingForm, ManualPaymentForm } from "@/components/admin/BookingActions";
+import { ActionButton, CancelBookingForm, LinkLodgifyForm, ManualPaymentForm } from "@/components/admin/BookingActions";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import { getBooking } from "@/lib/admin/bookings";
 import { requireAdmin } from "@/lib/admin/dal";
@@ -19,6 +21,13 @@ const show = (iso: string) => day.format(new Date(`${iso}T00:00:00Z`));
 const at = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
 const when = (d: Date | null) => (d ? at.format(new Date(d)) : "—");
 const words = (s: string) => s.toLowerCase().replaceAll("_", " ");
+const LODGIFY_STATUS: Record<string, string> = {
+  OFF: "not sent (sending to Lodgify was switched off)",
+  PENDING: "waiting to be sent",
+  SENDING: "being sent",
+  FAILED: "Lodgify refused it, so it's not in Lodgify",
+  CHECK: "unclear whether it reached Lodgify: check there",
+};
 
 export default async function AdminBookingPage({ params }: PageProps<"/admin/bookings/[id]">) {
   await requireAdmin();
@@ -65,6 +74,7 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
                   </a>
                 </p>
               )}
+              {b.guest.address && <p>{b.guest.address}</p>}
               {b.guest.country && <p>{countryName(b.guest.country)}</p>}
             </>
           ) : (
@@ -81,6 +91,29 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
             {b.confirmedAt && ` · confirmed ${when(b.confirmedAt)}`}
             {b.termsAcceptedAt && ` · terms accepted ${when(b.termsAcceptedAt)}`}
           </p>
+          {b.source === "DIRECT" && (
+            <p>
+              Newsletter:{" "}
+              {!b.newsletterOptIn
+                ? "didn't sign up"
+                : b.newsletterStatus === "DONE"
+                  ? "signed up"
+                  : b.newsletterStatus === "FAILED"
+                    ? "sign-up failed"
+                    : "asked to sign up (sent once the booking's paid and EmailOctopus is set up)"}
+            </p>
+          )}
+          {b.lodgifyPushStatus && (
+            <p>
+              Lodgify:{" "}
+              {b.lodgifyPushStatus === "PUSHED" ? (
+                <>booking {b.lodgifyBookingId}</>
+              ) : (
+                LODGIFY_STATUS[b.lodgifyPushStatus] ?? words(b.lodgifyPushStatus)
+              )}
+              {b.lodgifyPushError && <span className="block text-red-800">{b.lodgifyPushError}</span>}
+            </p>
+          )}
           {b.cancelledAt && (
             <p className="text-red-800">
               Cancelled {when(b.cancelledAt)}
@@ -147,9 +180,24 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
               <ManualPaymentForm action={recordPaymentAction.bind(null, b.id)} />
             </div>
           )}
+          {(b.lodgifyPushStatus === "FAILED" || b.lodgifyPushStatus === "CHECK" || b.lodgifyPushStatus === "OFF") && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                This booking isn&apos;t linked to Lodgify. First check it isn&apos;t there already. If it is, enter its
+                Lodgify booking number; if not, send it again.
+              </p>
+              <ActionButton
+                action={retryLodgifyPushAction.bind(null, b.id)}
+                label="Send to Lodgify"
+                confirmText="Have you checked this booking isn't already in Lodgify? Sending it again would create a second copy."
+              />
+              <LinkLodgifyForm action={linkLodgifyBookingAction.bind(null, b.id)} />
+            </div>
+          )}
           <div className="space-y-2 border-t border-border pt-6">
             <p className="text-sm text-muted-foreground">
               Cancelling releases the dates straight away. Payments aren&apos;t refunded automatically.
+              {b.lodgifyBookingId && ` It isn't cancelled in Lodgify: cancel booking ${b.lodgifyBookingId} there too.`}
             </p>
             <CancelBookingForm action={cancelBookingAction.bind(null, b.id)} />
           </div>

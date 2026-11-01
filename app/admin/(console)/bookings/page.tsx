@@ -59,6 +59,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
       attention.failingFeeds.length +
       attention.failedEmails.length +
       attention.voucherProblems.length +
+      attention.lodgifyProblems.length +
       conflicts.length >
     0;
 
@@ -90,6 +91,16 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                   {v.reference}
                 </Link>
                 : gift voucher {v.voucherCode} ({formatPence(v.amountPence)}). {v.message}
+              </li>
+            ))}
+            {attention.lodgifyProblems.map((l) => (
+              <li key={`lodgify-${l.reservationId}`}>
+                <Link href={`/admin/bookings/${l.reservationId}`} className="underline">
+                  {l.reference}
+                </Link>{" "}
+                ({l.propertyName}, arriving {show(l.checkIn)}){" "}
+                {l.status === "CHECK" ? "may not have reached Lodgify" : "isn't in Lodgify"}
+                {l.message ? `: ${l.message}` : "."}
               </li>
             ))}
             {attention.failingFeeds.map((f) => (

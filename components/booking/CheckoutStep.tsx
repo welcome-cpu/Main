@@ -92,8 +92,13 @@ function DetailsForm({
             lastName: form.get("lastName"),
             email: form.get("email"),
             phone: form.get("phone"),
+            addressLine1: form.get("addressLine1"),
+            addressLine2: form.get("addressLine2"),
+            city: form.get("city"),
+            postalCode: form.get("postalCode"),
             country: form.get("country"),
             message: form.get("message"),
+            newsletter: form.get("newsletter") === "on",
           },
           acceptTerms: form.get("acceptTerms") === "on",
           turnstileToken: turnstileToken || null,
@@ -152,9 +157,25 @@ function DetailsForm({
           Phone
           <input name="phone" type="tel" required maxLength={40} autoComplete="tel" className={input} />
         </label>
+        <label className="block text-sm sm:col-span-2">
+          Address
+          <input name="addressLine1" required maxLength={200} autoComplete="address-line1" className={input} />
+        </label>
+        <label className="block text-sm sm:col-span-2">
+          Address line 2 (optional)
+          <input name="addressLine2" maxLength={200} autoComplete="address-line2" className={input} />
+        </label>
         <label className="block text-sm">
-          Country you live in (optional)
-          <select name="country" defaultValue="" autoComplete="country" className={input}>
+          Town or city
+          <input name="city" required maxLength={100} autoComplete="address-level2" className={input} />
+        </label>
+        <label className="block text-sm">
+          Postcode
+          <input name="postalCode" required maxLength={20} autoComplete="postal-code" className={input} />
+        </label>
+        <label className="block text-sm">
+          Country
+          <select name="country" required defaultValue="GB" autoComplete="country" className={input}>
             <option value="">Choose…</option>
             {countryOptions().map((c) => (
               <option key={c.code} value={c.code}>
@@ -168,6 +189,14 @@ function DetailsForm({
           <textarea name="message" maxLength={2000} rows={3} className={input} />
         </label>
       </fieldset>
+
+      <label className="flex items-start gap-3 text-sm">
+        <input name="newsletter" type="checkbox" className="mt-1 h-4 w-4" />
+        <span>
+          Send me the Gamrie Chalets newsletter, with news and occasional discounts. You can unsubscribe at any
+          time.
+        </span>
+      </label>
 
       <label className="flex items-start gap-3 text-sm">
         <input name="acceptTerms" type="checkbox" required className="mt-1 h-4 w-4" />

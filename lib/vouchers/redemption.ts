@@ -1,5 +1,6 @@
 import "server-only";
 import { recordAudit } from "@/lib/audit";
+import { queueAfterFirstPayment } from "@/lib/booking/after-payment";
 import { lockPropertyAvailability } from "@/lib/booking/locks";
 import { db } from "@/lib/db/client";
 import { enqueueBookingConfirmedEmails } from "@/lib/email/booking-emails";
@@ -117,6 +118,7 @@ export async function confirmVoucherOnlyBooking(reservationId: string): Promise<
       details: { reference: r.reference, paidBy: "gift voucher", amountPence: voucher.amountPence },
     });
     await enqueueBookingConfirmedEmails(tx, reservationId);
+    await queueAfterFirstPayment(tx, reservationId);
     return true;
   });
 }

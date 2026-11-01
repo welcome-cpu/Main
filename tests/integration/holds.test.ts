@@ -19,7 +19,17 @@ let blocks: Blocks;
 let holdRoute: HoldRoute;
 let reservationRoute: ReservationRoute;
 
-const guest = { firstName: "Test", lastName: "Guest", email: "guest@example.com", phone: "07700 900000", country: null, message: null };
+const guest = {
+  firstName: "Test",
+  lastName: "Guest",
+  email: "guest@example.com",
+  phone: "07700 900000",
+  addressLine1: "1 Test Street",
+  city: "Banff",
+  postalCode: "AB45 1AA",
+  country: "GB",
+  message: null,
+};
 const admin = { id: randomUUID(), email: "test@example.com", displayName: null, role: "OWNER" as const };
 const stay = (checkIn: string, checkOut: string, extra: object = {}) => ({
   checkIn,

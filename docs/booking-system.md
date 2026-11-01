@@ -55,7 +55,9 @@ never touch dev or production data.
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_` | `pk_test_` | |
 | `STRIPE_WEBHOOK_SECRET` | live endpoint | test endpoint | Each endpoint has its own `whsec_` |
 | `CRON_SECRET` | ✓ | – | Scheduled jobs only run on production |
-| `LODGIFY_API_KEY` | ✓ | ✓ | Read-only: prices, calendars and guest details |
+| `LODGIFY_API_KEY` | ✓ | ✓ | Prices, calendars and guest details; also creates direct bookings when `LODGIFY_BOOKING_PUSH` is on |
+| `LODGIFY_BOOKING_PUSH` | `on` at switch-over | unset | Creates paid direct bookings in Lodgify. There's only one Lodgify account, so leave it off on dev except for a deliberate test |
+| `EMAILOCTOPUS_API_KEY` / `EMAILOCTOPUS_LIST_ID` | ✓ | optional | Mailing list sign-ups from checkout. Without them, sign-ups wait in the database and are sent once they're set |
 | `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `CONTACT_MAILBOX` | ✓ | ✓ | Contact-form app registration; sends from welcome@ |
 | `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | ✓ | optional | Required on production: protects holds from abuse |
 | `GIFTUP_API_KEY` | ✓ | ✓ | Gift Up! API key. Everywhere but production uses Gift Up's test mode, so dev bookings can't spend real vouchers |
@@ -70,6 +72,7 @@ never touch dev or production data.
 | `/api/cron/import-rates` | 04:00 daily | Copies nightly prices and stay limits from Lodgify |
 | `/api/cron/import-lodgify-bookings` | 04:30 daily | Copies Lodgify's bookings (guest name, party size, country from the phone's dialling code; no contact details) for the admin bookings list |
 | `/api/cron/charge-balances` | 09:00 daily | Charges balances due, to the saved card |
+| `/api/cron/send-to-lodgify` | every 5 min | Sends paid direct bookings to Lodgify and newsletter sign-ups to EmailOctopus that weren't sent straight after payment |
 
 ## Gift vouchers
 
@@ -101,6 +104,33 @@ In the database a voucher is a payment with provider `GIFTUP` and kind
 `VOUCHER` (states described in `db/migrations/0010_gift_vouchers.sql`), so
 it counts towards what's been paid.
 
+## Lodgify and the mailing list
+
+Once a direct booking's first payment is taken (deposit, full payment or gift
+voucher), it's created in Lodgify as **Booked** with the guest's name, email,
+phone and address, the party size, the total, and an internal note giving the
+reference, what's been paid, and that the website collects the balance. Lodgify
+then sends its own guest emails and passes the dates on to the channels
+straight away. Our site still takes every payment and sends its confirmation
+email as the receipt.
+
+- Lodgify's API can't record a payment, so the booking looks unpaid there.
+  **Switch off Lodgify's automatic payment requests and reminders**, or guests
+  may be asked to pay twice.
+- A booking is never sent twice. If Lodgify refuses (for example the dates are
+  already taken there) or doesn't answer clearly, it's listed under *Needs
+  attention*. Check Lodgify, then on the booking page either send it again or
+  enter its Lodgify booking number.
+- Cancelling here doesn't cancel it in Lodgify: the admin page reminds you to.
+- Lodgify's calendar then contains our own booking too. The admin area
+  recognises it by its Lodgify booking number and doesn't list it twice or as
+  a clash. Availability still counts it, which is harmless and keeps the dates
+  blocked if it's left in Lodgify after a cancellation here.
+
+Guests who tick the newsletter box at checkout are added to the EmailOctopus
+list as subscribed (tag `website-booking`) once their booking is paid. Sign-ups
+are queued in `newsletter_signups` and retried until EmailOctopus accepts them.
+
 ## Switch-over checklist
 
 Do these in order, and only when you're ready to take real direct bookings.
@@ -108,7 +138,8 @@ Nothing here is reversible-by-accident: each step can be checked before the next
 
 **Before (no guest-visible change)**
 
-1. Update the privacy policy to cover storing guests' booking details and Stripe processing.
+1. Update the privacy policy to cover storing guests' booking details and address, Stripe
+   processing, passing bookings to Lodgify, and the EmailOctopus mailing list.
 2. In Stripe **live** mode: set the public business name (shown on the payment page and
    statements) to Gamrie Chalets; create a webhook endpoint
    `https://gamriechalets.co.uk/api/stripe/webhook` with the 7 events listed in the code
@@ -129,7 +160,10 @@ Nothing here is reversible-by-accident: each step can be checked before the next
    as an imported calendar for that property (Lodgify then passes the block on to Airbnb and
    Booking.com). Check Lodgify shows a test block within its sync interval. Channels only
    check imported calendars every so often, so a short double-booking window always remains;
-   Lodgify's own sync frequency decides how short.
+   Lodgify's own sync frequency decides how short. With `LODGIFY_BOOKING_PUSH=on` (next
+   step), paid bookings reach Lodgify within seconds instead, and the export link is a backup.
+7a. In Lodgify, switch off automatic payment requests and reminders, and check which guest
+   emails it sends for a new booking. Set `LODGIFY_BOOKING_PUSH=on` in Production.
 
 **Go live**
 

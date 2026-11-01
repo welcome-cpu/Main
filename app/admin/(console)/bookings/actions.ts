@@ -12,6 +12,7 @@ import {
 import { requireAdmin } from "@/lib/admin/dal";
 import { isUuid } from "@/lib/admin/properties";
 import { cancelBookingSchema, fieldErrors, manualPaymentSchema } from "@/lib/admin/validation";
+import { isLodgifyPushEnabled, pushReservationToLodgify, resolveLodgifyPush } from "@/lib/booking/lodgify-push";
 import { processOutbox } from "@/lib/email/outbox";
 import { importLodgifyBookings } from "@/lib/guests/lodgify-import";
 import { chargeDueBalances } from "@/lib/payments/balance";
@@ -66,6 +67,31 @@ export async function retryBalanceAction(id: string): Promise<FormState> {
   if (!scheduled.paymentId) return { message: scheduled.error ?? "Couldn't retry." };
   const [outcome] = await chargeDueBalances(stripeGateway, new Date(), scheduled.paymentId);
   return done(id, outcome?.ok ? "Balance charged successfully." : "The card was declined again. The guest has been emailed.");
+}
+
+export async function retryLodgifyPushAction(id: string): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(id)) return { message: "Unknown booking." };
+  if (!isLodgifyPushEnabled()) return { message: "Sending bookings to Lodgify is switched off on this site." };
+  if (!(await resolveLodgifyPush(id, admin.email, { retry: true }))) return { message: "This booking can't be sent again." };
+  const outcome = await pushReservationToLodgify(id);
+  return done(id, outcome === "PUSHED" ? "Booking created in Lodgify." : "Lodgify didn't take it: see the message below.");
+}
+
+export async function linkLodgifyBookingAction(id: string, _: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(id)) return { message: "Unknown booking." };
+  const lodgifyBookingId = Number(String(formData.get("lodgifyBookingId") ?? "").trim());
+  if (!Number.isSafeInteger(lodgifyBookingId) || lodgifyBookingId <= 0) {
+    return { errors: { lodgifyBookingId: ["Enter the booking number from Lodgify."] } };
+  }
+  try {
+    if (!(await resolveLodgifyPush(id, admin.email, { lodgifyBookingId }))) return { message: "This booking can't be linked." };
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") return { message: "Another booking is already linked to that Lodgify booking." };
+    throw error;
+  }
+  return done(id, "Linked to the Lodgify booking.");
 }
 
 export async function importLodgifyBookingsAction(): Promise<FormState> {

@@ -1,4 +1,5 @@
 import { runAfterResponse } from "@/lib/after-response";
+import { sendQueuedAfterPayment } from "@/lib/booking/after-payment";
 import { guardPublicRequest, json, readJsonBody, validationError } from "@/lib/booking/api";
 import { createHold, GUEST_FACING_HOLD_MINUTES, HOLD_MINUTES } from "@/lib/booking/holds";
 import { getPublicProperty } from "@/lib/booking/public";
@@ -85,6 +86,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
       await releaseHoldAndVoucher(result.reservationId, "Voucher-only booking could not be confirmed");
       return json({ error: "We couldn't confirm your booking. Your gift voucher hasn't been used; please try again." }, 409);
     }
+    runAfterResponse(() => sendQueuedAfterPayment());
     checkoutUrl = `${origin}/book/${property.slug}/confirmation?reservation=${result.reservationId}`;
   } else if (isPaymentConfigured()) {
     // Send the guest straight to Stripe's payment page. Without Stripe

@@ -24,6 +24,13 @@ export type GuestDetails = {
   phone: string;
   country: string | null;
   message: string | null;
+  /** Home address, passed on to Lodgify with the booking. */
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  /** Ticked "send me the newsletter": signed up once the booking is confirmed. */
+  newsletter?: boolean;
 };
 
 export type HoldResult =
@@ -132,8 +139,9 @@ async function createHoldInTransaction(
     SELECT turnover_nights, currency FROM properties WHERE id = ${propertyId}
   `;
   const [guestRow] = await tx<{ id: string }[]>`
-    INSERT INTO guests (first_name, last_name, email, phone, country)
-    VALUES (${guest.firstName}, ${guest.lastName}, ${guest.email}, ${guest.phone}, ${guest.country})
+    INSERT INTO guests (first_name, last_name, email, phone, country, address_line1, address_line2, city, postal_code)
+    VALUES (${guest.firstName}, ${guest.lastName}, ${guest.email}, ${guest.phone}, ${guest.country},
+            ${guest.addressLine1 ?? null}, ${guest.addressLine2 ?? null}, ${guest.city ?? null}, ${guest.postalCode ?? null})
     RETURNING id
   `;
 
@@ -145,7 +153,7 @@ async function createHoldInTransaction(
       adults, children, infants, pets, guest_id, guest_message, hold_expires_at,
       currency, accommodation_pence, cleaning_fee_pence, pet_fee_pence, extras_pence,
       discount_pence, total_pence, deposit_pence, voucher_pence, balance_due_date, price_breakdown,
-      discount_code_id, created_by, access_token_sha256, terms_accepted_at
+      discount_code_id, created_by, access_token_sha256, terms_accepted_at, newsletter_opt_in
     ) VALUES (
       ${reference}, ${propertyId}, 'DIRECT', 'HOLD', ${stay.checkIn}, ${stay.checkOut}, ${property.turnoverNights},
       ${stay.adults}, ${stay.children}, ${stay.infants}, ${stay.pets}, ${guestRow.id}, ${guest.message},
@@ -153,7 +161,7 @@ async function createHoldInTransaction(
       ${quote.currency}, ${quote.accommodationPence}, ${quote.cleaningFeePence}, ${quote.petFeePence},
       ${quote.extrasPence}, ${quote.discount?.pence ?? 0}, ${quote.totalPence}, ${quote.dueNowPence},
       ${quote.voucher?.pence ?? 0}, ${quote.balanceDueDate}, ${tx.json(quote as unknown as Parameters<Tx["json"]>[0])},
-      ${quote.discount?.id ?? null}, 'guest', ${hashAccessToken(accessToken)}, now()
+      ${quote.discount?.id ?? null}, 'guest', ${hashAccessToken(accessToken)}, now(), ${guest.newsletter ?? false}
     )
     RETURNING id, hold_expires_at
   `;
