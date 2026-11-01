@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PrizeDrawForm from "@/components/PrizeDrawForm";
 import { welcomeGuides } from "@/lib/welcomeGuides";
 import { properties } from "@/lib/properties";
 
@@ -574,8 +575,8 @@ export default async function WelcomeGuidePage({
           <p className="text-sm font-semibold text-foreground">Enjoyed your stay?</p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             We&apos;d love it if you left us a Google review. It only takes a minute and helps other
-            guests find us. Every review is entered into our annual prize draw for a free night,
-            drawn once a year.
+            guests find us. Every review can be entered into our annual prize draw for a free night,
+            drawn once a year: just leave your review, then add your details below.
           </p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             And if you&apos;re already missing the view, book your return visit directly with us.
@@ -596,6 +597,7 @@ export default async function WelcomeGuidePage({
               Book a return visit
             </Link>
           </div>
+          <PrizeDrawForm propertySlug={guide.slug} />
         </div>
       </Section>
     </div>

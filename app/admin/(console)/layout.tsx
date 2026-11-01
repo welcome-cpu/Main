@@ -31,6 +31,9 @@ export default async function AdminConsoleLayout({ children }: LayoutProps<"/adm
           <Link href="/admin/discounts" className="text-foreground-strong hover:underline">
             Discounts
           </Link>
+          <Link href="/admin/prize-draw" className="text-foreground-strong hover:underline">
+            Prize draw
+          </Link>
         </nav>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>{admin.email}</span>

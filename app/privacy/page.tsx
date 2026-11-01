@@ -66,6 +66,11 @@ export default function PrivacyPage() {
             You can unsubscribe at any time using the link in every email.
           </p>
           <p>
+            <strong>Our prize draw.</strong> If you enter our annual free-night draw, the name on your Google review
+            and your email address, so we can check your review and contact you if you win. The legal basis is our
+            legitimate interest in running the draw. We delete entries after the draw for that year.
+          </p>
+          <p>
             <strong>Using this website.</strong> Information about how the site is used, such as pages visited and the
             type of device, through Google Analytics, and technical information like your IP address, which we use to
             keep the booking and contact forms secure and to stop abuse.
@@ -98,6 +103,7 @@ export default function PrivacyPage() {
             <li>Booking and payment records: six years after your stay, as required for tax and accounting.</li>
             <li>Messages you send us: as long as we need to deal with them, and no more than two years.</li>
             <li>Newsletter: until you unsubscribe.</li>
+            <li>Prize draw entries: until that year&apos;s draw has been made and the winner contacted.</li>
           </ul>
         </section>
 
