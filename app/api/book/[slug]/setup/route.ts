@@ -2,6 +2,7 @@ import { runAfterResponse } from "@/lib/after-response";
 import { guardPublicRequest, json } from "@/lib/booking/api";
 import { loadBookingSetup } from "@/lib/booking/setup";
 import { syncStaleLodgifyFeeds } from "@/lib/calendar/sync";
+import { processNewsletterSignups } from "@/lib/newsletter/emailoctopus";
 import { importStaleLodgifyRates } from "@/lib/pricing/lodgify-import";
 
 /**
@@ -15,7 +16,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 
   const chalets = await loadBookingSetup((await params).slug);
   if (!chalets) return json({ error: "Not found" }, 404);
-  // Keeps Lodgify's calendars and prices fresh where the scheduled jobs don't run.
-  runAfterResponse(() => Promise.all([syncStaleLodgifyFeeds(), importStaleLodgifyRates()]));
+  // Keeps Lodgify's calendars and prices fresh, and sends waiting newsletter
+  // sign-ups, where the scheduled jobs don't run.
+  runAfterResponse(() => Promise.all([syncStaleLodgifyFeeds(), importStaleLodgifyRates(), processNewsletterSignups(5)]));
   return json({ chalets });
 }
