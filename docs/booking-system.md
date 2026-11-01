@@ -108,13 +108,15 @@ it counts towards what's been paid.
 
 Once a direct booking's first payment is taken (deposit, full payment or gift
 voucher), it's created in Lodgify as **Booked** with the guest's name, email,
-phone and address, the party size, the total, and an internal note giving the
-reference, what's been paid, and that the website collects the balance. Lodgify
+phone and address, the party size and the total. Straight after, its admin note
+is set to the reference, what's been paid, and that the website collects the
+balance (Lodgify ignores notes sent with a new booking). Lodgify
 then sends its own guest emails and passes the dates on to the channels
 straight away. Our site still takes every payment and sends its confirmation
 email as the receipt.
 
-- Lodgify's API can't record a payment, so the booking looks unpaid there.
+- Lodgify's API can't record a payment, so the booking looks unpaid there
+  (its confirmation email shows only the total, not an amount due).
   **Switch off Lodgify's automatic payment requests and reminders**, or guests
   may be asked to pay twice.
 - A booking is never sent twice. If Lodgify refuses (for example the dates are

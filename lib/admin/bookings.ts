@@ -428,7 +428,9 @@ export async function needsAttention(): Promise<Attention> {
       SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
              r.lodgify_push_status AS status, r.lodgify_push_error AS message
       FROM reservations r JOIN properties p ON p.id = r.property_id
-      WHERE r.status = 'CONFIRMED' AND r.lodgify_push_status IN ('FAILED', 'CHECK')
+      WHERE r.status = 'CONFIRMED'
+        AND (r.lodgify_push_status IN ('FAILED', 'CHECK')
+          OR (r.lodgify_push_status = 'PUSHED' AND r.lodgify_push_error IS NOT NULL AND r.check_out >= current_date))
       ORDER BY r.check_in
     `,
   ]);

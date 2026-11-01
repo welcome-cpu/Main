@@ -99,7 +99,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                   {l.reference}
                 </Link>{" "}
                 ({l.propertyName}, arriving {show(l.checkIn)}){" "}
-                {l.status === "CHECK" ? "may not have reached Lodgify" : "isn't in Lodgify"}
+                {l.status === "CHECK" ? "may not have reached Lodgify" : l.status === "PUSHED" ? "is in Lodgify" : "isn't in Lodgify"}
                 {l.message ? `: ${l.message}` : "."}
               </li>
             ))}

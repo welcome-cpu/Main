@@ -10,8 +10,9 @@ import { SITE_URL } from "@/lib/site";
 // Direct bookings are created in Lodgify once their first payment is taken,
 // so Lodgify can send its guest emails and show them with the channel
 // bookings. Our site keeps taking the payments: Lodgify's API can't record
-// a payment, so each booking carries a note saying what's paid and that the
-// website collects the balance.
+// a payment, so each booking gets an admin note saying what's paid and that
+// the website collects the balance. (Lodgify drops "Comment" messages sent
+// with a new booking, so the note is set on the booking afterwards.)
 //
 // A booking must never be created in Lodgify twice, so only a definite
 // refusal (FAILED) or an unclear answer (CHECK) stops here; neither is retried
@@ -82,10 +83,7 @@ export function lodgifyNote(r: LodgifyPushRow) {
 
 /** The body for Lodgify's POST /v1/reservation/booking. */
 export function lodgifyBookingBody(r: LodgifyPushRow) {
-  const messages: { subject: string; message: string; type: "Comment" | "Renter" }[] = [
-    { subject: `Website booking ${r.reference}`, message: lodgifyNote(r), type: "Comment" },
-  ];
-  if (r.guestMessage) messages.push({ subject: "Message from the guest", message: r.guestMessage, type: "Renter" });
+  const messages = r.guestMessage ? [{ subject: "Message from the guest", message: r.guestMessage, type: "Renter" }] : [];
   return {
     property_id: r.lodgifyPropertyId,
     arrival: r.checkIn,
@@ -202,8 +200,10 @@ export async function pushReservationToLodgify(reservationId: string): Promise<P
     try {
       id = parseLodgifyBookingId(text);
     } catch {}
-    if (id) return finish("PUSHED", null, id);
-    return finish("CHECK", `Lodgify accepted the booking but didn't give its ID (HTTP ${res.status}).`);
+    if (!id) return finish("CHECK", `Lodgify accepted the booking but didn't give its ID (HTTP ${res.status}).`);
+    // The booking exists now; a missing note is worth flagging, not resending for.
+    const noted = await addLodgifyNote(apiKey, id, lodgifyNote(row));
+    return finish("PUSHED", noted ? null : "Created in Lodgify, but the payment note couldn't be added. Add it there by hand.", id);
   }
   if (res.status >= 500) {
     return finish("CHECK", `Lodgify had an error (HTTP ${res.status}), so the booking may or may not have been created there.`);
@@ -214,6 +214,23 @@ export async function pushReservationToLodgify(reservationId: string): Promise<P
     message = [body.code, body.message].filter((x) => typeof x === "string").join(": ");
   } catch {}
   return finish("FAILED", `Lodgify refused the booking (HTTP ${res.status})${message ? `: ${message.slice(0, 300)}` : "."}`);
+}
+
+/** Sets the booking's admin note in Lodgify. True if Lodgify accepted it. */
+async function addLodgifyNote(apiKey: string, lodgifyBookingId: number, note: string) {
+  try {
+    const res = await fetch(`https://api.lodgify.com/v1/reservation/booking/${lodgifyBookingId}`, {
+      method: "PUT",
+      headers: { "X-ApiKey": apiKey, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ id: lodgifyBookingId, note }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
+    });
+    return res.ok;
+  } catch (error) {
+    logError("Lodgify booking note failed", error);
+    return false;
+  }
 }
 
 /**

@@ -32,6 +32,8 @@ const guest = {
 /** Pretend Lodgify, EmailOctopus and Gift Up. */
 class FakeServices {
   lodgifyBodies: Record<string, unknown>[] = [];
+  noteBodies: { path: string; body: Record<string, unknown> }[] = [];
+  noteStatus = 200;
   octopusBodies: Record<string, unknown>[] = [];
   lastLodgifyId = 0;
   lodgify: () => Response | Promise<Response> = () => new Response(String((this.lastLodgifyId = lodgifyNumber())), { status: 201 });
@@ -39,6 +41,10 @@ class FakeServices {
   fetch = async (input: string | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const body = init?.body ? JSON.parse(String(init.body)) : {};
+    if (url.host === "api.lodgify.com" && init?.method === "PUT") {
+      this.noteBodies.push({ path: url.pathname, body });
+      return new Response("", { status: this.noteStatus });
+    }
     if (url.host === "api.lodgify.com") {
       this.lodgifyBodies.push(body);
       return this.lodgify();
@@ -147,6 +153,8 @@ describe.runIf(enabled)("sending bookings to Lodgify (database)", () => {
       guest: Record<string, unknown>;
       messages: { type: string; message: string }[];
     }[];
+    expect(services.noteBodies).toHaveLength(1);
+    expect(services.noteBodies[0].path).toBe(`/v1/reservation/booking/${services.lastLodgifyId}`);
     expect(sent).toMatchObject({
       property_id: b.property.lodgifyId,
       arrival: "2036-05-01",
@@ -163,7 +171,7 @@ describe.runIf(enabled)("sending bookings to Lodgify (database)", () => {
         country_code: "GB",
       },
     });
-    const note = sent.messages.find((m) => m.type === "Comment")!.message;
+    const note = String(services.noteBodies[0].body.note);
     expect(note).toContain(b.reference);
     expect(note).toContain("£340.00 by gift voucher");
     expect(note).toContain("Paid in full. Don't request payment in Lodgify.");
@@ -171,6 +179,15 @@ describe.runIf(enabled)("sending bookings to Lodgify (database)", () => {
 
     // Never sent twice.
     expect(await push.pushReservationToLodgify(b.reservationId)).toBe("SKIPPED");
+    await push.pushPendingLodgifyBookings();
+    expect(services.lodgifyBodies).toHaveLength(1);
+  });
+
+  it("flags a booking whose payment note didn't save, without creating it again", async () => {
+    services.noteStatus = 500;
+    const b = await paidBooking();
+    expect(await push.pushReservationToLodgify(b.reservationId)).toBe("PUSHED");
+    expect((await pushState(b.reservationId)).lodgifyPushError).toContain("payment note couldn't be added");
     await push.pushPendingLodgifyBookings();
     expect(services.lodgifyBodies).toHaveLength(1);
   });
