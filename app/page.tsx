@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const whyStay = [
   {
     text: "Panoramic Moray Firth views from every studio chalet, ever-changing through the day",
-    link: { word: "studio chalet", href: "/properties/muckle-view" },
+    link: { word: "studio chalet", href: "/properties#chalets" },
   },
   {
     text: "Log-burner evenings to warm you after a day on the Aberdeenshire coast",
@@ -133,7 +133,7 @@ export default function Home() {
             setting: intimate,{" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
             <a
-              href="/properties/muckle-view"
+              href="/properties#chalets"
               className="font-semibold text-primary hover:underline"
             >
               dog-friendly studio chalets
@@ -141,7 +141,7 @@ export default function Home() {
             for couples, and a{" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
             <a
-              href="/properties/murray-cottage"
+              href="/properties#family-stays"
               className="font-semibold text-primary hover:underline"
             >
               spacious family holiday home
@@ -235,7 +235,7 @@ export default function Home() {
           </p>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> forces a full reload so the Lodgify booking widget's one-time DOM scan runs fresh */}
           <a
-            href="/properties/muckle-view"
+            href="/properties#chalets"
             className="mt-8 inline-block rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Explore the Chalets

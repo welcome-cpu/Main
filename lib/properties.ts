@@ -12,6 +12,10 @@ export const properties = [
     // materially.
     priceRange: "£165–£295",
     sleeps: 2,
+    // Key facts on the properties page.
+    stayType: "chalet",
+    bedrooms: "Studio",
+    dogFriendly: true,
     description:
       "A contemporary studio chalet perched on the clifftop, with panoramic views across the Moray Firth and a log burner for cosy evenings in.",
     tagline: "For Couples and Their Dog",
@@ -91,6 +95,10 @@ export const properties = [
     lodgifyRoomTypeId: "862103",
     priceRange: "£104–£262",
     sleeps: 6,
+    // Key facts on the properties page.
+    stayType: "family",
+    bedrooms: "3 bedrooms (4 beds)",
+    dogFriendly: true,
     description:
       "The family home above Gardenstown, with three bedrooms, sweeping views of the Moray Firth, and room for everyone to settle in.",
     tagline: "Space for Everyone",
@@ -160,6 +168,10 @@ export const properties = [
     // Same studio design and nightly rates as Muckle View.
     priceRange: "£165–£295",
     sleeps: 2,
+    // Key facts on the properties page.
+    stayType: "chalet",
+    bedrooms: "Studio",
+    dogFriendly: true,
     description:
       "A contemporary studio chalet perched on the clifftop, with panoramic views across the Moray Firth and a log burner for cosy evenings in.",
     tagline: "For Couples and Their Dog",
