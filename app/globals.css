@@ -14,6 +14,11 @@
   --oak: #c5a982; /* Natural Oak */
 }
 
+/* Below this width the header switches to the mobile menu. */
+@theme {
+  --breakpoint-nav: 56.25rem;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);

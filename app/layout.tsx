@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ImageProtection from "@/components/ImageProtection";
+import MobileBookBar from "@/components/MobileBookBar";
+import { isDirectBookingEnabled } from "@/lib/booking/feature";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -102,6 +104,9 @@ const lodgingBusinessJsonLd = {
   // page, and this layout renders on every route.
 };
 
+// "cover" lets the mobile booking bar use the iPhone safe-area inset.
+export const viewport: Viewport = { viewportFit: "cover" };
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -133,6 +138,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <MobileBookBar chaletBookingOnPage={isDirectBookingEnabled()} />
         <SpeedInsights />
       </body>
     </html>
