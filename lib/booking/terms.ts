@@ -13,7 +13,7 @@ export const DATE_CHANGE_TERMS =
  * earlier ones keep the terms they accepted. Set this to the moment the policy
  * is pushed to live.
  */
-export const NEW_TERMS_FROM = new Date("2026-11-08T00:00:00Z");
+export const NEW_TERMS_FROM = new Date("2026-11-07T22:30:00Z");
 
 const OLD_TERMS = "All payments are non-refundable, so we recommend travel insurance.";
 
