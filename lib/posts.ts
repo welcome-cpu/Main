@@ -31,9 +31,9 @@ export const posts: Post[] = [
     date: "2026-11-07",
     excerpt: "Plan your 2027 coastal escape early and secure the best dates at Gamrie Chalets — luxury, dog-friendly self-catering above Gardenstown on the Aberdeenshire coast, with panoramic Moray Firth views and a brand-new clifftop chalet opening January 2027.",
     image: {
-      src: "/7907_Gamrie_High_158.jpg",
-      width: 7871,
-      height: 5249
+      src: "/blog/book-2027-coastal-getaway-january/gardenstown-bay-view.jpg",
+      width: 1440,
+      height: 960
     },
     content: [
       {
@@ -92,6 +92,13 @@ export const posts: Post[] = [
         text: "Each chalet is positioned to place the Moray Firth front and centre, through the glazed gable end, across the balcony and from the bed if you let it. The light shifts minute by minute. The sea changes colour with the weather. Dolphins from one of Europe's largest bottlenose populations pass through these waters regularly, and spotting them from your own balcony, coffee in hand, is the kind of thing guests mention in guest books long after they have gone home."
       },
       {
+        type: "image",
+        src: "/blog/book-2027-coastal-getaway-january/balcony-laptop-view.jpg",
+        width: 1440,
+        height: 960,
+        alt: "The view across Gardenstown bay to the cliffs from a chalet balcony"
+      },
+      {
         type: "paragraph",
         text: "On clear nights, the Northern Lights occasionally make their own appearance over the firth, unhurried and entirely on their own schedule."
       },
@@ -113,6 +120,13 @@ export const posts: Post[] = [
             href: "/properties/muckle-view"
           }
         ]
+      },
+      {
+        type: "image",
+        src: "/blog/book-2027-coastal-getaway-january/muckle-view-sunset.jpg",
+        width: 1440,
+        height: 960,
+        alt: "The Muckle View sign on the timber chalet at sunset over the Moray Firth"
       },
       {
         type: "paragraph",
@@ -155,13 +169,6 @@ export const posts: Post[] = [
             href: "https://www.alltrails.com/en-gb/trail/scotland/aberdeenshire/gardenstown-to-crovie-viewpoint"
           }
         ]
-      },
-      {
-        type: "image",
-        src: "/7907_Gamrie_High_267.jpg",
-        width: 7911,
-        height: 5277,
-        alt: "Gardenstown's beach and whitewashed cottages beneath the cliffs"
       },
       {
         type: "paragraph",
