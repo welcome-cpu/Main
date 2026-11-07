@@ -19,15 +19,24 @@ const OLD_TERMS = "All payments are non-refundable, so we recommend travel insur
 
 export const isOnOldTerms = (bookedAt: Date) => new Date(bookedAt) < NEW_TERMS_FROM;
 
+export const VOUCHER_REFUND_TERMS = "Gift vouchers: Any refund on the part of a stay paid by gift voucher goes back as voucher credit.";
+
+const startDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" });
+
+/** For the FAQ, which guests with earlier bookings can read too. */
+export const TERMS_APPLY_FROM = `This policy applies to bookings made from ${startDate.format(NEW_TERMS_FROM)}. Earlier bookings keep the terms accepted at the time of booking.`;
+
 /** The terms a guest accepted, as paragraphs, for anything sent about their booking. */
-export const termsForBooking = (bookedAt: Date) =>
-  isOnOldTerms(bookedAt) ? [OLD_TERMS] : [CANCELLATION_TERMS, DATE_CHANGE_TERMS];
+export const termsForBooking = (bookedAt: Date, paidByVoucher = false) =>
+  isOnOldTerms(bookedAt)
+    ? [OLD_TERMS]
+    : [CANCELLATION_TERMS, DATE_CHANGE_TERMS, ...(paidByVoucher ? [VOUCHER_REFUND_TERMS] : [])];
 
 /** For the owner: what to refund on this booking, including what "50%" is 50% of. */
 export const refundGuide = (bookedAt: Date) =>
   isOnOldTerms(bookedAt)
     ? "This booking was made before the new policy, so its payments are non-refundable and it has no free date change."
-    : "Refund due on this booking: everything paid if cancelled 30 or more days before arrival, half of what the guest has paid between 7 and 30 days, nothing within 7 days.";
+    : "Refund due on this booking: everything paid if cancelled 30 or more days before arrival, half of what the guest has paid at 7 to 29 days, nothing at fewer than 7 days.";
 
 /** The one-line version in the booking box on each property page. */
 export const TERMS_SUMMARY = "Full refund up to 30 days before arrival · Free date changes up to 48 hours before";

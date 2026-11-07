@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
-import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS, VOUCHER_REFUND_TERMS } from "@/lib/booking/terms";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "Gift Vouchers";
@@ -251,6 +251,7 @@ export default function GiftVouchersPage() {
             </p>
             <p>{CANCELLATION_TERMS}</p>
             <p>{DATE_CHANGE_TERMS}</p>
+            <p>{VOUCHER_REFUND_TERMS}</p>
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS, TERMS_APPLY_FROM, VOUCHER_REFUND_TERMS } from "@/lib/booking/terms";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "FAQs";
@@ -44,7 +44,7 @@ const faqs = [
   {
     id: "cancellation",
     question: "What is your cancellation policy?",
-    answer: `${CANCELLATION_TERMS}\n\n${DATE_CHANGE_TERMS}`,
+    answer: [CANCELLATION_TERMS, DATE_CHANGE_TERMS, VOUCHER_REFUND_TERMS, TERMS_APPLY_FROM].join("\n\n"),
   },
   {
     question: "Are there drying or laundry facilities in the chalet?",

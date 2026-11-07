@@ -93,8 +93,9 @@ ${bodyHtml}
 
 const p = (html: string) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.5">${html}</p>`;
 
-const termsHtml = (d: BookingEmailData) => termsForBooking(d.bookedAt).map((t) => p(escapeHtml(t))).join("");
-const termsText = (d: BookingEmailData) => termsForBooking(d.bookedAt).flatMap((t) => [t, ""]).slice(0, -1);
+const bookingTerms = (d: BookingEmailData) => termsForBooking(d.bookedAt, Boolean(d.quote.voucher));
+const termsHtml = (d: BookingEmailData) => bookingTerms(d).map((t) => p(escapeHtml(t))).join("");
+const termsText = (d: BookingEmailData) => bookingTerms(d).flatMap((t) => [t, ""]).slice(0, -1);
 
 function detailsTable(rows: [string, string][]) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;font-size:15px;border-collapse:collapse">

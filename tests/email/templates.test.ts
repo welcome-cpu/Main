@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CANCELLATION_TERMS, DATE_CHANGE_TERMS, NEW_TERMS_FROM } from "@/lib/booking/terms";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS, NEW_TERMS_FROM, VOUCHER_REFUND_TERMS } from "@/lib/booking/terms";
 import {
   escapeHtml,
   guestBalanceFailed,
@@ -80,6 +80,13 @@ describe("email templates", () => {
       expect(email.text).not.toContain(CANCELLATION_TERMS);
       expect(email.text).not.toContain(DATE_CHANGE_TERMS);
     }
+  });
+
+  it("explains voucher credit only when a voucher paid for the stay", () => {
+    expect(guestBookingConfirmed(data).text).not.toContain(VOUCHER_REFUND_TERMS);
+    const e = guestPaymentReceipt({ ...data, quote: { ...quote, voucher: { code: "GIFT1", pence: 10000 } } });
+    expect(e.text).toContain(VOUCHER_REFUND_TERMS);
+    expect(e.html).toContain(escapeHtml(VOUCHER_REFUND_TERMS));
   });
 
   it("describes payment in full when there's no balance", () => {

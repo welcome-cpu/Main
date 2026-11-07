@@ -97,8 +97,8 @@ stay still go through the contact form.
    every time a new hold is made, and in the expire-holds job; failures are
    retried and listed under *Needs attention*.
 6. Cancelling a confirmed booking in the admin area does **not** give the
-   voucher back, like card payments aren't refunded automatically. Do it
-   in Gift Up if you want to.
+   voucher back, like card payments aren't refunded automatically. Give any
+   refund due on it back as voucher credit in Gift Up.
 
 In the database a voucher is a payment with provider `GIFTUP` and kind
 `VOUCHER` (states described in `db/migrations/0010_gift_vouchers.sql`), so
