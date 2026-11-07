@@ -29,7 +29,7 @@ export const posts: Post[] = [
     title: "Planning a 2027 Coastal Getaway? Why January Is the Best Time to Book",
     metaTitle: "Book Your 2027 Coastal Getaway in January | Gamrie Chalets",
     date: "2026-11-07",
-    excerpt: "Plan your 2027 coastal escape early and secure the best dates at Gamrie Chalets — luxury, dog-friendly self-catering above Gardenstown on the Aberdeenshire coast, with panoramic Moray Firth views and a brand-new clifftop chalet opening January 2027.",
+    excerpt: "Plan your 2027 coastal escape early at Gamrie Chalets: luxury dog-friendly self-catering above Gardenstown, Aberdeenshire, with Moray Firth views.",
     image: {
       src: "/blog/book-2027-coastal-getaway-january/gardenstown-bay-view.jpg",
       width: 1440,
