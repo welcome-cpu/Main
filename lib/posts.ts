@@ -25,6 +25,218 @@ export type Post = {
 
 export const posts: Post[] = [
   {
+    slug: "book-2027-coastal-getaway-january",
+    title: "Planning a 2027 Coastal Getaway? Why January Is the Best Time to Book",
+    metaTitle: "Book Your 2027 Coastal Getaway in January | Gamrie Chalets",
+    date: "2026-11-07",
+    excerpt: "Plan your 2027 coastal escape early and secure the best dates at Gamrie Chalets — luxury, dog-friendly self-catering above Gardenstown on the Aberdeenshire coast, with panoramic Moray Firth views and a brand-new clifftop chalet opening January 2027.",
+    image: {
+      src: "/7907_Gamrie_High_158.jpg",
+      width: 7871,
+      height: 5249
+    },
+    content: [
+      {
+        type: "paragraph",
+        text: "There is something about the first weeks of January that quietly invites you to look ahead. The decorations come down, the diary opens up, and somewhere in the back of your mind, the thought surfaces … this is the year I am finally going to do that trip."
+      },
+      {
+        type: "paragraph",
+        text: "If a stay on the Aberdeenshire coast is on your wish list, this is the time to act. January is when the best dates at Gamrie Chalets tend to find their people, often long before the summer even begins to feel real."
+      },
+      {
+        type: "paragraph",
+        text: "Perched above the fishing village of Gardenstown, with the Moray Firth spreading out below in every direction, Gamrie Chalets is the kind of place that stays with you long after you have driven home. It is luxury self-catering Aberdeenshire guests return to year after year, drawn back by the view, the stillness, and the rare feeling of a place that has been genuinely thought about from the ground up."
+      },
+      {
+        type: "paragraph",
+        text: "And this year, there is something new to plan around. Mohr Rest, our newest clifftop chalet, opens its doors to guests for the very first time on 1st January 2027. If you have ever wanted to be among the first to stay somewhere that nobody else has quite discovered yet, now is your moment.",
+        links: [
+          {
+            word: "Mohr Rest",
+            href: "/properties/mohr-rest"
+          }
+        ]
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Your Dog Is Part of the Family Here"
+      },
+      {
+        type: "paragraph",
+        text: "At Gamrie Chalets, your dog is as much a part of the holiday as you are and that is not something we say lightly. The chalets were built with pets in mind, because we know that for so many of our guests, a holiday without their dog simply is not a holiday at all."
+      },
+      {
+        type: "paragraph",
+        text: "The Aberdeenshire coast makes this kind of dog-friendly self-catering Aberdeenshire escape wonderfully easy. Wide cliff paths wind out from the chalets and along the headland, offering the kind of open, breezy walk that leaves even the most spirited dog happily ready for a long nap. Gardenstown's beaches stretch below, with sand and shingle to run on and a harbour to nose around. The village cafés are the sort of places that greet dogs with the same warmth they offer you."
+      },
+      {
+        type: "image",
+        src: "/Muckle View/14.jpg",
+        width: 1920,
+        height: 1281,
+        alt: "Watching the coast through binoculars with the resident dog"
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "A View That Does Something to You"
+      },
+      {
+        type: "paragraph",
+        text: "Ask anyone who has stayed at Gamrie Chalets what they remember most, and it is almost always the view. Not in the way you might say it about any scenic destination, but in the way you would describe something that stops you mid-sentence."
+      },
+      {
+        type: "paragraph",
+        text: "Each chalet is positioned to place the Moray Firth front and centre, through the glazed gable end, across the balcony and from the bed if you let it. The light shifts minute by minute. The sea changes colour with the weather. Dolphins from one of Europe's largest bottlenose populations pass through these waters regularly, and spotting them from your own balcony, coffee in hand, is the kind of thing guests mention in guest books long after they have gone home."
+      },
+      {
+        type: "paragraph",
+        text: "On clear nights, the Northern Lights occasionally make their own appearance over the firth, unhurried and entirely on their own schedule."
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Chalets Designed Around the Setting"
+      },
+      {
+        type: "paragraph",
+        text: "There is a clear intention behind the way Gamrie Chalets are built. Every decision, from the position of the windows to the warmth of the log burner, from the calm Scandi-influenced interiors to the way the light is handled inside, exists to deepen your connection to the clifftop setting."
+      },
+      {
+        type: "paragraph",
+        text: "Muckle View, the original studio chalet, set the template. Intimate, beautifully finished, and built for two, it has that glazed gable end that frames the sea and guests tell us they never tire of the view.",
+        links: [
+          {
+            word: "Muckle View",
+            href: "/properties/muckle-view"
+          }
+        ]
+      },
+      {
+        type: "paragraph",
+        text: "Mohr Rest follows the same design, the same five-star finish, the same clifftop position, the same views that change with every tide and cloud. It is a brand-new building, and it is waiting for the people who will be its very first guests. If that sounds like something you would like to claim, January is the time to look at dates.",
+        links: [
+          {
+            word: "Mohr Rest",
+            href: "/properties/mohr-rest"
+          }
+        ]
+      },
+      {
+        type: "ctaGroup",
+        items: [
+          {
+            label: "Muckle View",
+            href: "/properties/muckle-view"
+          },
+          {
+            label: "Mohr Rest",
+            href: "/properties/mohr-rest"
+          }
+        ]
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Beyond the Balcony: What's Waiting Outside"
+      },
+      {
+        type: "paragraph",
+        text: "A stay at Gamrie Chalets gives you a remarkable base, and while plenty of guests find the balcony view hard to leave behind, the surrounding coast offers no shortage of reasons to pull on your boots and head out."
+      },
+      {
+        type: "paragraph",
+        text: "Cliff paths begin right outside the door and wind toward hidden coves and the tiny gable-end village of Crovie, one of those places that feels as though time forgot to visit. The Moray Firth's dolphins are never far away. Speyside's whisky trail is an easy drive inland, threading through distilleries that have been doing what they do for a very long time. Castles, heritage villages, sandy beaches, and harbour towns are all within comfortable reach of this Gardenstown holiday accommodation.",
+        links: [
+          {
+            word: "Crovie",
+            href: "https://www.alltrails.com/en-gb/trail/scotland/aberdeenshire/gardenstown-to-crovie-viewpoint"
+          }
+        ]
+      },
+      {
+        type: "image",
+        src: "/7907_Gamrie_High_267.jpg",
+        width: 7911,
+        height: 5277,
+        alt: "Gardenstown's beach and whitewashed cottages beneath the cliffs"
+      },
+      {
+        type: "paragraph",
+        text: "Part of what makes a stay here so restorative is the freedom to build your own version of a slow coastal week, following your mood, the weather, and whatever the sea feels like offering that day."
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Why January Is the Right Moment to Book"
+      },
+      {
+        type: "paragraph",
+        text: "January has a particular quality when it comes to planning a coastal escape. The year is fresh and there is something genuinely uplifting about giving yourself something beautiful to look forward to."
+      },
+      {
+        type: "paragraph",
+        text: "There are practical reasons too. January is when you have the widest possible choice of 2027 dates, before the peak weeks and favourite weekends are quietly claimed. Dog-friendly stays like Muckle View and the newly opening Mohr Rest tend to find their guests early, and once spring arrives and summer starts to feel close, availability narrows quickly.",
+        links: [
+          {
+            word: "Muckle View",
+            href: "/properties/muckle-view"
+          },
+          {
+            word: "Mohr Rest",
+            href: "/properties/mohr-rest"
+          }
+        ]
+      },
+      {
+        type: "paragraph",
+        text: "For couples planning a getaway Aberdeenshire trip, whether it is a birthday, an anniversary, or simply a long-overdue chance to slow down and watch the sea together, the best advice we can give is to not wait until it feels urgent. By then, the dates you really wanted may already be gone."
+      },
+      {
+        type: "heading",
+        level: 2,
+        text: "Come and Find Your Spot on the Balcony"
+      },
+      {
+        type: "paragraph",
+        text: "Dog-friendly luxury, the Moray Firth spread out below you, bespoke chalets built for the clifftop setting, and one of Scotland's most beautiful and unhurried coastlines on your doorstep. This is what a stay at Gamrie Chalets feels like, and why so many guests find themselves planning their return before they have even unpacked at home."
+      },
+      {
+        type: "paragraph",
+        text: "For anyone hoping to be among the very first guests at Mohr Rest, or to secure preferred dates at Muckle View, now is the time to look at what is available.",
+        links: [
+          {
+            word: "Mohr Rest",
+            href: "/properties/mohr-rest"
+          },
+          {
+            word: "Muckle View",
+            href: "/properties/muckle-view"
+          }
+        ]
+      },
+      {
+        type: "paragraph",
+        text: "Check availability for 2027 at gamriechalets.co.uk and start the year with a clifftop escape already waiting for you."
+      },
+      {
+        type: "ctaGroup",
+        items: [
+          {
+            label: "Check Muckle View",
+            href: "/properties/muckle-view"
+          },
+          {
+            label: "Check Mohr Rest",
+            href: "/properties/mohr-rest"
+          }
+        ]
+      }
+    ]
+  },
+  {
     slug: "muckle-view-guest-review-recharge-relax-rewind",
     title: "Recharge, Relax, Rewind: My Guest Review of Muckle View at Gamrie Chalets",
     metaTitle: "Muckle View, Gamrie Chalets | Self-Catering Aberdeenshire",
