@@ -202,6 +202,15 @@ export const cancelWithRefundSchema = z.object({
   approvedRefundPence: z.coerce.number().int().min(0),
 });
 
+export const moveBookingSchema = z.object({
+  checkIn: isoDate,
+  checkOut: isoDate,
+  reason: z.string().trim().min(1, "Give a reason (kept in the booking history)").max(500),
+  emailGuest: checkbox,
+  approvedTotalPence: z.coerce.number().int().min(0),
+  approvedOwedPence: z.coerce.number().int().min(0),
+});
+
 export const manualPaymentSchema = z.object({
   amountPence: pounds(1),
   note: z.string().trim().max(300).optional().default(""),

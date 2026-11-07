@@ -297,6 +297,52 @@ export function guestBookingCancelled(d: BookingEmailData, refund?: Cancellation
   return { subject, html, text };
 }
 
+export type BookingMoveSummary = {
+  fromCheckIn: string;
+  fromCheckOut: string;
+  oldTotalPence: number;
+  paidPence: number;
+  owedPence: number;
+  creditPence: number;
+  /** When what's owed is taken from the saved card; null if we'll collect it another way. */
+  chargeDate: string | null;
+  /** Booked under the current terms, so it keeps those of the day it moved. */
+  newTerms: boolean;
+};
+
+export function guestBookingMoved(d: BookingEmailData, move: BookingMoveSummary): RenderedEmail {
+  const m = (pence: number) => formatPence(pence, d.quote.currency);
+  const subject = `Your stay at ${d.propertyName} has moved to ${showDate(d.checkIn)} (${d.reference})`;
+  const lines = [
+    `Your booking for ${showDate(move.fromCheckIn)} to ${showDate(move.fromCheckOut)} has moved to the new dates below.`,
+    move.oldTotalPence === d.quote.totalPence
+      ? `The price is unchanged at ${m(d.quote.totalPence)}.`
+      : `The price for your new dates is ${m(d.quote.totalPence)} (it was ${m(move.oldTotalPence)}).`,
+  ];
+  if (move.owedPence > 0) {
+    lines.push(
+      move.chargeDate
+        ? `You've paid ${m(move.paidPence)} so far. The remaining ${m(move.owedPence)} will be taken from the card you paid with on ${showDate(move.chargeDate)}.`
+        : `You've paid ${m(move.paidPence)} so far, so ${m(move.owedPence)} is still to pay. We'll be in touch to arrange it.`
+    );
+  } else if (move.creditPence > 0) {
+    lines.push(`You've paid ${m(move.paidPence)}, which is ${m(move.creditPence)} more than your new dates cost. We're holding ${m(move.creditPence)} as credit for a future stay.`);
+  } else {
+    lines.push("Your stay is paid in full.");
+  }
+  if (move.newTerms) lines.push("Your booking keeps the cancellation terms that applied on the day it was moved.");
+  const rows = [...stayRows(d), ...priceRows(d.quote)];
+  const html = layout(
+    "Your stay has moved",
+    p(`Dear ${escapeHtml(d.guestFirstName)},`) +
+      lines.map((line) => p(escapeHtml(line))).join("") +
+      detailsTable(rows) +
+      p(`Reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a> with any questions.`)
+  );
+  const text = [`Dear ${d.guestFirstName},`, "", ...lines.flatMap((line) => [line, ""]), textTable(rows), "", `Reply or write to ${d.contactEmail} with any questions.`].join("\n");
+  return { subject, html, text };
+}
+
 // ---------------------------------------------------------------------------
 // Print sales (from the welcome guides)
 

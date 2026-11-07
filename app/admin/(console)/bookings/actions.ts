@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { FormState } from "@/app/admin/(console)/actions";
 import { runAfterResponse } from "@/lib/after-response";
 import {
@@ -10,8 +11,9 @@ import {
 } from "@/lib/admin/bookings";
 import { cancelBookingWithRefund, retryCancellationRefund } from "@/lib/admin/cancellations";
 import { requireAdmin } from "@/lib/admin/dal";
+import { moveBooking } from "@/lib/admin/moves";
 import { isUuid } from "@/lib/admin/properties";
-import { cancelWithRefundSchema, fieldErrors, manualPaymentSchema } from "@/lib/admin/validation";
+import { cancelWithRefundSchema, fieldErrors, manualPaymentSchema, moveBookingSchema } from "@/lib/admin/validation";
 import { cancelBookingInLodgify } from "@/lib/booking/lodgify-cancel";
 import { keepDespiteLodgify } from "@/lib/booking/lodgify-check";
 import { isLodgifyPushEnabled, pushReservationToLodgify, resolveLodgifyPush } from "@/lib/booking/lodgify-push";
@@ -52,6 +54,20 @@ export async function cancelWithRefundAction(id: string, _: FormState, formData:
     preview?.manualPence ? `return ${formatPence(preview.manualPence)} paid outside Stripe` : "",
   ].filter(Boolean);
   return done(id, `Booking cancelled and dates released. ${preview?.cardPence ? `${formatPence(preview.cardPence)} refunded to the card.` : "No card refund."}${left.length ? ` Still to do by hand: ${left.join("; ")}.` : ""}`);
+}
+
+export async function moveBookingAction(id: string, _: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(id)) return { message: "Unknown booking." };
+  const parsed = moveBookingSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+  const result = await moveBooking(admin, id, parsed.data);
+  if (!result.ok) {
+    revalidatePath(page(id));
+    return { message: result.error };
+  }
+  done(id, "Booking moved.");
+  redirect(`${page(id)}?moved=1#move`);
 }
 
 export async function retryCancellationRefundAction(id: string): Promise<FormState> {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   cancelWithRefundAction,
+  moveBookingAction,
   keepDespiteLodgifyAction,
   linkLodgifyBookingAction,
   retryLodgifyPushAction,
@@ -11,11 +12,12 @@ import {
   retryCancellationRefundAction,
   retryLodgifyCancelAction,
 } from "@/app/admin/(console)/bookings/actions";
-import { ActionButton, CancelWithRefundForm, LinkLodgifyForm, ManualPaymentForm } from "@/components/admin/BookingActions";
+import { ActionButton, CancelWithRefundForm, LinkLodgifyForm, ManualPaymentForm, MoveBookingForm } from "@/components/admin/BookingActions";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import { getBooking } from "@/lib/admin/bookings";
 import { getCancellationRecord, previewCancellation } from "@/lib/admin/cancellations";
 import { requireAdmin } from "@/lib/admin/dal";
+import { getMoves, previewMove } from "@/lib/admin/moves";
 import { isUuid } from "@/lib/admin/properties";
 import { countryName } from "@/lib/countries";
 import { formatPence } from "@/lib/money";
@@ -33,22 +35,32 @@ const LODGIFY_STATUS: Record<string, string> = {
   CHECK: "unclear whether it reached Lodgify: check there",
 };
 
-export default async function AdminBookingPage({ params }: PageProps<"/admin/bookings/[id]">) {
+export default async function AdminBookingPage({ params, searchParams }: PageProps<"/admin/bookings/[id]">) {
   await requireAdmin();
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const b = await getBooking(id);
   if (!b) notFound();
 
+  // Payments are listed oldest first; a move can add a later balance payment.
+  const lastBalance = b.payments.filter((p) => p.kind === "BALANCE").at(-1);
   const failedBalance =
-    b.payments.some((p) => p.kind === "BALANCE" && p.status === "FAILED") &&
-    !b.payments.some((p) => p.kind === "BALANCE" && (p.status === "PENDING" || p.status === "SUCCEEDED"));
+    lastBalance?.status === "FAILED";
 
   // Worked out afresh on each view, as the refund depends on today's date.
-  const [preview, cancellation] = await Promise.all([
+  const sp = await searchParams;
+  const param = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : null);
+  const moveIn = param("moveIn");
+  const moveOut = param("moveOut");
+  const justMoved = param("moved") === "1";
+  const [preview, cancellation, moves, movePreview] = await Promise.all([
     b.status === "CONFIRMED" ? previewCancellation(b.id) : null,
     getCancellationRecord(b.id),
+    getMoves(b.id),
+    b.status === "CONFIRMED" && moveIn && moveOut ? previewMove(b.id, moveIn, moveOut) : null,
   ]);
+  const mv = movePreview?.ok ? movePreview.preview : null;
+  const dateInput = "mt-1 block border border-border bg-surface px-2 py-1.5 text-sm";
 
   return (
     <div className="space-y-10">
@@ -130,6 +142,14 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
               )}
             </p>
           )}
+          {moves.map((m, i) => (
+            <p key={i}>
+              Moved {when(m.movedAt)} by {m.movedBy} from {show(m.fromCheckIn)} → {show(m.fromCheckOut)} to {show(m.toCheckIn)} →{" "}
+              {show(m.toCheckOut)}: {m.reason}. Price {formatPence(m.oldTotalPence)} → {formatPence(m.newTotalPence)}
+              {m.owedPence > 0 && `, ${formatPence(m.owedPence)} to pay${m.chargedAutomatically ? " by saved card" : " (no saved card)"}`}
+              {m.creditPence > 0 && `, ${formatPence(m.creditPence)} held as credit`}.
+            </p>
+          ))}
           {b.cancelledAt && (
             <p className="text-red-800">
               Cancelled {when(b.cancelledAt)}
@@ -175,7 +195,8 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
             </div>
           )}
           <p>
-            Paid {formatPence(b.paidPence)} · Balance {formatPence(b.balancePence)} · {words(b.paymentStatus)}
+            Paid {formatPence(b.paidPence)} ·{" "}
+            {b.balancePence < 0 ? `Credit held for a future stay ${formatPence(-b.balancePence)}` : `Balance ${formatPence(b.balancePence)}`} · {words(b.paymentStatus)}
           </p>
           <ul className="divide-y divide-border border-y border-border">
             {b.payments.map((p) => (
@@ -253,6 +274,96 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
               <LinkLodgifyForm action={linkLodgifyBookingAction.bind(null, b.id)} />
             </div>
           )}
+          <div id="move" className="space-y-3 border-t border-border pt-6">
+            <h2 className="text-lg font-semibold text-foreground-strong">Move this booking</h2>
+            {justMoved && (
+              <p role="status" className="text-green-800">
+                Booking moved.
+                {b.lodgifyBookingId &&
+                  ` Now change Lodgify booking ${b.lodgifyBookingId} to ${show(b.checkIn)} → ${show(b.checkOut)} too. Until it matches, it shows as different in Lodgify and its balance isn't charged.`}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Choose the new dates to see the new price and what it means for payment. Nothing changes until you approve. There are no limits
+              on dates here: anything outside the published terms is pointed out for you to decide.
+            </p>
+            <form method="get" action="#move" className="flex flex-wrap items-end gap-3">
+              <label className="text-sm">
+                New check-in
+                <input type="date" name="moveIn" defaultValue={moveIn ?? b.checkIn} required className={dateInput} />
+              </label>
+              <label className="text-sm">
+                New check-out
+                <input type="date" name="moveOut" defaultValue={moveOut ?? b.checkOut} required className={dateInput} />
+              </label>
+              <button type="submit" className="border border-border px-4 py-2 text-sm font-medium">
+                Preview the move
+              </button>
+            </form>
+            {movePreview && !movePreview.ok && !justMoved && (
+              <p role="alert" className="text-sm text-red-700">
+                {movePreview.error}
+              </p>
+            )}
+            {mv && (
+              <div className="space-y-3">
+                <p>
+                  {show(mv.from.checkIn)} → {show(mv.from.checkOut)} ({mv.from.nights} nights) moves to{" "}
+                  <strong>
+                    {show(mv.to.checkIn)} → {show(mv.to.checkOut)}
+                  </strong>{" "}
+                  ({mv.to.nights} nights).
+                </p>
+                {mv.warnings.length > 0 && (
+                  <div className="border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    <p className="font-medium">Outside the published terms (your call):</p>
+                    <ul className="mt-1 list-disc pl-5">
+                      {mv.warnings.map((w) => (
+                        <li key={w}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="max-w-sm">
+                  <PriceBreakdown quote={mv.quote} />
+                </div>
+                <dl className="max-w-sm space-y-1">
+                  <div className="flex justify-between gap-4"><dt>Price now</dt><dd>{formatPence(mv.oldTotalPence)}</dd></div>
+                  <div className="flex justify-between gap-4"><dt>New price</dt><dd>{formatPence(mv.newTotalPence)}</dd></div>
+                  <div className="flex justify-between gap-4"><dt>Paid so far</dt><dd>{formatPence(mv.paidPence)}</dd></div>
+                  {mv.plan.owedPence > 0 && (
+                    <div className="flex justify-between gap-4 border-t border-border pt-1 font-semibold"><dt>Still to pay</dt><dd>{formatPence(mv.plan.owedPence)}</dd></div>
+                  )}
+                  {mv.plan.creditPence > 0 && (
+                    <div className="flex justify-between gap-4 border-t border-border pt-1 font-semibold"><dt>Held as credit for a future stay</dt><dd>{formatPence(mv.plan.creditPence)}</dd></div>
+                  )}
+                  {mv.plan.owedPence === 0 && mv.plan.creditPence === 0 && (
+                    <div className="flex justify-between gap-4 border-t border-border pt-1 font-semibold"><dt>Paid in full</dt><dd>{formatPence(0)} to pay</dd></div>
+                  )}
+                </dl>
+                <p className="text-sm text-muted-foreground">
+                  {mv.plan.owedPence > 0 && (mv.plan.balance.action === "UPDATE" || mv.plan.balance.action === "CREATE")
+                    ? mv.plan.chargedAutomatically
+                      ? `It's charged to the guest's saved card with the daily balance run on ${show(mv.plan.balance.dueDate)}.`
+                      : "There's no saved card (the guest paid in full when booking), so collect it from them and record it on this page once paid."
+                    : mv.plan.creditPence > 0
+                      ? "Nothing is refunded. Any balance still waiting to be charged is called off."
+                      : ""}{" "}
+                  {mv.lodgifyBookingId
+                    ? `Lodgify isn't changed from here: change booking ${mv.lodgifyBookingId} there to the new dates too. Until it matches, the booking shows as different in Lodgify and its balance isn't charged.`
+                    : ""}
+                </p>
+                <MoveBookingForm
+                  action={moveBookingAction.bind(null, b.id)}
+                  checkIn={mv.to.checkIn}
+                  checkOut={mv.to.checkOut}
+                  approvedTotalPence={mv.newTotalPence}
+                  approvedOwedPence={mv.plan.owedPence}
+                  confirmText={`Move ${b.reference} to ${show(mv.to.checkIn)} → ${show(mv.to.checkOut)} at ${formatPence(mv.newTotalPence)}?`}
+                />
+              </div>
+            )}
+          </div>
           {preview && (
             <div className="space-y-3 border-t border-border pt-6">
               <h2 className="text-lg font-semibold text-foreground-strong">Cancel this booking</h2>

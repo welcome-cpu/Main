@@ -44,6 +44,44 @@ export function CancelWithRefundForm({ action, approvedRefundPence, confirmText,
   );
 }
 
+export function MoveBookingForm({
+  action,
+  checkIn,
+  checkOut,
+  approvedTotalPence,
+  approvedOwedPence,
+  confirmText,
+}: {
+  action: FormAction;
+  checkIn: string;
+  checkOut: string;
+  approvedTotalPence: number;
+  approvedOwedPence: number;
+  confirmText: string;
+}) {
+  const [state, formAction] = useActionState(action, {});
+  return (
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (!window.confirm(confirmText)) e.preventDefault();
+      }}
+      className="space-y-3"
+    >
+      <input type="hidden" name="checkIn" value={checkIn} />
+      <input type="hidden" name="checkOut" value={checkOut} />
+      <input type="hidden" name="approvedTotalPence" value={approvedTotalPence} />
+      <input type="hidden" name="approvedOwedPence" value={approvedOwedPence} />
+      <Field label="Reason" name="reason" errors={state.errors} required />
+      <Checkbox label="Email the guest their new dates" name="emailGuest" defaultChecked />
+      <div className="flex flex-wrap items-center gap-3">
+        <SubmitButton>Move booking</SubmitButton>
+        <FormMessage state={state} />
+      </div>
+    </form>
+  );
+}
+
 export function ManualPaymentForm({ action }: { action: FormAction }) {
   const [state, formAction] = useActionState(action, {});
   return (

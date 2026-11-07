@@ -4,6 +4,7 @@ import {
   escapeHtml,
   guestBalanceFailed,
   guestBookingConfirmed,
+  guestBookingMoved,
   guestPaymentReceipt,
   guestNotCharged,
   ownerNewBooking,
@@ -126,5 +127,29 @@ describe("payment receipt", () => {
     expect(e.text).toContain("Your booking confirmation comes in a separate email.");
     expect(e.text).toContain("We've taken a deposit of £267.50.");
     expect(e.html).toContain("Payment received");
+  });
+});
+
+describe("guestBookingMoved", () => {
+  const move = { fromCheckIn: "2026-05-01", fromCheckOut: "2026-05-04", oldTotalPence: 40000, paidPence: 20000, owedPence: 0, creditPence: 0, chargeDate: null, newTerms: true };
+
+  it("gives the old and new dates, the new price and when the rest is taken", () => {
+    const e = guestBookingMoved(data, { ...move, owedPence: 33500, chargeDate: "2026-07-01" });
+    expect(e.subject).toContain("has moved to");
+    expect(e.text).toContain("has moved to the new dates below");
+    expect(e.text).toContain("(it was £400.00)");
+    expect(e.text).toContain("The remaining £335.00 will be taken from the card you paid with on");
+    expect(e.text).toContain("keeps the cancellation terms that applied on the day it was moved");
+    expect(e.html).toContain("Your stay has moved");
+  });
+
+  it("says when credit is held, and leaves out the terms line for older bookings", () => {
+    const e = guestBookingMoved(data, { ...move, creditPence: 2500, newTerms: false });
+    expect(e.text).toContain("as credit for a future stay");
+    expect(e.text).not.toContain("cancellation terms");
+  });
+
+  it("escapes the guest's name", () => {
+    expect(guestBookingMoved({ ...data, guestFirstName: "<b>Ann" }, move).html).toContain("&lt;b&gt;Ann");
   });
 });

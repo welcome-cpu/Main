@@ -61,6 +61,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
       attention.voucherProblems.length +
       attention.lodgifyProblems.length +
       attention.cancellationProblems.length +
+      attention.balancesToCollect.length +
       conflicts.length >
     0;
 
@@ -92,6 +93,15 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                   {v.reference}
                 </Link>
                 : gift voucher {v.voucherCode} ({formatPence(v.amountPence)}). {v.message}
+              </li>
+            ))}
+            {attention.balancesToCollect.map((c) => (
+              <li key={`collect-${c.reservationId}`}>
+                <Link href={`/admin/bookings/${c.reservationId}`} className="underline">
+                  {c.reference}
+                </Link>{" "}
+                ({c.propertyName}, arriving {show(c.checkIn)}): {formatPence(c.amountPence)} to collect from the guest. There&apos;s no saved card to
+                charge, so record it on the booking once paid.
               </li>
             ))}
             {attention.cancellationProblems.map((c) => (

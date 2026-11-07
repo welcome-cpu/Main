@@ -43,7 +43,19 @@ export async function quoteStay(
   const availability = await checkAvailability(sql, propertyId, request, options);
   if (!availability) return null;
   if (!availability.available) return { availability, pricing: null };
+  return { availability, pricing: await priceStay(sql, propertyId, request, options.now) };
+}
 
+/**
+ * The price of a stay, without checking it can be booked. Callers other than
+ * quoteStay must check availability themselves (an owner moving a booking).
+ */
+export async function priceStay(
+  sql: Sql | Tx,
+  propertyId: string,
+  request: StayQuoteRequest,
+  now?: Date
+): Promise<QuoteResult> {
   const [policyRow] = await sql<(PricingPolicy & { timezone: string; rateSource: string })[]>`
     SELECT currency, base_nightly_pence AS base_pence, cleaning_fee_pence, pet_fee_pence,
            deposit_percent, balance_due_days_before, timezone, rate_source
@@ -89,21 +101,18 @@ export async function quoteStay(
       : null);
   if (request.discountCode && !discount) {
     const message = promo && !promo.ok ? promo.message : "We don't recognise that code.";
-    return { availability, pricing: { ok: false, error: { code: "DISCOUNT_INVALID", message } } };
+    return { ok: false, error: { code: "DISCOUNT_INVALID", message } };
   }
 
-  return {
-    availability,
-    pricing: buildQuote({
-      request: { ...request, extras: request.extras },
-      nights,
-      policy,
-      extras,
-      discount,
-      voucher: request.voucher ?? null,
-      today: todayInZone(policyRow.timezone, options.now),
-    }),
-  };
+  return buildQuote({
+    request: { ...request, extras: request.extras },
+    nights,
+    policy,
+    extras,
+    discount,
+    voucher: request.voucher ?? null,
+    today: todayInZone(policyRow.timezone, now),
+  });
 }
 
 /** Active extras offered at a property (its own and those for every property). */

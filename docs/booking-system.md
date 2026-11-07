@@ -130,6 +130,17 @@ email as the receipt.
   the channels, and the guest emailed. A failed refund or Lodgify call is listed
   under *Needs attention* with a retry. Voucher credit and money paid outside
   Stripe are returned by hand.
+- Moving a confirmed booking to new dates is also on its admin page
+  (`lib/admin/moves.ts`, rules in `lib/booking/move-pricing.ts`). It's the owner's
+  call, so there are no limits on when or where to; anything outside the published
+  terms is shown as a warning. The new dates are priced like a new booking, keeping
+  the guest's extras (at their booked prices) and discount. What's still owed
+  becomes the balance, charged to the saved card on the usual date (or straight
+  away if that has passed); with no saved card it's listed under *Needs attention*
+  to collect by hand. Money paid beyond the new price is held as credit (shown on
+  the booking). A moved booking keeps the cancellation terms of the day it first
+  moved. Lodgify isn't changed: change the dates there too, or the booking shows
+  as different in Lodgify and its balance waits.
 - Cancelling or changing it **in Lodgify** is spotted: upcoming bookings are
   compared with Lodgify about every 6 hours (send-to-lodgify job) and again
   just before the balance is charged. A booking cancelled, deleted or with

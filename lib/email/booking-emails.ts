@@ -7,6 +7,7 @@ import {
   guestBalanceFailed,
   guestBalanceReceived,
   guestBookingCancelled,
+  guestBookingMoved,
   guestBookingConfirmed,
   guestNotCharged,
   guestPaymentReceipt,
@@ -16,6 +17,7 @@ import {
   ownerPrintSold,
   printNeedsReplacing,
   type BookingEmailData,
+  type BookingMoveSummary,
   type CancellationRefundSummary,
   type PrintSaleEmailData,
 } from "@/lib/email/templates";
@@ -120,6 +122,12 @@ export async function enqueueBookingCancelledEmail(sql: Sql | Tx, reservationId:
   const d = await loadBookingEmailData(sql, reservationId);
   if (!d) return;
   await enqueueEmail(sql, { reservationId, kind: "BOOKING_CANCELLED", dedupeKey: `booking-cancelled:${reservationId}`, to: d.guestEmail, ...guestBookingCancelled(d, refund) });
+}
+
+export async function enqueueBookingMovedEmail(sql: Sql | Tx, reservationId: string, moveId: string, move: BookingMoveSummary) {
+  const d = await loadBookingEmailData(sql, reservationId);
+  if (!d) return;
+  await enqueueEmail(sql, { reservationId, kind: "BOOKING_MOVED", dedupeKey: `booking-moved:${moveId}`, to: d.guestEmail, ...guestBookingMoved(d, move) });
 }
 
 /** A print bought from a welcome guide: tell the owner where to post it, and thank the buyer. */

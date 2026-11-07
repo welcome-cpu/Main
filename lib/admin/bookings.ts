@@ -358,7 +358,7 @@ export async function scheduleBalanceRetry(admin: AdminUser, id: string): Promis
              pay.stripe_payment_method_id AS payment_method_id, r.property_id, r.reference
       FROM payments pay JOIN reservations r ON r.id = pay.reservation_id
       WHERE pay.reservation_id = ${id} AND pay.kind = 'BALANCE' AND pay.status = 'FAILED' AND r.status = 'CONFIRMED'
-        AND NOT EXISTS (SELECT 1 FROM payments x WHERE x.reservation_id = ${id} AND x.kind = 'BALANCE' AND x.status IN ('PENDING', 'SUCCEEDED'))
+        AND NOT EXISTS (SELECT 1 FROM payments x WHERE x.reservation_id = ${id} AND x.kind = 'BALANCE' AND x.status IN ('PENDING', 'SUCCEEDED') AND x.created_at > pay.created_at)
       ORDER BY pay.created_at DESC LIMIT 1
     `;
     if (!failed) return { error: "There's no failed balance payment to retry." };
@@ -394,18 +394,20 @@ export type Attention = {
   lodgifyProblems: { reservationId: string; reference: string; propertyName: string; checkIn: string; status: string; message: string | null }[];
   /** Cancelled bookings whose refund or release in Lodgify hasn't gone through. */
   cancellationProblems: { reservationId: string; reference: string; message: string }[];
+  /** Money owed after a move by a guest with no saved card: the owner collects it. */
+  balancesToCollect: { reservationId: string; reference: string; propertyName: string; checkIn: string; amountPence: number }[];
 };
 
 /** Things the owner needs to deal with. */
 export async function needsAttention(): Promise<Attention> {
   const sql = db();
-  const [failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems] = await Promise.all([
+  const [failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems, balancesToCollect] = await Promise.all([
     sql<Attention["failedPayments"]>`
       SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
              pay.amount_pence, pay.failure_message AS message
       FROM payments pay JOIN reservations r ON r.id = pay.reservation_id JOIN properties p ON p.id = r.property_id
       WHERE pay.kind = 'BALANCE' AND pay.status = 'FAILED' AND r.status = 'CONFIRMED'
-        AND NOT EXISTS (SELECT 1 FROM payments x WHERE x.reservation_id = r.id AND x.kind = 'BALANCE' AND x.status IN ('PENDING', 'SUCCEEDED'))
+        AND NOT EXISTS (SELECT 1 FROM payments x WHERE x.reservation_id = r.id AND x.kind = 'BALANCE' AND x.status IN ('PENDING', 'SUCCEEDED') AND x.created_at > pay.created_at)
       ORDER BY r.check_in
     `,
     sql<Attention["failingFeeds"]>`
@@ -453,6 +455,13 @@ export async function needsAttention(): Promise<Attention> {
       FROM reservations
       WHERE status = 'CANCELLED' AND lodgify_cancel_status IN ('FAILED', 'NOT_SENT') AND check_out >= current_date
     `,
+    sql<Attention["balancesToCollect"]>`
+      SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in, pay.amount_pence
+      FROM payments pay JOIN reservations r ON r.id = pay.reservation_id JOIN properties p ON p.id = r.property_id
+      WHERE pay.kind = 'BALANCE' AND pay.status = 'PENDING' AND r.status = 'CONFIRMED'
+        AND (pay.stripe_customer_id IS NULL OR pay.stripe_payment_method_id IS NULL)
+      ORDER BY r.check_in
+    `,
   ]);
-  return { failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems };
+  return { failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems, balancesToCollect };
 }
