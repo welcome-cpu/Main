@@ -249,8 +249,9 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
 
 /**
  * Cancels a booking and frees its dates. Payments aren't refunded
- * automatically (bookings are non-refundable); refunds made in Stripe are
- * recorded when Stripe reports them. Any scheduled balance is called off.
+ * automatically: the owner makes any refund due under the cancellation terms
+ * in Stripe, and it's recorded when Stripe reports it. Any scheduled balance
+ * is called off.
  */
 export async function cancelBooking(
   admin: AdminUser,

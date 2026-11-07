@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "Gift Vouchers";
@@ -242,6 +243,14 @@ export default function GiftVouchersPage() {
               data-site-id="d4f77063-d502-4034-a385-847b17596001"
               data-platform="Other"
             />
+          </div>
+
+          <div className="mt-10 space-y-2 text-sm leading-relaxed text-muted-foreground">
+            <p className="font-semibold text-foreground">
+              Stays booked with a voucher follow our booking terms:
+            </p>
+            <p>{CANCELLATION_TERMS}</p>
+            <p>{DATE_CHANGE_TERMS}</p>
           </div>
         </div>
       </section>

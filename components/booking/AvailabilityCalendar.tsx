@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CheckoutStep, { type StayPayload } from "@/components/booking/CheckoutStep";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import type { PublicCalendar } from "@/lib/booking/public";
+import { TERMS_PATH, TERMS_SUMMARY } from "@/lib/booking/terms";
 import type { ChaletSetup, PublicExtra } from "@/lib/booking/setup";
 import { addDays, daysBetween } from "@/lib/dates";
 import { formatPence } from "@/lib/money";
@@ -577,6 +578,10 @@ function ChaletCard({
       {quote && (
         <div className="mt-3 border-t border-green-300 pt-3 text-foreground">
           <PriceBreakdown quote={quote} />
+          {/* A new tab, so the guest doesn't lose the dates they've chosen. */}
+          <a href={TERMS_PATH} target="_blank" className="mt-3 block text-xs underline hover:no-underline">
+            {TERMS_SUMMARY}
+          </a>
         </div>
       )}
       {quoteError && <p className="mt-2 text-red-800">{quoteError.message}</p>}

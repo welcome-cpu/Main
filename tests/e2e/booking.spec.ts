@@ -56,6 +56,7 @@ test("prices a stay on the server, with a pet fee and discount code", async ({ p
   await expect(page.getByText("Pet fee (per stay)")).toBeVisible();
   await expect(page.getByText("£280.00")).toBeVisible(); // £240 + £40 pet fee
   await expect(page.getByText("Pay now (deposit)")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Full refund up to 30 days before arrival · Free date changes up to 48 hours before" })).toHaveAttribute("href", "/faqs#cancellation");
 
   await page.getByRole("button", { name: "Have a discount code or gift voucher?" }).click();
   await page.getByLabel("Discount code").fill("e2e10");

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
 import { pageOpenGraph, pageTwitter } from "@/lib/metadata";
 
 const title = "FAQs";
@@ -41,9 +42,9 @@ const faqs = [
       "Yes, at Muckle View. We offer guests complimentary untethered EV charging for one car per booking. Charging points are limited in the area, so we ensure your electric vehicle is ready for your next adventure. Please remember to bring your own cable.",
   },
   {
+    id: "cancellation",
     question: "What is your cancellation policy?",
-    answer:
-      "A 50% payment is due at the time of booking, with the balance payable 7 days before arrival. Please note that all payments are non-refundable, so we recommend arranging travel insurance to cover unforeseen circumstances. No security deposit is required, and quotes remain valid for 48 hours.",
+    answer: `${CANCELLATION_TERMS}\n\n${DATE_CHANGE_TERMS}`,
   },
   {
     question: "Are there drying or laundry facilities in the chalet?",
@@ -97,7 +98,13 @@ export default function FaqsPage() {
 
       <div className="mt-10 divide-y divide-border rounded-2xl border border-border">
         {faqs.map((faq) => (
-          <details key={faq.question} className="group px-6 py-5">
+          // The booking box links to the cancellation answer, so that one starts open.
+          <details
+            key={faq.question}
+            id={faq.id}
+            open={faq.id === "cancellation"}
+            className="group scroll-mt-24 px-6 py-5"
+          >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-foreground marker:content-none">
               {faq.question}
               <span
@@ -107,7 +114,7 @@ export default function FaqsPage() {
                 +
               </span>
             </summary>
-            <p className="mt-3 leading-relaxed text-muted-foreground">
+            <p className="mt-3 leading-relaxed whitespace-pre-line text-muted-foreground">
               {faq.answer}
             </p>
           </details>

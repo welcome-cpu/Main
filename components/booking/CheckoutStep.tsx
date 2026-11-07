@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import Turnstile from "@/components/Turnstile";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
 import { countryOptions } from "@/lib/countries";
 import { formatPence } from "@/lib/money";
 import type { Quote } from "@/lib/pricing/quote";
@@ -209,7 +210,9 @@ function DetailsForm({
           {quote.balanceDueDate
             ? `a deposit of ${formatPence(quote.dueNowPence, quote.currency)} now and the balance of ${formatPence(quote.balancePence, quote.currency)} on ${show(quote.balanceDueDate)}`
             : `payment of ${formatPence(quote.dueNowPence, quote.currency)} in full now`}
-          . All payments are non-refundable, so we recommend travel insurance.
+          .
+          <span className="mt-2 block">{CANCELLATION_TERMS}</span>
+          <span className="mt-2 block">{DATE_CHANGE_TERMS}</span>
         </span>
       </label>
 

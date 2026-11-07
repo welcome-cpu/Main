@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
 import {
   escapeHtml,
   guestBalanceFailed,
@@ -61,7 +62,13 @@ describe("email templates", () => {
       expect(e.text).toContain(s);
     }
     expect(e.text).toContain("We've taken a deposit of £267.50. The balance of £267.50 will be charged automatically to the same card on Tuesday, 2 February 2027.");
-    expect(e.text).toContain("non-refundable");
+    for (const email of [e, guestPaymentReceipt(data)]) {
+      for (const terms of [CANCELLATION_TERMS, DATE_CHANGE_TERMS]) {
+        expect(email.text).toContain(terms);
+        expect(email.html).toContain(escapeHtml(terms));
+      }
+      expect(`${email.text}${email.html}`).not.toContain("non-refundable");
+    }
   });
 
   it("describes payment in full when there's no balance", () => {
