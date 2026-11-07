@@ -123,7 +123,13 @@ email as the receipt.
   already taken there) or doesn't answer clearly, it's listed under *Needs
   attention*. Check Lodgify, then on the booking page either send it again or
   enter its Lodgify booking number.
-- Cancelling here doesn't cancel it in Lodgify: the admin page reminds you to.
+- Cancelling a confirmed booking on its admin page shows the refund worked out
+  by `calculateCancellationRefund` (`lib/booking/cancellation-refund.ts`). Nothing
+  happens until you approve that amount. The booking is then cancelled, the card
+  refunded through Stripe, the booking declined in Lodgify so its dates free up on
+  the channels, and the guest emailed. A failed refund or Lodgify call is listed
+  under *Needs attention* with a retry. Voucher credit and money paid outside
+  Stripe are returned by hand.
 - Cancelling or changing it **in Lodgify** is spotted: upcoming bookings are
   compared with Lodgify about every 6 hours (send-to-lodgify job) and again
   just before the balance is charged. A booking cancelled, deleted or with

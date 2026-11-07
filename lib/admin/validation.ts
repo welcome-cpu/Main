@@ -196,9 +196,10 @@ export const discountCodeSchema = z
     return { ...v, percentOff, amountOffPence };
   });
 
-export const cancelBookingSchema = z.object({
+export const cancelWithRefundSchema = z.object({
   reason: z.string().trim().min(1, "Give a reason (kept in the booking history)").max(500),
   emailGuest: checkbox,
+  approvedRefundPence: z.coerce.number().int().min(0),
 });
 
 export const manualPaymentSchema = z.object({

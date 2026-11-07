@@ -32,12 +32,6 @@ export const termsForBooking = (bookedAt: Date, paidByVoucher = false) =>
     ? [OLD_TERMS]
     : [CANCELLATION_TERMS, DATE_CHANGE_TERMS, ...(paidByVoucher ? [VOUCHER_REFUND_TERMS] : [])];
 
-/** For the owner: what to refund on this booking, including what "50%" is 50% of. */
-export const refundGuide = (bookedAt: Date) =>
-  isOnOldTerms(bookedAt)
-    ? "This booking was made before the new policy, so its payments are non-refundable and it has no free date change."
-    : "Refund due on this booking: everything paid if cancelled 30 or more days before arrival, half of what the guest has paid at 7 to 29 days, nothing at fewer than 7 days.";
-
 /** The one-line version in the booking box on each property page. */
 export const TERMS_SUMMARY = "Full refund up to 30 days before arrival · Free date changes up to 48 hours before";
 

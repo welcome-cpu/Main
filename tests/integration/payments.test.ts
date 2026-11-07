@@ -53,6 +53,9 @@ class FakeGateway implements PaymentGateway {
     this.intents.set(id, { ...pi, status: "succeeded", amountReceived: pi.amountCapturable, amountCapturable: 0 });
     return { status: "succeeded" };
   }
+  async refund() {
+    return { refundId: "re_fake" };
+  }
   async cancel(id: string) {
     this.calls.push({ method: "cancel", arg: id });
   }

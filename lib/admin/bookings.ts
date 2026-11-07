@@ -170,6 +170,7 @@ export type BookingDetail = {
   cancellationReason: string | null;
   termsAcceptedAt: Date | null;
   createdAt: Date;
+  lodgifyCancelError: string | null;
   payments: {
     id: string;
     provider: string;
@@ -202,7 +203,7 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
            r.check_in, r.check_out, r.adults, r.children, r.infants, r.pets, r.guest_message,
            r.price_breakdown AS quote, fin.total_pence, fin.paid_pence, fin.balance_pence, fin.payment_status,
            r.balance_due_date, r.hold_expires_at, r.confirmed_at, r.cancelled_at, r.cancellation_reason,
-           r.terms_accepted_at, r.created_at,
+           r.terms_accepted_at, r.created_at, r.lodgify_cancel_error,
            g.first_name AS guest_first_name, g.last_name AS guest_last_name, g.email AS guest_email, g.phone AS guest_phone,
            g.country AS guest_country,
            NULLIF(concat_ws(', ', g.address_line1, g.address_line2, g.city, g.postal_code), '') AS guest_address,
@@ -248,10 +249,9 @@ export async function getBooking(id: string): Promise<BookingDetail | null> {
 }
 
 /**
- * Cancels a booking and frees its dates. Payments aren't refunded
- * automatically: the owner makes any refund due under the cancellation terms
- * in Stripe, and it's recorded when Stripe reports it. Any scheduled balance
- * is called off.
+ * Cancels a booking and frees its dates, with no refund and without touching
+ * Lodgify. Confirmed bookings are cancelled in the admin area through
+ * cancelBookingWithRefund instead. Any scheduled balance is called off.
  */
 export async function cancelBooking(
   admin: AdminUser,
@@ -392,12 +392,14 @@ export type Attention = {
   voucherProblems: { reservationId: string; reference: string; voucherCode: string; amountPence: number; message: string }[];
   /** Paid bookings that didn't get into Lodgify. */
   lodgifyProblems: { reservationId: string; reference: string; propertyName: string; checkIn: string; status: string; message: string | null }[];
+  /** Cancelled bookings whose refund or release in Lodgify hasn't gone through. */
+  cancellationProblems: { reservationId: string; reference: string; message: string }[];
 };
 
 /** Things the owner needs to deal with. */
 export async function needsAttention(): Promise<Attention> {
   const sql = db();
-  const [failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems] = await Promise.all([
+  const [failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems] = await Promise.all([
     sql<Attention["failedPayments"]>`
       SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in,
              pay.amount_pence, pay.failure_message AS message
@@ -442,6 +444,15 @@ export async function needsAttention(): Promise<Attention> {
           OR (r.lodgify_mismatch IS NOT NULL AND NOT r.lodgify_mismatch_ignored))
       ORDER BY r.check_in
     `,
+    sql<Attention["cancellationProblems"]>`
+      SELECT r.id AS reservation_id, r.reference, 'the refund to the card hasn''t been made: ' || COALESCE(c.failure_message, 'it stopped part-way') AS message
+      FROM cancellation_refunds c JOIN reservations r ON r.id = c.reservation_id
+      WHERE c.status <> 'DONE' AND c.created_at < now() - interval '1 minute'
+      UNION ALL
+      SELECT id, reference, lodgify_cancel_error
+      FROM reservations
+      WHERE status = 'CANCELLED' AND lodgify_cancel_status IN ('FAILED', 'NOT_SENT') AND check_out >= current_date
+    `,
   ]);
-  return { failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems };
+  return { failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems };
 }

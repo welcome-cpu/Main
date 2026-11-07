@@ -40,6 +40,9 @@ class Ledger implements PaymentGateway {
     this.intents.set(id, { ...pi, status: "succeeded", amountReceived: pi.amountCapturable });
     return { status: "succeeded" };
   }
+  async refund() {
+    return { refundId: "re_fake" };
+  }
   async cancel(id: string) {
     if (this.captured.has(id)) throw new Error("cannot cancel a captured payment");
     this.cancelled.add(id);

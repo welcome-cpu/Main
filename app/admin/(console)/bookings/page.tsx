@@ -60,6 +60,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
       attention.failedEmails.length +
       attention.voucherProblems.length +
       attention.lodgifyProblems.length +
+      attention.cancellationProblems.length +
       conflicts.length >
     0;
 
@@ -91,6 +92,14 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                   {v.reference}
                 </Link>
                 : gift voucher {v.voucherCode} ({formatPence(v.amountPence)}). {v.message}
+              </li>
+            ))}
+            {attention.cancellationProblems.map((c) => (
+              <li key={`cancel-${c.reservationId}-${c.message}`}>
+                <Link href={`/admin/bookings/${c.reservationId}`} className="underline">
+                  {c.reference}
+                </Link>{" "}
+                is cancelled, but {c.message}
               </li>
             ))}
             {attention.lodgifyProblems.map((l) => (

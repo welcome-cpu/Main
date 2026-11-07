@@ -23,20 +23,21 @@ export function ActionButton({ action, label, confirmText }: { action: ButtonAct
   );
 }
 
-export function CancelBookingForm({ action }: { action: FormAction }) {
+export function CancelWithRefundForm({ action, approvedRefundPence, confirmText, label }: { action: FormAction; approvedRefundPence: number; confirmText: string; label: string }) {
   const [state, formAction] = useActionState(action, {});
   return (
     <form
       action={formAction}
       onSubmit={(e) => {
-        if (!window.confirm("Cancel this booking and release its dates? This can't be undone.")) e.preventDefault();
+        if (!window.confirm(confirmText)) e.preventDefault();
       }}
       className="space-y-3"
     >
+      <input type="hidden" name="approvedRefundPence" value={approvedRefundPence} />
       <Field label="Reason" name="reason" errors={state.errors} required />
       <Checkbox label="Email the guest to tell them" name="emailGuest" defaultChecked />
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton>Cancel booking</SubmitButton>
+        <SubmitButton>{label}</SubmitButton>
         <FormMessage state={state} />
       </div>
     </form>

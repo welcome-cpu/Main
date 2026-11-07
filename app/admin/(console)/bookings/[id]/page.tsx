@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  cancelBookingAction,
+  cancelWithRefundAction,
   keepDespiteLodgifyAction,
   linkLodgifyBookingAction,
   retryLodgifyPushAction,
   recordPaymentAction,
   resendConfirmationAction,
   retryBalanceAction,
+  retryCancellationRefundAction,
+  retryLodgifyCancelAction,
 } from "@/app/admin/(console)/bookings/actions";
-import { ActionButton, CancelBookingForm, LinkLodgifyForm, ManualPaymentForm } from "@/components/admin/BookingActions";
+import { ActionButton, CancelWithRefundForm, LinkLodgifyForm, ManualPaymentForm } from "@/components/admin/BookingActions";
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import { getBooking } from "@/lib/admin/bookings";
+import { getCancellationRecord, previewCancellation } from "@/lib/admin/cancellations";
 import { requireAdmin } from "@/lib/admin/dal";
-import { refundGuide } from "@/lib/booking/terms";
 import { isUuid } from "@/lib/admin/properties";
 import { countryName } from "@/lib/countries";
 import { formatPence } from "@/lib/money";
@@ -41,6 +43,12 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
   const failedBalance =
     b.payments.some((p) => p.kind === "BALANCE" && p.status === "FAILED") &&
     !b.payments.some((p) => p.kind === "BALANCE" && (p.status === "PENDING" || p.status === "SUCCEEDED"));
+
+  // Worked out afresh on each view, as the refund depends on today's date.
+  const [preview, cancellation] = await Promise.all([
+    b.status === "CONFIRMED" ? previewCancellation(b.id) : null,
+    getCancellationRecord(b.id),
+  ]);
 
   return (
     <div className="space-y-10">
@@ -127,6 +135,35 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
               Cancelled {when(b.cancelledAt)}
               {b.cancellationReason && `: ${b.cancellationReason}`}
             </p>
+          )}
+          {cancellation && (
+            <div className="space-y-2">
+              <p>
+                Refund approved by {cancellation.approvedBy} on {show(cancellation.cancelledOn)}, {cancellation.daysBefore} days before arrival:{" "}
+                {formatPence(cancellation.refundPence)}
+                {cancellation.status === "DONE" ? "." : cancellation.status === "FAILED" ? ", not yet made." : ", being made."}
+              </p>
+              {cancellation.voucherPence > 0 && (
+                <p>Give {formatPence(cancellation.voucherPence)} back as credit on voucher {cancellation.voucherCode} in Gift Up.</p>
+              )}
+              {cancellation.manualPence > 0 && <p>Return {formatPence(cancellation.manualPence)} paid outside Stripe.</p>}
+              {cancellation.status !== "DONE" && (
+                <>
+                  {cancellation.failureMessage && <p className="text-red-800">{cancellation.failureMessage}</p>}
+                  <ActionButton
+                    action={retryCancellationRefundAction.bind(null, b.id)}
+                    label="Retry refund"
+                    confirmText={`Try the refund of ${formatPence(cancellation.cardPence)} to the card again?`}
+                  />
+                </>
+              )}
+            </div>
+          )}
+          {b.lodgifyCancelError && (
+            <div className="space-y-2">
+              <p className="text-red-800">{b.lodgifyCancelError}</p>
+              <ActionButton action={retryLodgifyCancelAction.bind(null, b.id)} label="Try Lodgify again" />
+            </div>
           )}
         </section>
 
@@ -216,13 +253,29 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
               <LinkLodgifyForm action={linkLodgifyBookingAction.bind(null, b.id)} />
             </div>
           )}
-          <div className="space-y-2 border-t border-border pt-6">
-            <p className="text-sm text-muted-foreground">
-              Cancelling releases the dates straight away. Payments aren&apos;t refunded automatically. {refundGuide(b.createdAt)}
-              {b.lodgifyBookingId && ` It isn't cancelled in Lodgify: cancel booking ${b.lodgifyBookingId} there too.`}
-            </p>
-            <CancelBookingForm action={cancelBookingAction.bind(null, b.id)} />
-          </div>
+          {preview && (
+            <div className="space-y-3 border-t border-border pt-6">
+              <h2 className="text-lg font-semibold text-foreground-strong">Cancel this booking</h2>
+              <p>{preview.explanation}</p>
+              <dl className="max-w-sm space-y-1">
+                <div className="flex justify-between gap-4"><dt>Total booking value</dt><dd>{formatPence(preview.totalPence)}</dd></div>
+                <div className="flex justify-between gap-4"><dt>Paid so far</dt><dd>{formatPence(preview.paidPence)}</dd></div>
+                <div className="flex justify-between gap-4 border-t border-border pt-1 font-semibold"><dt>Refund</dt><dd>{formatPence(preview.refundPence)}</dd></div>
+                {preview.cardPence > 0 && <div className="flex justify-between gap-4"><dt>To the card, through Stripe</dt><dd>{formatPence(preview.cardPence)}</dd></div>}
+                {preview.voucherPence > 0 && <div className="flex justify-between gap-4"><dt>Voucher credit {preview.voucherCode}, by hand in Gift Up</dt><dd>{formatPence(preview.voucherPence)}</dd></div>}
+                {preview.manualPence > 0 && <div className="flex justify-between gap-4"><dt>Paid outside Stripe, return by hand</dt><dd>{formatPence(preview.manualPence)}</dd></div>}
+              </dl>
+              <p className="text-sm text-muted-foreground">
+                Nothing happens until you approve. This cancels the booking, releases its dates here and in Lodgify, makes the card refund and emails the guest.
+              </p>
+              <CancelWithRefundForm
+                action={cancelWithRefundAction.bind(null, b.id)}
+                approvedRefundPence={preview.refundPence}
+                label={preview.refundPence > 0 ? `Cancel and refund ${formatPence(preview.refundPence)}` : "Cancel with no refund"}
+                confirmText={`Cancel ${b.reference} and refund ${formatPence(preview.refundPence)}? This can't be undone.`}
+              />
+            </div>
+          )}
         </section>
       )}
 

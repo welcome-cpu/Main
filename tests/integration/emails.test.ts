@@ -41,6 +41,9 @@ function gateway(opts: { failCapture?: boolean; chargeFails?: boolean } = {}): P
       return { status: "succeeded" };
     },
     async cancel() {},
+    async refund() {
+      return { refundId: "re_fake" };
+    },
     async chargeOffSession(c) {
       return opts.chargeFails
         ? { ok: false, paymentIntentId: null, code: "card_declined", message: "Declined" }

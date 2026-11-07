@@ -40,6 +40,9 @@ function gateway(chargeFails = false): PaymentGateway & { intents: Map<string, P
       return { status: "succeeded" };
     },
     async cancel() {},
+    async refund() {
+      return { refundId: "re_fake" };
+    },
     async chargeOffSession(c: { paymentId: string }) {
       g.charges++;
       return chargeFails

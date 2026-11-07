@@ -4,18 +4,20 @@ import { revalidatePath } from "next/cache";
 import type { FormState } from "@/app/admin/(console)/actions";
 import { runAfterResponse } from "@/lib/after-response";
 import {
-  cancelBooking,
   recordManualPayment,
   resendConfirmation,
   scheduleBalanceRetry,
 } from "@/lib/admin/bookings";
+import { cancelBookingWithRefund, retryCancellationRefund } from "@/lib/admin/cancellations";
 import { requireAdmin } from "@/lib/admin/dal";
 import { isUuid } from "@/lib/admin/properties";
-import { cancelBookingSchema, fieldErrors, manualPaymentSchema } from "@/lib/admin/validation";
+import { cancelWithRefundSchema, fieldErrors, manualPaymentSchema } from "@/lib/admin/validation";
+import { cancelBookingInLodgify } from "@/lib/booking/lodgify-cancel";
 import { keepDespiteLodgify } from "@/lib/booking/lodgify-check";
 import { isLodgifyPushEnabled, pushReservationToLodgify, resolveLodgifyPush } from "@/lib/booking/lodgify-push";
 import { processOutbox } from "@/lib/email/outbox";
 import { importLodgifyBookings } from "@/lib/guests/lodgify-import";
+import { formatPence } from "@/lib/money";
 import { chargeDueBalances } from "@/lib/payments/balance";
 import { isPaymentConfigured, stripeGateway } from "@/lib/payments/gateway";
 
@@ -29,15 +31,45 @@ function done(id: string, message: string): FormState {
   return { ok: true, message };
 }
 
-export async function cancelBookingAction(id: string, _: FormState, formData: FormData): Promise<FormState> {
+export async function cancelWithRefundAction(id: string, _: FormState, formData: FormData): Promise<FormState> {
   const admin = await requireAdmin();
   if (!isUuid(id)) return { message: "Unknown booking." };
-  const parsed = cancelBookingSchema.safeParse(Object.fromEntries(formData));
+  const parsed = cancelWithRefundSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
-  const result = await cancelBooking(admin, id, parsed.data);
+  const result = await cancelBookingWithRefund(admin, id, parsed.data, { gateway: stripeGateway, paymentsReady: isPaymentConfigured() });
+  if (result.error) {
+    revalidatePath(page(id));
+    return { message: result.error };
+  }
+  const { preview, refundError } = result;
+  if (refundError) {
+    revalidatePath(page(id));
+    return { message: `Booking cancelled and dates released, but the refund failed: ${refundError} Retry it on this page.` };
+  }
+  const left = [
+    preview?.voucherPence ? `give ${formatPence(preview.voucherPence)} back on voucher ${preview.voucherCode ?? ""} in Gift Up` : "",
+    preview?.manualPence ? `return ${formatPence(preview.manualPence)} paid outside Stripe` : "",
+  ].filter(Boolean);
+  return done(id, `Booking cancelled and dates released. ${preview?.cardPence ? `${formatPence(preview.cardPence)} refunded to the card.` : "No card refund."}${left.length ? ` Still to do by hand: ${left.join("; ")}.` : ""}`);
+}
+
+export async function retryCancellationRefundAction(id: string): Promise<FormState> {
+  const admin = await requireAdmin();
+  if (!isUuid(id)) return { message: "Unknown booking." };
+  if (!isPaymentConfigured()) return { message: "Card refunds can't be made here because Stripe isn't set up." };
+  const result = await retryCancellationRefund(admin, id, stripeGateway);
+  revalidatePath(page(id));
   if (result.error) return { message: result.error };
-  return done(id, "Booking cancelled and dates released. Any refund must be made in Stripe.");
+  return done(id, "Refund made.");
+}
+
+export async function retryLodgifyCancelAction(id: string): Promise<FormState> {
+  await requireAdmin();
+  if (!isUuid(id)) return { message: "Unknown booking." };
+  const outcome = await cancelBookingInLodgify(id);
+  revalidatePath(page(id));
+  return outcome === "DONE" ? { ok: true, message: "Released in Lodgify." } : { message: "Lodgify didn't confirm it. See the note on this page." };
 }
 
 export async function resendConfirmationAction(id: string): Promise<FormState> {

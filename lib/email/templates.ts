@@ -265,17 +265,35 @@ export function guestBalanceReceived(d: BookingEmailData, amountPence: number): 
   return { subject, html, text };
 }
 
-export function guestBookingCancelled(d: BookingEmailData): RenderedEmail {
+export type CancellationRefundSummary = {
+  cardPence: number;
+  voucherPence: number;
+  voucherCode: string | null;
+  manualPence: number;
+};
+
+function refundLines(refund: CancellationRefundSummary, currency: string) {
+  const m = (pence: number) => formatPence(pence, currency);
+  const lines: string[] = [];
+  if (refund.cardPence > 0) lines.push(`We've refunded ${m(refund.cardPence)} to the card you paid with. It usually reaches your account within 5 to 10 working days.`);
+  if (refund.voucherPence > 0) lines.push(`We'll give ${m(refund.voucherPence)} back as credit on your gift voucher${refund.voucherCode ? ` ${refund.voucherCode}` : ""}.`);
+  if (refund.manualPence > 0) lines.push(`We'll return ${m(refund.manualPence)} the same way you paid it, and we'll be in touch if we need any details.`);
+  return lines.length ? lines : ["Under our cancellation terms, no refund is due for this cancellation."];
+}
+
+export function guestBookingCancelled(d: BookingEmailData, refund?: CancellationRefundSummary): RenderedEmail {
   const subject = `Your booking at ${d.propertyName} has been cancelled (${d.reference})`;
   const body = `Your booking below has been cancelled. If you have any questions about this, please get in touch.`;
+  const refunds = refund ? refundLines(refund, d.quote.currency) : [];
   const html = layout(
     "Your booking has been cancelled",
     p(`Dear ${escapeHtml(d.guestFirstName)},`) +
       p(escapeHtml(body)) +
+      refunds.map((line) => p(escapeHtml(line))).join("") +
       detailsTable(stayRows(d)) +
       p(`Reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a>.`)
   );
-  const text = [`Dear ${d.guestFirstName},`, "", body, "", textTable(stayRows(d)), "", `Reply or write to ${d.contactEmail}.`].join("\n");
+  const text = [`Dear ${d.guestFirstName},`, "", body, "", ...refunds.flatMap((line) => [line, ""]), textTable(stayRows(d)), "", `Reply or write to ${d.contactEmail}.`].join("\n");
   return { subject, html, text };
 }
 

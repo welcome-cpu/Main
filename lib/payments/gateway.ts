@@ -44,6 +44,15 @@ export type OffSessionCharge = {
   description: string;
 };
 
+export type RefundRequest = {
+  paymentIntentId: string;
+  amountPence: number;
+  /** Repeating a request with the same key can't refund twice. */
+  idempotencyKey: string;
+  reservationId: string;
+  reference: string;
+};
+
 export type ChargeResult =
   | { ok: true; paymentIntentId: string; status: string }
   | { ok: false; paymentIntentId: string | null; code: string; message: string };
@@ -57,6 +66,8 @@ export interface PaymentGateway {
   capture(paymentIntentId: string): Promise<{ status: string }>;
   cancel(paymentIntentId: string): Promise<void>;
   chargeOffSession(charge: OffSessionCharge): Promise<ChargeResult>;
+  /** Refunds part or all of a payment. Throws if Stripe doesn't make the refund. */
+  refund(refund: RefundRequest): Promise<{ refundId: string }>;
   /** Verifies a webhook's signature and returns the event; throws if invalid. */
   parseWebhook(payload: string, signature: string): Stripe.Event;
 }
@@ -225,6 +236,22 @@ export const stripeGateway: PaymentGateway = {
         message: e.message ?? "The card couldn't be charged.",
       };
     }
+  },
+
+  async refund(r) {
+    const refund = await stripe().refunds.create(
+      {
+        payment_intent: r.paymentIntentId,
+        amount: r.amountPence,
+        reason: "requested_by_customer",
+        metadata: { reservation_id: r.reservationId, reference: r.reference },
+      },
+      { idempotencyKey: r.idempotencyKey }
+    );
+    if (refund.status === "failed" || refund.status === "canceled") {
+      throw new Error(`Stripe reports the refund as ${refund.status}.`);
+    }
+    return { refundId: refund.id };
   },
 
   parseWebhook(payload, signature) {
