@@ -194,7 +194,7 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Refunds are made in the Stripe dashboard (search for the payment id above); they appear here automatically.
+            Cancelling below makes the refund due. Any extra refund is made in the Stripe dashboard (search for the payment id above) and appears here automatically.
             Gift voucher amounts on a booking you cancel aren&apos;t given back automatically: give any refund due on them back as voucher credit in Gift Up.
           </p>
         </section>
