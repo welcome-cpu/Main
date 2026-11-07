@@ -69,32 +69,36 @@ describe("calculateCancellationRefund", () => {
 
   describe("moved bookings", () => {
     const newArrival = "2027-12-01";
+    const beforeNew = (n: number) => new Date(Date.parse(`${newArrival}T12:00:00Z`) - n * 86_400_000);
 
-    it("keeps the full refund of the day it moved, however close the new arrival is", () => {
-      const r = refund({
-        arrivalDate: newArrival,
-        cancelledAt: new Date("2027-11-30T12:00:00Z"),
-        move: { movedAt: daysBefore(30), arrivalWhenMoved: arrival },
-      });
-      expect(r).toEqual({ rule: "FULL", daysBefore: 30, refundPence: 50000 });
+    it("keeps the full refund of the day it moved while the new dates also allow it", () => {
+      const r = refund({ arrivalDate: newArrival, cancelledAt: beforeNew(40), move: { movedAt: daysBefore(30), arrivalWhenMoved: arrival } });
+      expect(r).toEqual({ rule: "FULL", daysBefore: 30, refundPence: 50000, basis: "MOVE_DAY" });
+    });
+
+    it("uses the new dates when they're stricter: moved with a full refund, cancelled the day before the new arrival", () => {
+      const r = refund({ arrivalDate: newArrival, cancelledAt: beforeNew(1), move: { movedAt: daysBefore(30), arrivalWhenMoved: arrival } });
+      expect(r).toEqual({ rule: "NONE", daysBefore: 1, refundPence: 0, basis: "NEW_DATES" });
+    });
+
+    it("uses the new dates when they're stricter: moved 45 days out, cancelled 10 days before the new arrival", () => {
+      const r = refund({ arrivalDate: newArrival, cancelledAt: beforeNew(10), move: { movedAt: daysBefore(45), arrivalWhenMoved: arrival } });
+      expect(r).toEqual({ rule: "HALF_OF_TOTAL", daysBefore: 10, refundPence: 25000, basis: "NEW_DATES" });
     });
 
     it("keeps the 50% of the day it moved, however far off the new arrival is", () => {
-      const r = refund({
-        arrivalDate: newArrival,
-        cancelledAt: daysBefore(7),
-        move: { movedAt: daysBefore(7), arrivalWhenMoved: arrival },
-      });
-      expect(r).toEqual({ rule: "HALF_OF_TOTAL", daysBefore: 7, refundPence: 25000 });
+      const r = refund({ arrivalDate: newArrival, cancelledAt: daysBefore(7), move: { movedAt: daysBefore(7), arrivalWhenMoved: arrival } });
+      expect(r).toEqual({ rule: "HALF_OF_TOTAL", daysBefore: 7, refundPence: 25000, basis: "MOVE_DAY" });
     });
 
     it("keeps no refund if it moved under 7 days before, however far off the new arrival is", () => {
-      const r = refund({
-        arrivalDate: newArrival,
-        cancelledAt: daysBefore(3),
-        move: { movedAt: daysBefore(6), arrivalWhenMoved: arrival },
-      });
-      expect(r).toEqual({ rule: "NONE", daysBefore: 6, refundPence: 0 });
+      const r = refund({ arrivalDate: newArrival, cancelledAt: daysBefore(3), move: { movedAt: daysBefore(6), arrivalWhenMoved: arrival } });
+      expect(r).toEqual({ rule: "NONE", daysBefore: 6, refundPence: 0, basis: "MOVE_DAY" });
+    });
+
+    it("never refunds credit held after moving to cheaper dates", () => {
+      const r = refund({ totalPence: 40000, paidPence: 50000, arrivalDate: newArrival, cancelledAt: beforeNew(60), move: { movedAt: daysBefore(60), arrivalWhenMoved: arrival } });
+      expect(r).toMatchObject({ rule: "FULL", refundPence: 40000 });
     });
   });
 

@@ -66,27 +66,33 @@ export function carryDiscount(d: BookedDiscount | null, newAccommodationPence: n
 export type MovePaymentPlan = {
   /** Still to pay at the new price (0 if paid in full or more). */
   owedPence: number;
+  /** The extra cost of the new dates, charged to the saved card when the booking moves. */
+  payNowPence: number;
   /** Paid beyond the new price, held as credit for a future stay. */
   creditPence: number;
-  /** What happens to the balance payment. */
+  /** What happens to the balance payment (what's owed, less anything charged now). */
   balance:
     | { action: "NONE" }
     | { action: "CANCEL"; paymentId: string }
     | { action: "UPDATE"; paymentId: string; amountPence: number; dueDate: string }
     | { action: "CREATE"; amountPence: number; dueDate: string };
-  /** Whether the saved card will be charged automatically; if not, the owner collects it. */
+  /** Whether the balance will be charged to the saved card; if not, the owner collects it. */
   chargedAutomatically: boolean;
 };
 
 /**
- * How the money changes when a booking moves. Whatever is still owed at the
- * new price becomes the balance, due on the usual date before the new arrival
- * (or straight away, if that date has passed), and is charged to the card the
- * guest saved when paying their deposit. A guest who paid in full had no card
- * saved, so any extra is collected by the owner. Money paid beyond the new
- * price is held as credit.
+ * How the money changes when a booking moves (rental agreement clause 3):
+ *   - dearer dates: the difference is charged to the card the guest saved when
+ *     paying their deposit, at the time of the change;
+ *   - the balance they already owed stays, due on the usual date before the
+ *     new arrival (or straight away, if that date has passed);
+ *   - cheaper dates: the balance shrinks, and money paid beyond the new price
+ *     is held as credit.
+ * A guest who paid in full had no card saved, so anything extra goes on a
+ * balance for the owner to collect.
  */
 export function planMovePayment(input: {
+  oldTotalPence: number;
   newTotalPence: number;
   paidPence: number;
   pendingBalance: { paymentId: string; amountPence: number } | null;
@@ -98,29 +104,19 @@ export function planMovePayment(input: {
   const difference = input.newTotalPence - input.paidPence;
   const owedPence = Math.max(0, difference);
   const creditPence = Math.max(0, -difference);
+  const owedBefore = Math.max(0, input.oldTotalPence - input.paidPence);
+  const payNowPence = input.hasSavedCard ? Math.max(0, owedPence - owedBefore) : 0;
+  const balancePence = owedPence - payNowPence;
   const dueDate = maxDate(input.balanceDueDate, input.today);
   const pending = input.pendingBalance;
 
-  if (owedPence === 0) {
-    return {
-      owedPence,
-      creditPence,
-      balance: pending ? { action: "CANCEL", paymentId: pending.paymentId } : { action: "NONE" },
-      chargedAutomatically: false,
-    };
-  }
-  if (pending) {
-    return {
-      owedPence,
-      creditPence,
-      balance: { action: "UPDATE", paymentId: pending.paymentId, amountPence: owedPence, dueDate },
-      chargedAutomatically: input.hasSavedCard,
-    };
-  }
-  return {
-    owedPence,
-    creditPence,
-    balance: { action: "CREATE", amountPence: owedPence, dueDate },
-    chargedAutomatically: input.hasSavedCard,
-  };
+  const balance: MovePaymentPlan["balance"] =
+    balancePence === 0
+      ? pending
+        ? { action: "CANCEL", paymentId: pending.paymentId }
+        : { action: "NONE" }
+      : pending
+        ? { action: "UPDATE", paymentId: pending.paymentId, amountPence: balancePence, dueDate }
+        : { action: "CREATE", amountPence: balancePence, dueDate };
+  return { owedPence, payNowPence, creditPence, balance, chargedAutomatically: balancePence > 0 && input.hasSavedCard };
 }

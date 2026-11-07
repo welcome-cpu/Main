@@ -6,7 +6,7 @@ export const CANCELLATION_TERMS =
   "Cancellation: Full refund if you cancel 30 or more days before arrival. 50% refund between 7 and 30 days. No refund within 7 days of arrival. We recommend travel insurance to cover the final 7 days.";
 
 export const DATE_CHANGE_TERMS =
-  "Changing dates: Move your stay once, free of charge, up to 48 hours before arrival, to available dates within 12 months of your original arrival date. Your new stay must be the same length or longer. If the new dates cost more, you pay the difference; if they cost less, we hold the difference as credit for a future stay. A moved booking keeps the cancellation terms that applied on the day you moved it.";
+  "Changing dates: Move your stay once, free of charge, up to 48 hours before arrival, to available dates within 12 months of your original arrival date. Your new stay must be the same length or longer. If the new dates cost more, you pay the difference; if they cost less, we hold the difference as credit for a future stay. A moved booking keeps the cancellation terms that applied on the day you moved it, or those for your new dates if they're stricter.";
 
 /**
  * When the policy above took effect. It applies to new bookings only, so

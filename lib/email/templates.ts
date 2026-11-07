@@ -301,12 +301,18 @@ export type BookingMoveSummary = {
   fromCheckIn: string;
   fromCheckOut: string;
   oldTotalPence: number;
+  /** Paid before the move. */
   paidPence: number;
-  owedPence: number;
-  creditPence: number;
-  /** When what's owed is taken from the saved card; null if we'll collect it another way. */
+  /** The extra cost of the new dates, taken from the saved card when moving. */
+  chargedNowPence: number;
+  /** The extra cost, when taking it from the card failed. */
+  failedNowPence: number;
+  /** The balance still to pay. */
+  balancePence: number;
+  /** When the balance is taken from the saved card; null if we'll collect it another way. */
   chargeDate: string | null;
-  /** Booked under the current terms, so it keeps those of the day it moved. */
+  creditPence: number;
+  /** Booked under the current terms, so the moved-booking cancellation terms apply. */
   newTerms: boolean;
 };
 
@@ -319,18 +325,20 @@ export function guestBookingMoved(d: BookingEmailData, move: BookingMoveSummary)
       ? `The price is unchanged at ${m(d.quote.totalPence)}.`
       : `The price for your new dates is ${m(d.quote.totalPence)} (it was ${m(move.oldTotalPence)}).`,
   ];
-  if (move.owedPence > 0) {
+  if (move.chargedNowPence > 0) lines.push(`We've taken the difference of ${m(move.chargedNowPence)} from the card you paid with.`);
+  if (move.failedNowPence > 0) lines.push(`We couldn't take the difference of ${m(move.failedNowPence)} from your card, so we'll be in touch to arrange it.`);
+  if (move.balancePence > 0) {
     lines.push(
       move.chargeDate
-        ? `You've paid ${m(move.paidPence)} so far. The remaining ${m(move.owedPence)} will be taken from the card you paid with on ${showDate(move.chargeDate)}.`
-        : `You've paid ${m(move.paidPence)} so far, so ${m(move.owedPence)} is still to pay. We'll be in touch to arrange it.`
+        ? `The balance of ${m(move.balancePence)} will be taken from the card you paid with on ${showDate(move.chargeDate)}.`
+        : `${m(move.balancePence)} is still to pay. We'll be in touch to arrange it.`
     );
   } else if (move.creditPence > 0) {
     lines.push(`You've paid ${m(move.paidPence)}, which is ${m(move.creditPence)} more than your new dates cost. We're holding ${m(move.creditPence)} as credit for a future stay.`);
-  } else {
+  } else if (move.failedNowPence === 0) {
     lines.push("Your stay is paid in full.");
   }
-  if (move.newTerms) lines.push("Your booking keeps the cancellation terms that applied on the day it was moved.");
+  if (move.newTerms) lines.push("Your booking keeps the cancellation terms that applied on the day it was moved, or those for your new dates if they're stricter.");
   const rows = [...stayRows(d), ...priceRows(d.quote)];
   const html = layout(
     "Your stay has moved",

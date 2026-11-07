@@ -134,12 +134,14 @@ email as the receipt.
   (`lib/admin/moves.ts`, rules in `lib/booking/move-pricing.ts`). It's the owner's
   call, so there are no limits on when or where to; anything outside the published
   terms is shown as a warning. The new dates are priced like a new booking, keeping
-  the guest's extras (at their booked prices) and discount. What's still owed
-  becomes the balance, charged to the saved card on the usual date (or straight
-  away if that has passed); with no saved card it's listed under *Needs attention*
-  to collect by hand. Money paid beyond the new price is held as credit (shown on
-  the booking). A moved booking keeps the cancellation terms of the day it first
-  moved. Lodgify isn't changed: change the dates there too, or the booking shows
+  the guest's extras (at their booked prices) and discount. Dearer dates: the
+  difference is charged to the saved card when the booking moves (a TOP_UP
+  payment), and the balance already owed stays on its usual date before the new
+  arrival. With no saved card, or if the card is declined, it's listed under
+  *Needs attention* to collect by hand. Cheaper dates reduce the balance; money
+  paid beyond the new price is held as credit (shown on the booking, never
+  refunded). A moved booking keeps the cancellation terms of the day it first
+  moved, or those for its new dates if stricter (rental agreement clause 2.4). Lodgify isn't changed: change the dates there too, or the booking shows
   as different in Lodgify and its balance waits.
 - Cancelling or changing it **in Lodgify** is spotted: upcoming bookings are
   compared with Lodgify about every 6 hours (send-to-lodgify job) and again

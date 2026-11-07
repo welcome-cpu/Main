@@ -131,14 +131,15 @@ describe("payment receipt", () => {
 });
 
 describe("guestBookingMoved", () => {
-  const move = { fromCheckIn: "2026-05-01", fromCheckOut: "2026-05-04", oldTotalPence: 40000, paidPence: 20000, owedPence: 0, creditPence: 0, chargeDate: null, newTerms: true };
+  const move = { fromCheckIn: "2026-05-01", fromCheckOut: "2026-05-04", oldTotalPence: 40000, paidPence: 20000, chargedNowPence: 0, failedNowPence: 0, balancePence: 0, creditPence: 0, chargeDate: null, newTerms: true };
 
   it("gives the old and new dates, the new price and when the rest is taken", () => {
-    const e = guestBookingMoved(data, { ...move, owedPence: 33500, chargeDate: "2026-07-01" });
+    const e = guestBookingMoved(data, { ...move, chargedNowPence: 13500, balancePence: 20000, chargeDate: "2026-07-01" });
     expect(e.subject).toContain("has moved to");
     expect(e.text).toContain("has moved to the new dates below");
     expect(e.text).toContain("(it was £400.00)");
-    expect(e.text).toContain("The remaining £335.00 will be taken from the card you paid with on");
+    expect(e.text).toContain("We've taken the difference of £135.00 from the card you paid with.");
+    expect(e.text).toContain("The balance of £200.00 will be taken from the card you paid with on");
     expect(e.text).toContain("keeps the cancellation terms that applied on the day it was moved");
     expect(e.html).toContain("Your stay has moved");
   });
@@ -147,6 +148,12 @@ describe("guestBookingMoved", () => {
     const e = guestBookingMoved(data, { ...move, creditPence: 2500, newTerms: false });
     expect(e.text).toContain("as credit for a future stay");
     expect(e.text).not.toContain("cancellation terms");
+  });
+
+  it("says when the difference couldn't be taken", () => {
+    const e = guestBookingMoved(data, { ...move, failedNowPence: 13500 });
+    expect(e.text).toContain("We couldn't take the difference of £135.00 from your card");
+    expect(e.text).not.toContain("paid in full");
   });
 
   it("escapes the guest's name", () => {

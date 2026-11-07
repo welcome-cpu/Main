@@ -8,7 +8,7 @@ import { daysBetween, todayInZone } from "@/lib/dates";
 const UK = "Europe/London";
 
 export type RefundRule =
-  /** 30 or more days before arrival: everything paid. */
+  /** 30 or more days before arrival: everything paid, except credit held after a move. */
   | "FULL"
   /** 7 to 29 days: 50% of the total booking value, capped at what's been paid. */
   | "HALF_OF_TOTAL"
@@ -32,26 +32,40 @@ export type RefundInput = {
 
 export type RefundDecision = {
   rule: RefundRule;
-  /** The days the rule was chosen from. For a moved booking: on the day it was moved. */
+  /** The days before arrival the rule was chosen from. */
   daysBefore: number;
   refundPence: number;
+  /**
+   * For a moved booking, which measure gave the (smaller) refund: the day it
+   * moved against the arrival it had then, or today against the new arrival.
+   */
+  basis?: "MOVE_DAY" | "NEW_DATES";
 };
 
-export function calculateCancellationRefund(input: RefundInput): RefundDecision {
-  const { totalPence, paidPence, arrivalDate, bookedAt, cancelledAt, move } = input;
-
-  // A moved booking keeps the terms of the day it moved, measured against the
-  // arrival date it had that day: the new arrival date doesn't come into it.
-  const daysBefore = move
-    ? daysBetween(todayInZone(UK, move.movedAt), move.arrivalWhenMoved)
-    : daysBetween(todayInZone(UK, cancelledAt), arrivalDate);
-
-  if (isOnOldTerms(bookedAt)) return { rule: "OLD_TERMS", daysBefore, refundPence: 0 };
-  if (daysBefore >= 30) return { rule: "FULL", daysBefore, refundPence: paidPence };
+function byDays(daysBefore: number, totalPence: number, paidPence: number): RefundDecision {
+  // Credit held after a move to cheaper dates (paid beyond the total) isn't refundable.
+  if (daysBefore >= 30) return { rule: "FULL", daysBefore, refundPence: Math.min(paidPence, totalPence) };
   if (daysBefore >= 7) {
     return { rule: "HALF_OF_TOTAL", daysBefore, refundPence: Math.min(Math.round(totalPence / 2), paidPence) };
   }
   return { rule: "NONE", daysBefore, refundPence: 0 };
+}
+
+export function calculateCancellationRefund(input: RefundInput): RefundDecision {
+  const { totalPence, paidPence, arrivalDate, bookedAt, cancelledAt, move } = input;
+
+  const now = daysBetween(todayInZone(UK, cancelledAt), arrivalDate);
+  if (isOnOldTerms(bookedAt)) return { rule: "OLD_TERMS", daysBefore: now, refundPence: 0 };
+  if (!move) return byDays(now, totalPence, paidPence);
+
+  // A moved booking keeps the terms of the day it moved (measured against the
+  // arrival date it had that day), or those for its new dates if stricter:
+  // the rental agreement lets the host keep whichever is greater.
+  const onMoveDay = byDays(daysBetween(todayInZone(UK, move.movedAt), move.arrivalWhenMoved), totalPence, paidPence);
+  const onNewDates = byDays(now, totalPence, paidPence);
+  return onNewDates.refundPence < onMoveDay.refundPence
+    ? { ...onNewDates, basis: "NEW_DATES" }
+    : { ...onMoveDay, basis: "MOVE_DAY" };
 }
 
 export type PaidBy = { cardPence: number; voucherPence: number; manualPence: number };
@@ -86,15 +100,18 @@ export function allocateToCardPayments<P extends { refundablePence: number }>(ca
   return allocated;
 }
 
-export function describeRefundRule(decision: RefundDecision, moved: boolean) {
-  const when = moved
-    ? `It was ${decision.daysBefore} days before arrival when the booking was moved`
-    : `It's ${decision.daysBefore} days before arrival`;
+export function describeRefundRule(decision: RefundDecision) {
+  const when =
+    decision.basis === "MOVE_DAY"
+      ? `It was ${decision.daysBefore} days before arrival when the booking was moved`
+      : decision.basis === "NEW_DATES"
+        ? `It's ${decision.daysBefore} days before the new arrival (stricter than on the day it moved)`
+        : `It's ${decision.daysBefore} days before arrival`;
   switch (decision.rule) {
     case "OLD_TERMS":
       return "Booked before the new policy, so its payments are non-refundable.";
     case "FULL":
-      return `${when}: 100% of what's been paid.`;
+      return `${when}: 100% of what's been paid${decision.basis ? ", apart from any credit held" : ""}.`;
     case "HALF_OF_TOTAL":
       return `${when}: 50% of the total booking value, up to what's been paid.`;
     case "NONE":

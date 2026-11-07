@@ -100,8 +100,9 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                 <Link href={`/admin/bookings/${c.reservationId}`} className="underline">
                   {c.reference}
                 </Link>{" "}
-                ({c.propertyName}, arriving {show(c.checkIn)}): {formatPence(c.amountPence)} to collect from the guest. There&apos;s no saved card to
-                charge, so record it on the booking once paid.
+                ({c.propertyName}, arriving {show(c.checkIn)}): {formatPence(c.amountPence)} to collect from the guest.{" "}
+                {c.why === "CHARGE_FAILED" ? "Charging the saved card for a date change failed" : "There's no saved card to charge"}, so record it on the
+                booking once paid.
               </li>
             ))}
             {attention.cancellationProblems.map((c) => (

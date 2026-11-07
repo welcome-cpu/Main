@@ -61,13 +61,13 @@ export async function moveBookingAction(id: string, _: FormState, formData: Form
   if (!isUuid(id)) return { message: "Unknown booking." };
   const parsed = moveBookingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
-  const result = await moveBooking(admin, id, parsed.data);
+  const result = await moveBooking(admin, id, parsed.data, { gateway: stripeGateway, paymentsReady: isPaymentConfigured() });
   if (!result.ok) {
     revalidatePath(page(id));
     return { message: result.error };
   }
   done(id, "Booking moved.");
-  redirect(`${page(id)}?moved=1#move`);
+  redirect(`${page(id)}?moved=1${result.chargeError ? "&chargeFailed=1" : ""}#move`);
 }
 
 export async function retryCancellationRefundAction(id: string): Promise<FormState> {

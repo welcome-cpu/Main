@@ -14,6 +14,8 @@ import { isOnOldTerms } from "@/lib/booking/terms";
 import { addDays, daysBetween, isValidDate, todayInZone, zonedTimeToUtc } from "@/lib/dates";
 import { db, type Sql, type Tx } from "@/lib/db/client";
 import { enqueueBookingMovedEmail } from "@/lib/email/booking-emails";
+import { logError } from "@/lib/log";
+import type { PaymentGateway } from "@/lib/payments/gateway";
 import { priceStay } from "@/lib/pricing/quote-service";
 import type { Quote } from "@/lib/pricing/quote";
 
@@ -42,7 +44,7 @@ export type MovePreview = {
   newTerms: boolean;
 };
 
-type MoveResult = { ok: true; preview: MovePreview } | { ok: false; error: string };
+type MoveResult = { ok: true; preview: MovePreview; chargeError?: string } | { ok: false; error: string };
 
 type Loaded = {
   status: string;
@@ -62,19 +64,20 @@ type Loaded = {
   createdAt: Date;
   movedAt: Date | null;
   lodgifyBookingId: number | null;
+  propertyName: string;
   timezone: string;
   checkInTime: string;
   balanceDueDaysBefore: number;
 };
 
-async function workOutMove(sql: Sql | Tx, id: string, checkIn: string, checkOut: string, now: Date): Promise<MoveResult & { extras?: (BookedExtra & { id: string })[]; card?: { customerId: string; paymentMethodId: string } | null; previous?: Quote }> {
+async function workOutMove(sql: Sql | Tx, id: string, checkIn: string, checkOut: string, now: Date): Promise<MoveResult & { extras?: (BookedExtra & { id: string })[]; card?: { customerId: string; paymentMethodId: string } | null; previous?: Quote; propertyName?: string }> {
   if (!isValidDate(checkIn) || !isValidDate(checkOut) || checkOut <= checkIn) {
     return { ok: false, error: "Choose a check-out date after the check-in date." };
   }
   const [r] = await sql<Loaded[]>`
     SELECT r.status, r.reference, r.property_id, r.check_in::text, r.check_out::text, r.adults, r.children, r.infants, r.pets,
            r.total_pence, r.accommodation_pence, r.discount_pence, r.discount_code_id, r.price_breakdown, r.created_at,
-           r.moved_at, r.lodgify_booking_id, p.timezone, to_char(p.check_in_time, 'HH24:MI') AS check_in_time,
+           r.moved_at, r.lodgify_booking_id, p.name AS property_name, p.timezone, to_char(p.check_in_time, 'HH24:MI') AS check_in_time,
            p.balance_due_days_before
     FROM reservations r JOIN properties p ON p.id = r.property_id
     WHERE r.id = ${id}
@@ -152,6 +155,7 @@ async function workOutMove(sql: Sql | Tx, id: string, checkIn: string, checkOut:
   const newTotalPence = base.accommodationPence + base.cleaningFeePence + base.petFeePence + extrasPence - (discount?.pence ?? 0);
   const today = todayInZone(r.timezone, now);
   const plan = planMovePayment({
+    oldTotalPence: r.totalPence,
     newTotalPence,
     paidPence,
     pendingBalance: pending ? { paymentId: pending.id, amountPence: pending.amountPence } : null,
@@ -177,7 +181,7 @@ async function workOutMove(sql: Sql | Tx, id: string, checkIn: string, checkOut:
     totalPence: newTotalPence,
     voucher: oldVoucher ? { code: oldVoucher.code, pence: voucherPence } : null,
     dueNowPence,
-    balancePence: plan.owedPence,
+    balancePence: plan.owedPence - plan.payNowPence,
     balanceDueDate: plan.balance.action === "UPDATE" || plan.balance.action === "CREATE" ? plan.balance.dueDate : null,
   };
 
@@ -187,7 +191,7 @@ async function workOutMove(sql: Sql | Tx, id: string, checkIn: string, checkOut:
     hoursToArrival < 48 ? (hoursToArrival < 0 ? "The original arrival date has passed." : "It's less than 48 hours before the original arrival.") : "",
     checkIn > addDays(r.checkIn, 365) ? "The new arrival is more than 12 months after the original one." : "",
     nights < oldNights ? `The new stay is shorter (${nights} nights instead of ${oldNights}).` : "",
-    r.movedAt ? "This booking has been moved before. It keeps the cancellation terms from its first move." : "",
+    r.movedAt ? "This booking has been moved before. It keeps the cancellation terms from its first move (or its new dates', if stricter)." : "",
     checkIn < today ? "The new arrival date is in the past." : "",
     ...availability.reasons.filter((x) => x.code !== "DATES_TAKEN").map((x) => x.message),
   ].filter(Boolean);
@@ -210,6 +214,7 @@ async function workOutMove(sql: Sql | Tx, id: string, checkIn: string, checkOut:
     extras: bookedExtras,
     card,
     previous: r.priceBreakdown,
+    propertyName: r.propertyName,
   };
 }
 
@@ -223,11 +228,18 @@ export async function moveBooking(
   admin: AdminUser,
   id: string,
   input: { checkIn: string; checkOut: string; reason: string; emailGuest: boolean; approvedTotalPence: number; approvedOwedPence: number },
-  options: { now?: Date } = {}
+  options: { gateway: PaymentGateway; paymentsReady: boolean; now?: Date }
 ): Promise<MoveResult> {
   const now = options.now ?? new Date();
+  type Started = {
+    preview: MovePreview;
+    moveId: string;
+    propertyId: string;
+    topUp: { paymentId: string; customerId: string; paymentMethodId: string; description: string } | null;
+  };
+  let started: Started;
   try {
-    return await db().begin(async (tx): Promise<MoveResult> => {
+    const result = await db().begin(async (tx): Promise<{ ok: false; error: string } | ({ ok: true } & Started)> => {
       const [locked] = await tx<{ propertyId: string }[]>`SELECT property_id FROM reservations WHERE id = ${id}`;
       if (!locked) return { ok: false, error: "Booking not found." };
       await lockPropertyAvailability(tx, locked.propertyId);
@@ -235,12 +247,15 @@ export async function moveBooking(
 
       const found = await workOutMove(tx, id, input.checkIn, input.checkOut, now);
       if (!found.ok) return found;
-      const { preview, extras = [], card = null, previous } = found;
+      const { preview, extras = [], card = null, previous, propertyName = "" } = found;
       const { plan, quote } = preview;
 
       // The owner approved one price: if it no longer holds, they decide again.
       if (preview.newTotalPence !== input.approvedTotalPence || plan.owedPence !== input.approvedOwedPence) {
         return { ok: false, error: "The price or payment has changed since you previewed it, so nothing has been done. Check the new figures and approve again." };
+      }
+      if (plan.payNowPence > 0 && !options.paymentsReady) {
+        return { ok: false, error: "The difference can't be charged here because Stripe isn't set up, so nothing has been done." };
       }
 
       const total = quote.totalPence;
@@ -276,6 +291,17 @@ export async function moveBooking(
         `;
       }
 
+      // The extra cost of the new dates, charged once this has committed.
+      let topUp: Started["topUp"] = null;
+      if (plan.payNowPence > 0 && card) {
+        const [p] = await tx<{ id: string }[]>`
+          INSERT INTO payments (reservation_id, provider, kind, status, amount_pence, currency, due_date, stripe_customer_id, stripe_payment_method_id)
+          VALUES (${id}, 'STRIPE', 'TOP_UP', 'PENDING', ${plan.payNowPence}, ${quote.currency}, ${todayInZone("Europe/London", now)}, ${card.customerId}, ${card.paymentMethodId})
+          RETURNING id
+        `;
+        topUp = { paymentId: p.id, ...card, description: `${propertyName} date change to ${quote.checkIn}, ref ${preview.reference}` };
+      }
+
       const [move] = await tx<{ id: string }[]>`
         INSERT INTO reservation_moves (reservation_id, moved_at, moved_by, reason, from_check_in, from_check_out, to_check_in, to_check_out,
           old_total_pence, new_total_pence, paid_pence, owed_pence, credit_pence, charged_automatically, email_guest, previous_price_breakdown)
@@ -300,32 +326,92 @@ export async function moveBooking(
           oldTotalPence: preview.oldTotalPence,
           newTotalPence: total,
           owedPence: plan.owedPence,
+          payNowPence: plan.payNowPence,
           creditPence: plan.creditPence,
           warnings: preview.warnings,
           emailedGuest: input.emailGuest,
         },
       });
 
-      if (input.emailGuest) {
-        const chargeDate = plan.chargedAutomatically && (b.action === "UPDATE" || b.action === "CREATE") ? b.dueDate : null;
-        await enqueueBookingMovedEmail(tx, id, move.id, {
-          fromCheckIn: preview.from.checkIn,
-          fromCheckOut: preview.from.checkOut,
-          oldTotalPence: preview.oldTotalPence,
-          paidPence: preview.paidPence,
-          owedPence: plan.owedPence,
-          creditPence: plan.creditPence,
-          chargeDate,
-          newTerms: preview.newTerms,
-        });
-      }
-      return { ok: true, preview };
+      return { ok: true, preview, moveId: move.id, propertyId: locked.propertyId, topUp };
     });
+    if (!result.ok) return result;
+    started = result;
   } catch (error) {
     // The database's double-booking guard: someone took the dates meanwhile.
     if ((error as { code?: string }).code === "23P01") return { ok: false, error: "Those dates have just been taken, so nothing has been done." };
     throw error;
   }
+
+  const { preview, moveId, propertyId, topUp } = started;
+  const { plan } = preview;
+  let chargedNowPence = 0;
+  let chargeError: string | undefined;
+  if (topUp) {
+    let result: Awaited<ReturnType<PaymentGateway["chargeOffSession"]>>;
+    try {
+      result = await options.gateway.chargeOffSession({
+        paymentId: topUp.paymentId,
+        reservationId: id,
+        reference: preview.reference,
+        customerId: topUp.customerId,
+        paymentMethodId: topUp.paymentMethodId,
+        amountPence: plan.payNowPence,
+        currency: preview.quote.currency,
+        description: topUp.description,
+      });
+    } catch (error) {
+      logError("Charging a move's difference failed", error);
+      result = { ok: false, paymentIntentId: null, code: "error", message: String((error as Error)?.message ?? "The charge failed.") };
+    }
+    const succeeded = result.ok && result.status === "succeeded";
+    if (succeeded) chargedNowPence = plan.payNowPence;
+    else chargeError = result.ok ? `The payment is ${result.status}.` : result.message;
+    await db().begin(async (tx) => {
+      if (succeeded) {
+        await tx`
+          UPDATE payments SET status = 'SUCCEEDED', captured_at = now(), stripe_payment_intent_id = ${result.paymentIntentId}
+          WHERE id = ${topUp.paymentId} AND status = 'PENDING'
+        `;
+      } else {
+        await tx`
+          UPDATE payments SET status = 'FAILED', failed_at = now(),
+            stripe_payment_intent_id = COALESCE(${result.paymentIntentId}, stripe_payment_intent_id),
+            failure_code = ${result.ok ? `status_${result.status}` : result.code}, failure_message = ${chargeError!.slice(0, 300)}
+          WHERE id = ${topUp.paymentId} AND status = 'PENDING'
+        `;
+      }
+      await recordAudit(tx, {
+        actorType: "ADMIN",
+        actor: admin.email,
+        action: succeeded ? "payment.confirmed" : "payment.failed",
+        entityType: "payment",
+        entityId: topUp.paymentId,
+        propertyId,
+        details: { reference: preview.reference, kind: "TOP_UP", amountPence: plan.payNowPence, paymentIntentId: result.paymentIntentId, error: chargeError },
+      });
+    });
+  }
+
+  if (input.emailGuest) {
+    const b = plan.balance;
+    const balancePence = b.action === "UPDATE" || b.action === "CREATE" ? b.amountPence : 0;
+    await db().begin((tx) =>
+      enqueueBookingMovedEmail(tx, id, moveId, {
+        fromCheckIn: preview.from.checkIn,
+        fromCheckOut: preview.from.checkOut,
+        oldTotalPence: preview.oldTotalPence,
+        paidPence: preview.paidPence,
+        chargedNowPence,
+        failedNowPence: topUp && !chargedNowPence ? plan.payNowPence : 0,
+        balancePence,
+        chargeDate: plan.chargedAutomatically && (b.action === "UPDATE" || b.action === "CREATE") ? b.dueDate : null,
+        creditPence: plan.creditPence,
+        newTerms: preview.newTerms,
+      })
+    );
+  }
+  return { ok: true, preview, chargeError };
 }
 
 export type MoveRecord = {

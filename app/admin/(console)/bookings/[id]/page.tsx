@@ -53,6 +53,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
   const moveIn = param("moveIn");
   const moveOut = param("moveOut");
   const justMoved = param("moved") === "1";
+  const chargeFailed = param("chargeFailed") === "1";
   const [preview, cancellation, moves, movePreview] = await Promise.all([
     b.status === "CONFIRMED" ? previewCancellation(b.id) : null,
     getCancellationRecord(b.id),
@@ -241,7 +242,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
           {b.balancePence > 0 && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Received the balance another way (e.g. bank transfer)? Record it here. This stops the automatic charge.
+                Received money another way (e.g. bank transfer)? Record it here. Any automatic balance charge it makes unnecessary is called off.
               </p>
               <ManualPaymentForm action={recordPaymentAction.bind(null, b.id)} />
             </div>
@@ -279,6 +280,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
             {justMoved && (
               <p role="status" className="text-green-800">
                 Booking moved.
+                {chargeFailed && " Charging the difference to the saved card failed (see Payments): collect it from the guest and record it below."}
                 {b.lodgifyBookingId &&
                   ` Now change Lodgify booking ${b.lodgifyBookingId} to ${show(b.checkIn)} → ${show(b.checkOut)} too. Until it matches, it shows as different in Lodgify and its balance isn't charged.`}
               </p>
@@ -334,6 +336,12 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
                   {mv.plan.owedPence > 0 && (
                     <div className="flex justify-between gap-4 border-t border-border pt-1 font-semibold"><dt>Still to pay</dt><dd>{formatPence(mv.plan.owedPence)}</dd></div>
                   )}
+                  {mv.plan.payNowPence > 0 && (
+                    <div className="flex justify-between gap-4"><dt>Charged to the saved card now (the difference)</dt><dd>{formatPence(mv.plan.payNowPence)}</dd></div>
+                  )}
+                  {mv.plan.payNowPence > 0 && mv.plan.owedPence > mv.plan.payNowPence && (
+                    <div className="flex justify-between gap-4"><dt>Balance</dt><dd>{formatPence(mv.plan.owedPence - mv.plan.payNowPence)}</dd></div>
+                  )}
                   {mv.plan.creditPence > 0 && (
                     <div className="flex justify-between gap-4 border-t border-border pt-1 font-semibold"><dt>Held as credit for a future stay</dt><dd>{formatPence(mv.plan.creditPence)}</dd></div>
                   )}
@@ -344,11 +352,12 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
                 <p className="text-sm text-muted-foreground">
                   {mv.plan.owedPence > 0 && (mv.plan.balance.action === "UPDATE" || mv.plan.balance.action === "CREATE")
                     ? mv.plan.chargedAutomatically
-                      ? `It's charged to the guest's saved card with the daily balance run on ${show(mv.plan.balance.dueDate)}.`
+                      ? `The balance is charged to the guest's saved card with the daily balance run on ${show(mv.plan.balance.dueDate)}.`
                       : "There's no saved card (the guest paid in full when booking), so collect it from them and record it on this page once paid."
                     : mv.plan.creditPence > 0
                       ? "Nothing is refunded. Any balance still waiting to be charged is called off."
                       : ""}{" "}
+                  {mv.plan.payNowPence > 0 && "The difference is charged as soon as you move it; if the card is declined, the booking still moves and the difference is listed for you to collect."}{" "}
                   {mv.lodgifyBookingId
                     ? `Lodgify isn't changed from here: change booking ${mv.lodgifyBookingId} there to the new dates too. Until it matches, the booking shows as different in Lodgify and its balance isn't charged.`
                     : ""}
@@ -359,7 +368,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
                   checkOut={mv.to.checkOut}
                   approvedTotalPence={mv.newTotalPence}
                   approvedOwedPence={mv.plan.owedPence}
-                  confirmText={`Move ${b.reference} to ${show(mv.to.checkIn)} → ${show(mv.to.checkOut)} at ${formatPence(mv.newTotalPence)}?`}
+                  confirmText={`Move ${b.reference} to ${show(mv.to.checkIn)} → ${show(mv.to.checkOut)} at ${formatPence(mv.newTotalPence)}${mv.plan.payNowPence > 0 ? ` and charge ${formatPence(mv.plan.payNowPence)} to the guest's card now` : ""}?`}
                 />
               </div>
             )}

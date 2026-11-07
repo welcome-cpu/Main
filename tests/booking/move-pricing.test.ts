@@ -33,31 +33,67 @@ describe("carryDiscount", () => {
 });
 
 describe("planMovePayment", () => {
-  const base = { hasSavedCard: true, balanceDueDate: "2027-03-01", today: "2027-01-10" };
+  const base = { oldTotalPence: 45000, hasSavedCard: true, balanceDueDate: "2027-03-01", today: "2027-01-10" };
   const pending = { paymentId: "bal", amountPence: 22500 };
 
   it("same price with a deposit paid: the balance stays, due before the new arrival", () => {
     expect(planMovePayment({ ...base, newTotalPence: 45000, paidPence: 22500, pendingBalance: pending })).toEqual({
       owedPence: 22500,
+      payNowPence: 0,
       creditPence: 0,
       balance: { action: "UPDATE", paymentId: "bal", amountPence: 22500, dueDate: "2027-03-01" },
       chargedAutomatically: true,
     });
   });
 
-  it("dearer dates add the difference to the balance", () => {
-    const plan = planMovePayment({ ...base, newTotalPence: 60000, paidPence: 22500, pendingBalance: pending });
-    expect(plan.balance).toMatchObject({ action: "UPDATE", amountPence: 37500 });
+  it("dearer dates: the difference is charged now and the balance stays as it was", () => {
+    expect(planMovePayment({ ...base, newTotalPence: 60000, paidPence: 22500, pendingBalance: pending })).toMatchObject({
+      owedPence: 37500,
+      payNowPence: 15000,
+      balance: { action: "UPDATE", amountPence: 22500 },
+    });
+  });
+
+  it("dearer dates after paying in full: only the difference, charged now", () => {
+    expect(planMovePayment({ ...base, newTotalPence: 60000, paidPence: 45000, pendingBalance: null })).toEqual({
+      owedPence: 15000,
+      payNowPence: 15000,
+      creditPence: 0,
+      balance: { action: "NONE" },
+      chargedAutomatically: false,
+    });
+  });
+
+  it("dearer dates with credit held: the credit is used first", () => {
+    expect(planMovePayment({ ...base, oldTotalPence: 40000, newTotalPence: 46000, paidPence: 45000, pendingBalance: null })).toMatchObject({
+      owedPence: 1000,
+      payNowPence: 1000,
+    });
+  });
+
+  it("with no saved card, the difference goes on a balance for the owner to collect", () => {
+    expect(planMovePayment({ ...base, hasSavedCard: false, newTotalPence: 60000, paidPence: 45000, pendingBalance: null })).toEqual({
+      owedPence: 15000,
+      payNowPence: 0,
+      creditPence: 0,
+      balance: { action: "CREATE", amountPence: 15000, dueDate: "2027-03-01" },
+      chargedAutomatically: false,
+    });
   });
 
   it("cheaper dates take the difference off the balance", () => {
-    const plan = planMovePayment({ ...base, newTotalPence: 30000, paidPence: 22500, pendingBalance: pending });
-    expect(plan).toMatchObject({ owedPence: 7500, creditPence: 0, balance: { action: "UPDATE", amountPence: 7500 } });
+    expect(planMovePayment({ ...base, newTotalPence: 30000, paidPence: 22500, pendingBalance: pending })).toMatchObject({
+      owedPence: 7500,
+      payNowPence: 0,
+      creditPence: 0,
+      balance: { action: "UPDATE", amountPence: 7500 },
+    });
   });
 
   it("cheaper than what's been paid: the balance is called off and the rest held as credit", () => {
     expect(planMovePayment({ ...base, newTotalPence: 20000, paidPence: 22500, pendingBalance: pending })).toEqual({
       owedPence: 0,
+      payNowPence: 0,
       creditPence: 2500,
       balance: { action: "CANCEL", paymentId: "bal" },
       chargedAutomatically: false,
@@ -72,27 +108,15 @@ describe("planMovePayment", () => {
     });
   });
 
-  it("paid in full, dearer dates: a new balance for the difference on the saved card", () => {
-    expect(planMovePayment({ ...base, newTotalPence: 60000, paidPence: 45000, pendingBalance: null })).toEqual({
-      owedPence: 15000,
-      creditPence: 0,
-      balance: { action: "CREATE", amountPence: 15000, dueDate: "2027-03-01" },
-      chargedAutomatically: true,
-    });
-  });
-
-  it("with no saved card, the difference is for the owner to collect", () => {
-    expect(planMovePayment({ ...base, hasSavedCard: false, newTotalPence: 60000, paidPence: 45000, pendingBalance: null }).chargedAutomatically).toBe(false);
-  });
-
-  it("when the usual balance date has passed, what's owed is due straight away", () => {
-    const plan = planMovePayment({ ...base, balanceDueDate: "2027-01-05", newTotalPence: 60000, paidPence: 45000, pendingBalance: null });
+  it("when the usual balance date has passed, the balance is due straight away", () => {
+    const plan = planMovePayment({ ...base, balanceDueDate: "2027-01-05", newTotalPence: 45000, paidPence: 22500, pendingBalance: pending });
     expect(plan.balance).toMatchObject({ dueDate: "2027-01-10" });
   });
 
   it("the same price, paid in full: nothing changes", () => {
     expect(planMovePayment({ ...base, newTotalPence: 45000, paidPence: 45000, pendingBalance: null })).toMatchObject({
       owedPence: 0,
+      payNowPence: 0,
       creditPence: 0,
       balance: { action: "NONE" },
     });

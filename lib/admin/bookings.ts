@@ -330,7 +330,8 @@ export async function recordManualPayment(
     // The automatic charge for this balance must not also happen.
     await tx`
       UPDATE payments SET status = 'CANCELLED', cancelled_at = now()
-      WHERE reservation_id = ${id} AND kind = 'BALANCE' AND status IN ('PENDING', 'FAILED')
+      WHERE reservation_id = ${id} AND kind = 'BALANCE'
+        AND (status = 'FAILED' OR (status = 'PENDING' AND amount_pence > ${r.balancePence - input.amountPence}))
     `;
     const [p] = await tx<{ id: string }[]>`
       INSERT INTO payments (reservation_id, provider, kind, status, amount_pence, currency, captured_at, failure_message)
@@ -395,7 +396,7 @@ export type Attention = {
   /** Cancelled bookings whose refund or release in Lodgify hasn't gone through. */
   cancellationProblems: { reservationId: string; reference: string; message: string }[];
   /** Money owed after a move by a guest with no saved card: the owner collects it. */
-  balancesToCollect: { reservationId: string; reference: string; propertyName: string; checkIn: string; amountPence: number }[];
+  balancesToCollect: { reservationId: string; reference: string; propertyName: string; checkIn: string; amountPence: number; why: "NO_CARD" | "CHARGE_FAILED" }[];
 };
 
 /** Things the owner needs to deal with. */
@@ -456,11 +457,16 @@ export async function needsAttention(): Promise<Attention> {
       WHERE status = 'CANCELLED' AND lodgify_cancel_status IN ('FAILED', 'NOT_SENT') AND check_out >= current_date
     `,
     sql<Attention["balancesToCollect"]>`
-      SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in, pay.amount_pence
+      SELECT r.id AS reservation_id, r.reference, p.name AS property_name, r.check_in, pay.amount_pence, 'NO_CARD' AS why
       FROM payments pay JOIN reservations r ON r.id = pay.reservation_id JOIN properties p ON p.id = r.property_id
       WHERE pay.kind = 'BALANCE' AND pay.status = 'PENDING' AND r.status = 'CONFIRMED'
         AND (pay.stripe_customer_id IS NULL OR pay.stripe_payment_method_id IS NULL)
-      ORDER BY r.check_in
+      UNION ALL
+      SELECT r.id, r.reference, p.name, r.check_in, pay.amount_pence, 'CHARGE_FAILED'
+      FROM payments pay JOIN reservations r ON r.id = pay.reservation_id JOIN properties p ON p.id = r.property_id
+      WHERE pay.kind = 'TOP_UP' AND pay.status = 'FAILED' AND r.status = 'CONFIRMED'
+        AND NOT EXISTS (SELECT 1 FROM payments x WHERE x.reservation_id = r.id AND x.status = 'SUCCEEDED' AND x.created_at > pay.created_at)
+      ORDER BY check_in
     `,
   ]);
   return { failedPayments, failingFeeds, failedEmails, voucherProblems, lodgifyProblems, cancellationProblems, balancesToCollect };

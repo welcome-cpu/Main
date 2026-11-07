@@ -26,6 +26,7 @@ function gateway() {
   const g = {
     intents,
     charges: [] as OffSessionCharge[],
+    failCharges: false,
     async createCheckout() {
       return { sessionId: `cs_test_${randomUUID()}`, url: "https://checkout.stripe.test" };
     },
@@ -44,6 +45,7 @@ function gateway() {
     async cancel() {},
     async chargeOffSession(c: OffSessionCharge) {
       g.charges.push(c);
+      if (g.failCharges) return { ok: false as const, paymentIntentId: null, code: "card_declined", message: "Your card was declined." };
       return { ok: true as const, paymentIntentId: `pi_off_${g.charges.length}_${randomUUID().slice(0, 8)}`, status: "succeeded" };
     },
     async refund() {
@@ -92,14 +94,14 @@ async function confirmedBooking(g: ReturnType<typeof gateway>) {
 const priceNights = (propertyId: string, from: string, to: string, pence: number) =>
   dbMod.db()`INSERT INTO rate_rules (property_id, name, nights, price_pence) VALUES (${propertyId}, 'test', daterange(${from}::date, ${to}::date, '[)'), ${pence})`;
 
-async function move(id: string, checkIn: string, checkOut: string, now: Date, override: Partial<{ approvedTotalPence: number; approvedOwedPence: number }> = {}) {
+async function move(g: ReturnType<typeof gateway>, id: string, checkIn: string, checkOut: string, now: Date, override: Partial<{ approvedTotalPence: number; approvedOwedPence: number }> = {}) {
   const preview = await moves.previewMove(id, checkIn, checkOut, now);
   if (!preview.ok) return { preview, result: null };
   const result = await moves.moveBooking(
     admin,
     id,
     { checkIn, checkOut, reason: "Guest asked", emailGuest: true, approvedTotalPence: preview.preview.newTotalPence, approvedOwedPence: preview.preview.plan.owedPence, ...override },
-    { now }
+    { gateway: g, paymentsReady: true, now }
   );
   return { preview, result };
 }
@@ -112,6 +114,8 @@ const balances = (id: string) =>
   dbMod.db()<{ id: string; status: string; amountPence: number; dueDate: string; customerId: string | null }[]>`
     SELECT id, status, amount_pence, due_date::text, stripe_customer_id AS customer_id FROM payments WHERE reservation_id = ${id} AND kind = 'BALANCE' ORDER BY created_at
   `;
+const topUps = (id: string) =>
+  dbMod.db()<{ status: string; amountPence: number }[]>`SELECT status, amount_pence FROM payments WHERE reservation_id = ${id} AND kind = 'TOP_UP' ORDER BY created_at`;
 const movedEmail = async (id: string) =>
   (await dbMod.db()<{ textBody: string }[]>`SELECT text_body FROM emails WHERE reservation_id = ${id} AND kind = 'BOOKING_MOVED'`)[0]?.textBody;
 
@@ -159,7 +163,7 @@ describe.runIf(enabled)("moving a booking (database)", () => {
   it("at 72 hours: moves the stay, frees the old dates, keeps the balance and emails the guest", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
-    const { preview, result } = await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(3));
+    const { preview, result } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(3));
     expect(preview.ok && preview.preview.warnings).toEqual([]);
     expect(result).toMatchObject({ ok: true });
 
@@ -171,7 +175,7 @@ describe.runIf(enabled)("moving a booking (database)", () => {
     const email = await movedEmail(b.id);
     expect(email).toContain("has moved to the new dates below");
     expect(email).toContain("The price is unchanged at £450.00.");
-    expect(email).toContain("The remaining £225.00 will be taken from the card you paid with on");
+    expect(email).toContain("The balance of £225.00 will be taken from the card you paid with on");
     expect(email).toContain("keeps the cancellation terms that applied on the day it was moved");
 
     // The old dates can be booked again; the new ones can't.
@@ -184,7 +188,7 @@ describe.runIf(enabled)("moving a booking (database)", () => {
   it("at 24 hours: still allowed, as it's the owner's call, with a warning", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
-    const { preview, result } = await move(b.id, "2039-08-01", "2039-08-03", beforeArrival(1));
+    const { preview, result } = await move(g, b.id, "2039-08-01", "2039-08-03", beforeArrival(1));
     expect(preview.ok && preview.preview.warnings).toEqual([
       "It's less than 48 hours before the original arrival.",
       "The new stay is shorter (2 nights instead of 3).",
@@ -193,35 +197,57 @@ describe.runIf(enabled)("moving a booking (database)", () => {
     expect((await reservation(b.id)).totalPence).toBe(30000);
   });
 
-  it("dearer dates: the difference goes on the balance charged to the saved card", async () => {
+  it("dearer dates: the difference is charged to the saved card straight away; the balance stays", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
     await priceNights(b.propertyId, "2039-08-01", "2039-08-04", 20000);
-    const { preview, result } = await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
-    expect(preview.ok && preview.preview.plan).toMatchObject({ owedPence: 37500, creditPence: 0, chargedAutomatically: true });
+    const { preview, result } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
+    expect(preview.ok && preview.preview.plan).toMatchObject({ owedPence: 37500, payNowPence: 15000, creditPence: 0, chargedAutomatically: true });
     expect(result).toMatchObject({ ok: true });
-    expect(await balances(b.id)).toEqual([expect.objectContaining({ status: "PENDING", amountPence: 37500, dueDate: "2039-07-25" })]);
-    expect(await movedEmail(b.id)).toContain("The price for your new dates is £600.00 (it was £450.00).");
+    expect(result && result.ok && result.chargeError).toBeUndefined();
+    expect(g.charges).toEqual([expect.objectContaining({ amountPence: 15000, customerId: "cus_x", paymentMethodId: "pm_x" })]);
+    expect(await topUps(b.id)).toEqual([expect.objectContaining({ status: "SUCCEEDED", amountPence: 15000 })]);
+    expect(await balances(b.id)).toEqual([expect.objectContaining({ status: "PENDING", amountPence: 22500, dueDate: "2039-07-25" })]);
+    const email = await movedEmail(b.id);
+    expect(email).toContain("The price for your new dates is £600.00 (it was £450.00).");
+    expect(email).toContain("We've taken the difference of £150.00 from the card you paid with.");
+    expect(email).toContain("The balance of £225.00 will be taken");
 
-    // Charged with the daily balance run on the due date.
+    // The balance is charged with the daily run on its usual date.
     const outcomes = await balance.chargeDueBalances(g, new Date("2039-07-25T09:00:00Z"), (await balances(b.id))[0].id);
     expect(outcomes).toEqual([expect.objectContaining({ ok: true })]);
-    expect(g.charges[0]).toMatchObject({ amountPence: 37500, customerId: "cus_x", paymentMethodId: "pm_x" });
+    expect(g.charges[1]).toMatchObject({ amountPence: 22500 });
   });
 
-  it("dearer dates after the balance was taken: a new charge for the difference", async () => {
+  it("dearer dates when the card is declined: still moved, and listed for the owner to collect", async () => {
+    const g = gateway();
+    const b = await confirmedBooking(g);
+    await priceNights(b.propertyId, "2039-08-01", "2039-08-04", 20000);
+    g.failCharges = true;
+    const { result } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
+    expect(result).toMatchObject({ ok: true, chargeError: "Your card was declined." });
+    expect((await reservation(b.id)).checkIn).toBe("2039-08-01");
+    expect(await topUps(b.id)).toEqual([expect.objectContaining({ status: "FAILED", amountPence: 15000 })]);
+    expect(await movedEmail(b.id)).toContain("We couldn't take the difference of £150.00 from your card");
+    const attention = await bookings.needsAttention();
+    expect(attention.balancesToCollect).toContainEqual(expect.objectContaining({ reservationId: b.id, amountPence: 15000, why: "CHARGE_FAILED" }));
+
+    // Paid by hand: recorded, off the list, and the balance is still charged automatically.
+    expect(await bookings.recordManualPayment(admin, b.id, { amountPence: 15000, note: "bank transfer" })).toEqual({});
+    expect((await bookings.needsAttention()).balancesToCollect.some((x) => x.reservationId === b.id)).toBe(false);
+    expect(await balances(b.id)).toContainEqual(expect.objectContaining({ status: "PENDING", amountPence: 22500 }));
+  });
+
+  it("dearer dates after the balance was taken: the difference is charged straight away", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
     const [bal] = await balances(b.id);
     await dbMod.db()`UPDATE payments SET status = 'SUCCEEDED', captured_at = now() WHERE id = ${bal.id}`;
     await priceNights(b.propertyId, "2039-08-01", "2039-08-04", 20000);
-    const { result } = await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(3));
+    const { result } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(3));
     expect(result).toMatchObject({ ok: true });
-    const after = await balances(b.id);
-    expect(after).toEqual([
-      expect.objectContaining({ status: "SUCCEEDED", amountPence: 22500 }),
-      expect.objectContaining({ status: "PENDING", amountPence: 15000, dueDate: "2039-07-25", customerId: "cus_x" }),
-    ]);
+    expect(await balances(b.id)).toEqual([expect.objectContaining({ status: "SUCCEEDED", amountPence: 22500 })]);
+    expect(await topUps(b.id)).toEqual([expect.objectContaining({ status: "SUCCEEDED", amountPence: 15000 })]);
   });
 
   it("dearer dates with no saved card: flagged for the owner to collect", async () => {
@@ -230,7 +256,7 @@ describe.runIf(enabled)("moving a booking (database)", () => {
     const [bal] = await balances(b.id);
     await dbMod.db()`UPDATE payments SET status = 'SUCCEEDED', captured_at = now(), stripe_customer_id = NULL, stripe_payment_method_id = NULL WHERE id = ${bal.id}`;
     await priceNights(b.propertyId, "2039-08-01", "2039-08-04", 20000);
-    const { preview } = await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(3));
+    const { preview } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(3));
     expect(preview.ok && preview.preview.plan.chargedAutomatically).toBe(false);
     expect(await movedEmail(b.id)).toContain("£150.00 is still to pay. We'll be in touch to arrange it.");
     const attention = await bookings.needsAttention();
@@ -241,14 +267,14 @@ describe.runIf(enabled)("moving a booking (database)", () => {
     const g = gateway();
     const b = await confirmedBooking(g);
     await priceNights(b.propertyId, "2039-08-01", "2039-09-30", 10000);
-    await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
+    await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
     expect(await balances(b.id)).toEqual([expect.objectContaining({ status: "PENDING", amountPence: 7500 })]);
 
     // Now paid in full, then moved somewhere cheaper again.
     const [bal] = await balances(b.id);
     await dbMod.db()`UPDATE payments SET status = 'SUCCEEDED', captured_at = now() WHERE id = ${bal.id}`;
     await dbMod.db()`DELETE FROM emails WHERE reservation_id = ${b.id}`;
-    const { preview, result } = await move(b.id, "2039-09-01", "2039-09-03", beforeArrival(40));
+    const { preview, result } = await move(g, b.id, "2039-09-01", "2039-09-03", beforeArrival(40));
     expect(preview.ok && preview.preview.plan).toMatchObject({ owedPence: 0, creditPence: 10000 });
     expect(result).toMatchObject({ ok: true });
     expect(await movedEmail(b.id)).toContain("We're holding £100.00 as credit for a future stay.");
@@ -259,29 +285,35 @@ describe.runIf(enabled)("moving a booking (database)", () => {
     const g = gateway();
     const b = await confirmedBooking(g);
     // Moved 45 days before the original arrival, to dates much later on.
-    await move(b.id, "2040-01-10", "2040-01-13", beforeArrival(45));
+    await move(g, b.id, "2040-01-10", "2040-01-13", beforeArrival(45));
     const cancelAt = new Date(Date.parse("2040-01-10T12:00:00Z") - 10 * DAY);
-    expect(await cancellations.previewCancellation(b.id, cancelAt)).toMatchObject({ rule: "FULL", daysBefore: 45, moved: true, refundPence: 22500 });
+    // 45 days when it moved would be a full refund; 10 days before the new
+    // arrival is 50% of the total, the same £225 as the deposit paid here.
+    expect(await cancellations.previewCancellation(b.id, cancelAt)).toMatchObject({ daysBefore: 45, moved: true, refundPence: 22500 });
+
+    // Moved with a full refund, cancelled the day before the new arrival: the new dates' terms are stricter.
+    const late = new Date(Date.parse("2040-01-10T12:00:00Z") - 1 * DAY);
+    expect(await cancellations.previewCancellation(b.id, late)).toMatchObject({ rule: "NONE", daysBefore: 1, basis: "NEW_DATES", refundPence: 0 });
 
     // Moved 3 days before: no refund, even far ahead of the new dates.
     const c = await confirmedBooking(g);
-    await move(c.id, "2040-01-10", "2040-01-13", beforeArrival(3));
+    await move(g, c.id, "2040-01-10", "2040-01-13", beforeArrival(3));
     expect(await cancellations.previewCancellation(c.id, new Date("2039-08-01T12:00:00Z"))).toMatchObject({ rule: "NONE", daysBefore: 3, refundPence: 0 });
   });
 
   it("a second move keeps the terms from the first", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
-    await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(45));
-    const { preview } = await move(b.id, "2039-08-10", "2039-08-13", beforeArrival(2));
-    expect(preview.ok && preview.preview.warnings).toContain("This booking has been moved before. It keeps the cancellation terms from its first move.");
+    await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(45));
+    const { preview } = await move(g, b.id, "2039-08-10", "2039-08-13", beforeArrival(2));
+    expect(preview.ok && preview.preview.warnings).toContain("This booking has been moved before. It keeps the cancellation terms from its first move (or its new dates', if stricter).");
     expect(await reservation(b.id)).toMatchObject({ checkIn: "2039-08-10", arrivalWhenMoved: arrival });
   });
 
   it("can overlap its own old dates", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
-    const { result } = await move(b.id, plusDays(arrival, 1), plusDays(arrival, 4), beforeArrival(10));
+    const { result } = await move(g, b.id, plusDays(arrival, 1), plusDays(arrival, 4), beforeArrival(10));
     expect(result).toMatchObject({ ok: true });
   });
 
@@ -289,7 +321,7 @@ describe.runIf(enabled)("moving a booking (database)", () => {
     const g = gateway();
     const b = await confirmedBooking(g);
     await dbMod.db()`INSERT INTO manual_blocks (property_id, start_date, end_date, reason, created_by) VALUES (${b.propertyId}, '2039-08-02', '2039-08-03', 'test', 'test')`;
-    const { preview } = await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
+    const { preview } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(40));
     expect(preview).toMatchObject({ ok: false, error: expect.stringContaining("a block you added") });
     expect((await reservation(b.id)).checkIn).toBe(arrival);
   });
@@ -297,7 +329,7 @@ describe.runIf(enabled)("moving a booking (database)", () => {
   it("does nothing if the price changed after the preview", async () => {
     const g = gateway();
     const b = await confirmedBooking(g);
-    const { result } = await move(b.id, "2039-08-01", "2039-08-04", beforeArrival(40), { approvedTotalPence: 40000 });
+    const { result } = await move(g, b.id, "2039-08-01", "2039-08-04", beforeArrival(40), { approvedTotalPence: 40000 });
     expect(result).toMatchObject({ ok: false, error: expect.stringContaining("nothing has been done") });
     expect((await reservation(b.id)).checkIn).toBe(arrival);
     expect(await moves.getMoves(b.id)).toEqual([]);

@@ -94,7 +94,7 @@ async function workOut(sql: Sql | Tx, id: string, now: Date) {
     cancelledOn: todayInZone("Europe/London", now),
     voucherCode,
     moved: Boolean(move),
-    explanation: describeRefundRule(decision, Boolean(move)),
+    explanation: describeRefundRule(decision),
   };
   return { reservation: r, preview, cards };
 }
