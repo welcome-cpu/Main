@@ -92,15 +92,15 @@ export const posts: Post[] = [
         text: "Each chalet is positioned to place the Moray Firth front and centre, through the glazed gable end, across the balcony and from the bed if you let it. The light shifts minute by minute. The sea changes colour with the weather. Dolphins from one of Europe's largest bottlenose populations pass through these waters regularly, and spotting them from your own balcony, coffee in hand, is the kind of thing guests mention in guest books long after they have gone home."
       },
       {
-        type: "image",
-        src: "/blog/book-2027-coastal-getaway-january/balcony-laptop-view.jpg",
-        width: 1440,
-        height: 960,
-        alt: "The view across Gardenstown bay to the cliffs from a chalet balcony"
-      },
-      {
         type: "paragraph",
         text: "On clear nights, the Northern Lights occasionally make their own appearance over the firth, unhurried and entirely on their own schedule."
+      },
+      {
+        type: "image",
+        src: "/Mohr Rest/11.jpg",
+        width: 1920,
+        height: 1280,
+        alt: "The Northern Lights over the old St John's Kirk above Gardenstown"
       },
       {
         type: "heading",
@@ -182,6 +182,13 @@ export const posts: Post[] = [
       {
         type: "paragraph",
         text: "January has a particular quality when it comes to planning a coastal escape. The year is fresh and there is something genuinely uplifting about giving yourself something beautiful to look forward to."
+      },
+      {
+        type: "image",
+        src: "/blog/book-2027-coastal-getaway-january/balcony-laptop-view.jpg",
+        width: 1440,
+        height: 960,
+        alt: "The view across Gardenstown bay to the cliffs from a chalet balcony"
       },
       {
         type: "paragraph",
