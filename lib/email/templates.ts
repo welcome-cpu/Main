@@ -1,7 +1,7 @@
 // Transactional email content. Pure functions of the booking data, so they
 // can be tested. Anything a guest typed is HTML-escaped.
 
-import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
+import { termsForBooking } from "@/lib/booking/terms";
 import { formatPence } from "@/lib/money";
 import { groupNights, type Quote } from "@/lib/pricing/quote";
 
@@ -21,6 +21,8 @@ export type BookingEmailData = {
   guestEmail: string;
   guestPhone: string | null;
   guestMessage: string | null;
+  /** Decides which cancellation terms apply to this booking. */
+  bookedAt: Date;
   quote: Quote;
   siteUrl: string;
   contactEmail: string;
@@ -91,7 +93,8 @@ ${bodyHtml}
 
 const p = (html: string) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.5">${html}</p>`;
 
-const termsHtml = () => p(escapeHtml(CANCELLATION_TERMS)) + p(escapeHtml(DATE_CHANGE_TERMS));
+const termsHtml = (d: BookingEmailData) => termsForBooking(d.bookedAt).map((t) => p(escapeHtml(t))).join("");
+const termsText = (d: BookingEmailData) => termsForBooking(d.bookedAt).flatMap((t) => [t, ""]).slice(0, -1);
 
 function detailsTable(rows: [string, string][]) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;font-size:15px;border-collapse:collapse">
@@ -126,7 +129,7 @@ export function guestBookingConfirmed(d: BookingEmailData): RenderedEmail {
       detailsTable(stayRows(d)) +
       detailsTable(priceRows(d.quote)) +
       p(escapeHtml(paymentSummary(d.quote))) +
-      termsHtml() +
+      termsHtml(d) +
       p("We'll be in touch before your stay with arrival details.") +
       p(`If you have any questions, just reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a>.`)
   );
@@ -141,9 +144,7 @@ export function guestBookingConfirmed(d: BookingEmailData): RenderedEmail {
     "",
     paymentSummary(d.quote),
     "",
-    CANCELLATION_TERMS,
-    "",
-    DATE_CHANGE_TERMS,
+    ...termsText(d),
     "",
     "We'll be in touch before your stay with arrival details.",
     "",
@@ -167,7 +168,7 @@ export function guestPaymentReceipt(d: BookingEmailData): RenderedEmail {
       detailsTable(stayRows(d)) +
       detailsTable(priceRows(d.quote)) +
       p(escapeHtml(paymentSummary(d.quote))) +
-      termsHtml() +
+      termsHtml(d) +
       p(`If you have any questions, just reply to this email or write to <a href="mailto:${escapeHtml(d.contactEmail)}">${escapeHtml(d.contactEmail)}</a>.`)
   );
   const text = [
@@ -181,9 +182,7 @@ export function guestPaymentReceipt(d: BookingEmailData): RenderedEmail {
     "",
     paymentSummary(d.quote),
     "",
-    CANCELLATION_TERMS,
-    "",
-    DATE_CHANGE_TERMS,
+    ...termsText(d),
     "",
     `Questions? Reply to this email or write to ${d.contactEmail}.`,
   ].join("\n");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CANCELLATION_TERMS, DATE_CHANGE_TERMS } from "@/lib/booking/terms";
+import { CANCELLATION_TERMS, DATE_CHANGE_TERMS, NEW_TERMS_FROM } from "@/lib/booking/terms";
 import {
   escapeHtml,
   guestBalanceFailed,
@@ -39,6 +39,7 @@ const data: BookingEmailData = {
   checkOut: "2027-02-12",
   checkInTime: "15:00",
   checkOutTime: "11:00",
+  bookedAt: new Date(NEW_TERMS_FROM.getTime() + 1000),
   adults: 2,
   children: 0,
   infants: 0,
@@ -68,6 +69,16 @@ describe("email templates", () => {
         expect(email.html).toContain(escapeHtml(terms));
       }
       expect(`${email.text}${email.html}`).not.toContain("non-refundable");
+    }
+  });
+
+  it("keeps the old terms on bookings made before the new policy, e.g. a resent confirmation", () => {
+    const old = { ...data, bookedAt: new Date(NEW_TERMS_FROM.getTime() - 1000) };
+    for (const email of [guestBookingConfirmed(old), guestPaymentReceipt(old)]) {
+      expect(email.text).toContain("All payments are non-refundable");
+      expect(email.html).toContain("All payments are non-refundable");
+      expect(email.text).not.toContain(CANCELLATION_TERMS);
+      expect(email.text).not.toContain(DATE_CHANGE_TERMS);
     }
   });
 

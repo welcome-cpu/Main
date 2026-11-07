@@ -8,6 +8,27 @@ export const CANCELLATION_TERMS =
 export const DATE_CHANGE_TERMS =
   "Changing dates: Move your stay once, free of charge, up to 48 hours before arrival, to available dates within 12 months of your original arrival date. Your new stay must be the same length or longer. If the new dates cost more, you pay the difference; if they cost less, we hold the difference as credit for a future stay. A moved booking keeps the cancellation terms that applied on the day you moved it.";
 
+/**
+ * When the policy above took effect. It applies to new bookings only, so
+ * earlier ones keep the terms they accepted. Set this to the moment the policy
+ * is pushed to live.
+ */
+export const NEW_TERMS_FROM = new Date("2026-11-08T00:00:00Z");
+
+const OLD_TERMS = "All payments are non-refundable, so we recommend travel insurance.";
+
+export const isOnOldTerms = (bookedAt: Date) => new Date(bookedAt) < NEW_TERMS_FROM;
+
+/** The terms a guest accepted, as paragraphs, for anything sent about their booking. */
+export const termsForBooking = (bookedAt: Date) =>
+  isOnOldTerms(bookedAt) ? [OLD_TERMS] : [CANCELLATION_TERMS, DATE_CHANGE_TERMS];
+
+/** For the owner: what to refund on this booking, including what "50%" is 50% of. */
+export const refundGuide = (bookedAt: Date) =>
+  isOnOldTerms(bookedAt)
+    ? "This booking was made before the new policy, so its payments are non-refundable and it has no free date change."
+    : "Refund due on this booking: everything paid if cancelled 30 or more days before arrival, half of what the guest has paid between 7 and 30 days, nothing within 7 days.";
+
 /** The one-line version in the booking box on each property page. */
 export const TERMS_SUMMARY = "Full refund up to 30 days before arrival · Free date changes up to 48 hours before";
 

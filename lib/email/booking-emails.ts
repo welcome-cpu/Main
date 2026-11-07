@@ -33,7 +33,7 @@ async function loadBookingEmailData(sql: Sql | Tx, reservationId: string): Promi
            to_char(p.check_out_time, 'HH24:MI') AS check_out_time,
            r.adults, r.children, r.infants, r.pets,
            g.first_name AS guest_first_name, g.last_name AS guest_last_name,
-           g.email AS guest_email, g.phone AS guest_phone, r.guest_message,
+           g.email AS guest_email, g.phone AS guest_phone, r.guest_message, r.created_at AS booked_at,
            r.price_breakdown AS quote
     FROM reservations r
     JOIN properties p ON p.id = r.property_id

@@ -13,6 +13,7 @@ import { ActionButton, CancelBookingForm, LinkLodgifyForm, ManualPaymentForm } f
 import PriceBreakdown from "@/components/booking/PriceBreakdown";
 import { getBooking } from "@/lib/admin/bookings";
 import { requireAdmin } from "@/lib/admin/dal";
+import { refundGuide } from "@/lib/booking/terms";
 import { isUuid } from "@/lib/admin/properties";
 import { countryName } from "@/lib/countries";
 import { formatPence } from "@/lib/money";
@@ -217,7 +218,7 @@ export default async function AdminBookingPage({ params }: PageProps<"/admin/boo
           )}
           <div className="space-y-2 border-t border-border pt-6">
             <p className="text-sm text-muted-foreground">
-              Cancelling releases the dates straight away. Payments aren&apos;t refunded automatically.
+              Cancelling releases the dates straight away. Payments aren&apos;t refunded automatically. {refundGuide(b.createdAt)}
               {b.lodgifyBookingId && ` It isn't cancelled in Lodgify: cancel booking ${b.lodgifyBookingId} there too.`}
             </p>
             <CancelBookingForm action={cancelBookingAction.bind(null, b.id)} />
