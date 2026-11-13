@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { HeatingSchedule } from "@/lib/heating/hive-schedule";
+import type { HeatingSchedule, HotWaterSchedule } from "@/lib/heating/hive-schedule";
 
 const TEST_URL = process.env.TEST_DATABASE_URL;
 const enabled = Boolean(TEST_URL);
@@ -16,22 +16,44 @@ const day = [
 const schedule = Object.fromEntries(
   ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((d) => [d, day]),
 ) as HeatingSchedule;
+const water = [
+  { start: 360, value: { status: "ON" } },
+  { start: 540, value: { status: "OFF" } },
+];
+const hotWaterSchedule = Object.fromEntries(
+  ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((d) => [d, water]),
+) as HotWaterSchedule;
 
-/** A pretend thermostat that records what it was told. */
+/** What one planned change does on the pretend Hive. */
+const RESET = ["heating schedule", "heating SCHEDULE", "water schedule", "water SCHEDULE"];
+const OFF = ["heating OFF", "water OFF"];
+
+/** A pretend Hive that records what it was told. `failWater` makes only the hot water fail. */
 function fakeHive() {
   const f = {
     calls: [] as string[],
     fail: false,
-    connect: async () => ({
-      async setSchedule() {
-        if (f.fail) throw new Error("Hive returned 500");
-        f.calls.push("schedule");
-      },
-      async setMode(mode: "SCHEDULE" | "OFF") {
-        if (f.fail) throw new Error("Hive returned 500");
-        f.calls.push(mode);
-      },
-    }),
+    failWater: false,
+    connect: async () => {
+      const step = (name: string, water = false) => {
+        if (f.fail || (water && f.failWater)) throw new Error("Hive returned 500");
+        f.calls.push(name);
+      };
+      return {
+        async setHeatingSchedule() {
+          step("heating schedule");
+        },
+        async setHeatingMode(mode: "SCHEDULE" | "OFF") {
+          step(`heating ${mode}`);
+        },
+        async setHotWaterSchedule() {
+          step("water schedule", true);
+        },
+        async setHotWaterMode(mode: "SCHEDULE" | "OFF") {
+          step(`water ${mode}`, true);
+        },
+      };
+    },
   };
   return f;
 }
@@ -66,8 +88,8 @@ describe.runIf(enabled)("heating control (database)", () => {
       VALUES (${slug}, ${"Heating " + slug}, true, 6, 15000, 2, 50, 7, 6000, 0) RETURNING id
     `;
     await dbMod.db()`
-      INSERT INTO heating_controls (property_id, standard_schedule, schedule_saved_at, schedule_saved_by)
-      VALUES (${propertyId}, ${dbMod.db().json(schedule)}, now(), 'owner@example.com')
+      INSERT INTO heating_controls (property_id, standard_schedule, standard_hot_water_schedule, schedule_saved_at, schedule_saved_by)
+      VALUES (${propertyId}, ${dbMod.db().json(schedule)}, ${dbMod.db().json(hotWaterSchedule)}, now(), 'owner@example.com')
     `;
   });
 
@@ -78,9 +100,11 @@ describe.runIf(enabled)("heating control (database)", () => {
     expect(hive.calls).toEqual([]);
   });
 
-  it("refuses to switch on without a standard schedule", async () => {
+  it("refuses to switch on unless both standard schedules are saved", async () => {
+    await dbMod.db()`UPDATE heating_controls SET standard_hot_water_schedule = NULL WHERE property_id = ${propertyId}`;
+    expect(await run.setHeatingEnabled(admin, propertyId, true)).toEqual({ error: "Save the standard schedules first." });
     await dbMod.db()`UPDATE heating_controls SET standard_schedule = NULL WHERE property_id = ${propertyId}`;
-    expect(await run.setHeatingEnabled(admin, propertyId, true)).toEqual({ error: "Save the standard schedule first." });
+    expect(await run.setHeatingEnabled(admin, propertyId, true)).toEqual({ error: "Save the standard schedules first." });
   });
 
   it("resets before each guest, stays on for short gaps and turns off for long ones", async () => {
@@ -97,16 +121,16 @@ describe.runIf(enabled)("heating control (database)", () => {
     expect(hive.calls).toEqual([]);
 
     expect(await tick(hive, at("2041-01-14T18:05:00Z"))).toMatchObject({ result: "DONE", key: "reset:2041-01-15", action: "RESET" });
-    expect(hive.calls).toEqual(["schedule", "SCHEDULE"]);
+    expect(hive.calls).toEqual(RESET);
 
     // Hourly runs in between change nothing.
     expect((await tick(hive, at("2041-01-15T09:05:00Z"))).result).toBe("UP_TO_DATE");
 
     expect(await tick(hive, at("2041-01-17T11:05:00Z"))).toMatchObject({ result: "DONE", key: "off:2041-01-17", action: "OFF" });
-    expect(hive.calls).toEqual(["schedule", "SCHEDULE", "OFF"]);
+    expect(hive.calls).toEqual([...RESET, ...OFF]);
 
     expect(await tick(hive, at("2041-01-24T18:05:00Z"))).toMatchObject({ result: "DONE", key: "reset:2041-01-25" });
-    expect(hive.calls.slice(3)).toEqual(["schedule", "SCHEDULE"]);
+    expect(hive.calls.slice(RESET.length + OFF.length)).toEqual(RESET);
   });
 
   it("turns the heating off again when the next guest cancels after their reset", async () => {
@@ -119,7 +143,7 @@ describe.runIf(enabled)("heating control (database)", () => {
     expect((await tick(hive, at("2041-02-09T18:05:00Z"))).result).toBe("DONE"); // reset for the new guest
     await dbMod.db()`DELETE FROM manual_blocks WHERE property_id = ${propertyId} AND start_date = '2041-02-10'`;
     expect(await tick(hive, at("2041-02-09T19:05:00Z"))).toMatchObject({ result: "DONE", key: "off:2041-02-03", action: "OFF" });
-    expect(hive.calls).toEqual(["OFF", "schedule", "SCHEDULE", "OFF"]);
+    expect(hive.calls).toEqual([...OFF, ...RESET, ...OFF]);
   });
 
   it("records a failure, emails the owner once, and retries on the next run", async () => {
@@ -137,7 +161,24 @@ describe.runIf(enabled)("heating control (database)", () => {
 
     hive.fail = false;
     expect((await tick(hive, at("2041-03-03T13:05:00Z"))).result).toBe("DONE");
-    expect(hive.calls).toEqual(["OFF"]);
+    expect(hive.calls).toEqual(OFF);
+    await dbMod.db()`DELETE FROM emails WHERE dedupe_key LIKE ${`heating-failed:${propertyId}:%`}`;
+  });
+
+  it("retries the whole change when only the hot water fails", async () => {
+    const hive = fakeHive();
+    await stay("2041-05-01", "2041-05-03");
+    await stay("2041-05-10", "2041-05-12");
+    await run.setHeatingEnabled(admin, propertyId, true);
+    await tick(hive, at("2041-04-30T18:05:00Z")); // starting point
+
+    hive.failWater = true;
+    expect((await tick(hive, at("2041-05-09T18:05:00Z"))).result).toBe("FAILED");
+    expect(hive.calls).toEqual(["heating schedule", "heating SCHEDULE"]);
+
+    hive.failWater = false;
+    expect((await tick(hive, at("2041-05-09T19:05:00Z"))).result).toBe("DONE");
+    expect(hive.calls.slice(2)).toEqual(RESET);
     await dbMod.db()`DELETE FROM emails WHERE dedupe_key LIKE ${`heating-failed:${propertyId}:%`}`;
   });
 

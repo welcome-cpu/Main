@@ -21,7 +21,7 @@ export async function saveScheduleAction(formData: FormData) {
   if (!isUuid(propertyId)) return;
   const result = await saveCurrentSchedule(admin, propertyId);
   if ("error" in result) done(result.error, true);
-  done("Saved the current Hive schedule as the standard schedule.");
+  done("Saved the current Hive heating and hot water schedules as standard.");
 }
 
 export async function toggleHeatingAction(formData: FormData) {
@@ -31,7 +31,7 @@ export async function toggleHeatingAction(formData: FormData) {
   if (!isUuid(propertyId)) return;
   const result = await setHeatingEnabled(admin, propertyId, enabled);
   if ("error" in result) done(result.error, true);
-  done(enabled ? "Automatic heating switched on." : "Automatic heating switched off. The heating stays as it is.");
+  done(enabled ? "Automatic control switched on." : "Automatic control switched off. The heating and hot water stay as they are.");
 }
 
 export async function runHeatingAction(formData: FormData) {
@@ -43,16 +43,16 @@ export async function runHeatingAction(formData: FormData) {
   if (!outcome) done("Hive isn't set up for this deployment.", true);
   switch (outcome.result) {
     case "DONE":
-      done(outcome.action === "RESET" ? "Put the standard schedule back on." : "Turned the heating off.");
+      done(outcome.action === "RESET" ? "Put the standard heating and hot water schedules back on." : "Turned the heating and hot water off.");
     case "FAILED":
-      done(`Couldn't change the heating: ${outcome.error}`, true);
+      done(`Couldn't change the heating and hot water: ${outcome.error}`, true);
     case "BASELINE":
-      done("Starting from the heating as it is now. The next planned change will be made on time.");
+      done("Starting from the heating and hot water as they are now. The next planned change will be made on time.");
     case "UP_TO_DATE":
-      done("Nothing to do: the heating already matches the bookings.");
+      done("Nothing to do: the heating and hot water already match the bookings.");
     case "NOTHING_DUE":
       done("Nothing to do yet.");
     case "DISABLED":
-      done("Automatic heating is switched off.", true);
+      done("Automatic control is switched off.", true);
   }
 }

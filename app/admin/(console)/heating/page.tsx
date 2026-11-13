@@ -1,6 +1,6 @@
 import { runHeatingAction, saveScheduleAction, toggleHeatingAction } from "@/app/admin/(console)/heating/actions";
 import { requireAdmin } from "@/lib/admin/dal";
-import { describeSchedule } from "@/lib/heating/hive-schedule";
+import { describeHotWaterSchedule, describeSchedule } from "@/lib/heating/hive-schedule";
 import { getHeatingOverview } from "@/lib/heating/run";
 import type { Transition } from "@/lib/heating/plan";
 
@@ -16,7 +16,7 @@ const showWhen = (d: Date | null) => (d ? when.format(d) : "—");
 const describe = (t: Pick<Transition, "action" | "key">) => {
   const date = t.key.split(":")[1];
   const day = date ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)) : "";
-  return t.action === "RESET" ? `Standard schedule on, for the guest arriving ${day}` : `Heating off, after the guest leaving ${day}`;
+  return t.action === "RESET" ? `Standard schedules on, for the guest arriving ${day}` : `Heating and hot water off, after the guest leaving ${day}`;
 };
 const MODE: Record<string, string> = { SCHEDULE: "Schedule", MANUAL: "Manual", OFF: "Off", BOOST: "Boost" };
 
@@ -32,13 +32,14 @@ export default async function AdminHeatingPage({ searchParams }: PageProps<"/adm
   return (
     <div className="space-y-10">
       <section>
-        <h1 className="text-2xl font-semibold text-foreground-strong">Heating</h1>
+        <h1 className="text-2xl font-semibold text-foreground-strong">Heating and hot water</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          The website controls the Hive thermostat from the bookings. At 6pm the evening before each guest arrives, it puts the
-          standard schedule back on, so every guest starts the same whatever the last guest changed. Back-to-back guests get
-          it at check-out time on changeover day. When a guest leaves and nobody arrives for more than 3 days, it turns the
-          heating off at check-out time. Shorter gaps keep the schedule running. Every unavailable date counts as a stay,
-          including owner blocks. Changes you make in the Hive app are left alone until the next planned change.
+          The website controls the Hive heating and hot water from the bookings. At 6pm the evening before each guest arrives,
+          it puts the standard heating and hot water schedules back on, so every guest starts the same whatever the last guest
+          changed. Back-to-back guests get them at check-out time on changeover day. When a guest leaves and nobody arrives for
+          more than 3 days, it turns both off at check-out time. Shorter gaps keep the schedules running. Every unavailable date
+          counts as a stay, including owner blocks. Changes you make in the Hive app are left alone until the next planned
+          change.
         </p>
       </section>
 
@@ -63,7 +64,7 @@ export default async function AdminHeatingPage({ searchParams }: PageProps<"/adm
                   <input type="hidden" name="propertyId" value={p.propertyId} />
                   <input type="hidden" name="enabled" value={String(!p.enabled)} />
                   <button type="submit" className={button} disabled={!overview.configured}>
-                    {p.enabled ? "Switch off automatic heating" : "Switch on automatic heating"}
+                    {p.enabled ? "Switch off automatic control" : "Switch on automatic control"}
                   </button>
                 </form>
                 {p.enabled && (
@@ -78,14 +79,22 @@ export default async function AdminHeatingPage({ searchParams }: PageProps<"/adm
             </div>
 
             <dl className="grid max-w-3xl grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Automatic heating</dt>
-              <dd className="font-medium">{p.enabled ? "On" : "Off: the website won't change the heating"}</dd>
-              <dt className="text-muted-foreground">Thermostat now</dt>
+              <dt className="text-muted-foreground">Automatic control</dt>
+              <dd className="font-medium">{p.enabled ? "On" : "Off: the website won&apos;t change anything"}</dd>
+              <dt className="text-muted-foreground">Heating now</dt>
               <dd>
                 {p.live
-                  ? `${p.live.name ?? "Heating"}: ${MODE[p.live.mode ?? ""] ?? p.live.mode ?? "unknown"}, ${p.live.temperature ?? "?"}° in the cottage, set to ${p.live.target ?? "?"}°`
+                  ? `${p.live.heating.name ?? "Heating"}: ${MODE[p.live.heating.mode ?? ""] ?? p.live.heating.mode ?? "unknown"}, ${p.live.heating.temperature ?? "?"}° in the cottage, set to ${p.live.heating.target ?? "?"}°`
                   : p.liveError
                     ? <span className="text-red-700">Couldn&apos;t reach Hive: {p.liveError}</span>
+                    : "—"}
+              </dd>
+              <dt className="text-muted-foreground">Hot water now</dt>
+              <dd>
+                {p.live?.hotWater
+                  ? `${p.live.hotWater.name ?? "Hot water"}: ${MODE[p.live.hotWater.mode ?? ""] ?? p.live.hotWater.mode ?? "unknown"}${p.live.hotWater.on === null ? "" : p.live.hotWater.on ? ", heating water now" : ", not heating water now"}`
+                  : p.live?.hotWaterError
+                    ? <span className="text-red-700">{p.live.hotWaterError}</span>
                     : "—"}
               </dd>
               <dt className="text-muted-foreground">Should be now</dt>
@@ -101,32 +110,42 @@ export default async function AdminHeatingPage({ searchParams }: PageProps<"/adm
             </dl>
 
             <div>
-              <h3 className="font-semibold text-foreground-strong">Standard schedule</h3>
-              {p.standardSchedule ? (
+              <h3 className="font-semibold text-foreground-strong">Standard schedules</h3>
+              {p.standardSchedule && p.standardHotWaterSchedule ? (
                 <>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Saved {showWhen(p.scheduleSavedAt)} by {p.scheduleSavedBy}. Every guest starts with this.
+                    Saved {showWhen(p.scheduleSavedAt)} by {p.scheduleSavedBy}. Every guest starts with these.
                   </p>
-                  <table className="mt-3 text-sm">
-                    <tbody>
-                      {describeSchedule(p.standardSchedule).map((d) => (
-                        <tr key={d.day}>
-                          <td className="py-0.5 pr-6 text-muted-foreground">{d.day}</td>
-                          <td className="py-0.5">{d.slots}</td>
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="text-sm">
+                      <thead>
+                        <tr className="text-left">
+                          <th className="pb-1 pr-6 font-medium" />
+                          <th className="pb-1 pr-6 font-medium">Heating</th>
+                          <th className="pb-1 font-medium">Hot water</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {describeSchedule(p.standardSchedule).map((d, i) => (
+                          <tr key={d.day}>
+                            <td className="py-0.5 pr-6 align-top text-muted-foreground">{d.day}</td>
+                            <td className="py-0.5 pr-6 align-top">{d.slots}</td>
+                            <td className="py-0.5 align-top">{describeHotWaterSchedule(p.standardHotWaterSchedule!)[i].slots}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </>
               ) : (
                 <p className="mt-1 text-sm text-muted-foreground">
-                  None saved yet. Set the schedule you want in the Hive app, then save it here.
+                  Not saved yet. Set the heating and hot water schedules you want in the Hive app, then save them here.
                 </p>
               )}
               <form action={saveScheduleAction} className="mt-3">
                 <input type="hidden" name="propertyId" value={p.propertyId} />
                 <button type="submit" className={button} disabled={!overview.configured}>
-                  Save the current Hive schedule as standard
+                  Save the current Hive schedules as standard
                 </button>
               </form>
             </div>

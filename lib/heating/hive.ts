@@ -11,7 +11,12 @@ import "server-only";
 // and device keys alone, with no SMS. All of these are server-only secrets.
 
 import { AuthenticationDetails, CognitoUser, CognitoUserPool, type ICognitoStorage } from "amazon-cognito-identity-js";
-import { parseHeatingSchedule, type HeatingSchedule } from "@/lib/heating/hive-schedule";
+import {
+  parseHeatingSchedule,
+  parseHotWaterSchedule,
+  type HeatingSchedule,
+  type HotWaterSchedule,
+} from "@/lib/heating/hive-schedule";
 
 export class HiveError extends Error {}
 
@@ -26,6 +31,8 @@ type HiveEnv = {
   deviceGroupKey: string;
   devicePassword: string;
   heatingId: string;
+  /** Optional: otherwise found as the hot water on the same Hive receiver as the heating. */
+  hotWaterId: string | null;
   apiBase: string;
 };
 
@@ -41,6 +48,7 @@ function hiveEnv(): HiveEnv | null {
     deviceGroupKey: e.HIVE_DEVICE_GROUP_KEY,
     devicePassword: e.HIVE_DEVICE_PASSWORD,
     heatingId: e.HIVE_HEATING_ID,
+    hotWaterId: e.HIVE_HOT_WATER_ID || null,
     apiBase: (e.HIVE_API_BASE || DEFAULT_API_BASE).replace(/\/$/, ""),
   };
 }
@@ -118,17 +126,36 @@ export type HeatingStatus = {
   schedule: HeatingSchedule | null;
 };
 
+export type HotWaterStatus = {
+  id: string;
+  name: string | null;
+  mode: string | null;
+  /** Whether the water is being heated right now. */
+  on: boolean | null;
+  schedule: HotWaterSchedule | null;
+};
+
+export type HiveStatus = {
+  heating: HeatingStatus;
+  hotWater: HotWaterStatus | null;
+  /** Why the hot water couldn't be found, if it couldn't. */
+  hotWaterError: string | null;
+};
+
 type HiveProduct = {
   id?: unknown;
   type?: unknown;
-  state?: { name?: unknown; mode?: unknown; target?: unknown; heat?: unknown; schedule?: unknown };
-  props?: { temperature?: unknown };
+  parent?: unknown;
+  state?: { name?: unknown; mode?: unknown; target?: unknown; heat?: unknown; schedule?: unknown; status?: unknown };
+  props?: { temperature?: unknown; working?: unknown };
 };
+type Found = HiveProduct & { id: string; type: string };
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const str = (v: unknown) => (typeof v === "string" ? v : null);
+const label = (p: HiveProduct) => `${str(p.state?.name) ?? "(no name)"} (${String(p.id)})`;
 
-/** A signed-in connection to the configured heating. */
+/** A signed-in connection to the configured heating and its hot water. */
 export class HiveHeating {
   private constructor(
     private env: HiveEnv,
@@ -154,39 +181,93 @@ export class HiveHeating {
     return text ? (JSON.parse(text) as unknown) : null;
   }
 
-  private async product(): Promise<HiveProduct & { type: string }> {
+  private async products(): Promise<HiveProduct[]> {
     const all = (await this.request("GET", "/nodes/all?products=true&devices=true")) as { products?: HiveProduct[] } | null;
-    const product = all?.products?.find((p) => p.id === this.env.heatingId);
-    if (!product) throw new HiveError("The heating set in HIVE_HEATING_ID wasn't found on the Hive account.");
-    const type = str(product.type);
+    return all?.products ?? [];
+  }
+
+  private heating(products: HiveProduct[]): Found {
+    const p = products.find((x) => x.id === this.env.heatingId);
+    if (!p) throw new HiveError("The heating set in HIVE_HEATING_ID wasn't found on the Hive account.");
+    const type = str(p.type);
     if (type !== "heating" && type !== "trvcontrol") throw new HiveError(`HIVE_HEATING_ID points at a Hive "${type}", not heating.`);
-    return { ...product, type };
+    return { ...p, id: this.env.heatingId, type };
   }
 
-  async status(): Promise<HeatingStatus> {
-    const p = await this.product();
-    return {
-      id: this.env.heatingId,
-      name: str(p.state?.name),
-      mode: str(p.state?.mode),
-      target: num(p.state?.target) ?? num(p.state?.heat),
-      temperature: num(p.props?.temperature),
-      schedule: parseHeatingSchedule(p.state?.schedule),
+  /**
+   * The hot water: the one named in HIVE_HOT_WATER_ID, or else the only hot
+   * water on the same Hive receiver as the heating. Never a guess between
+   * several, because one Hive account can control more than one home.
+   */
+  private hotWater(products: HiveProduct[], heating: Found): Found {
+    const all = products.filter((p) => p.type === "hotwater" && typeof p.id === "string");
+    if (this.env.hotWaterId) {
+      const p = all.find((x) => x.id === this.env.hotWaterId);
+      if (!p) throw new HiveError("The hot water set in HIVE_HOT_WATER_ID wasn't found on the Hive account.");
+      return { ...p, id: p.id as string, type: "hotwater" };
+    }
+    const sameReceiver = heating.parent ? all.filter((p) => p.parent === heating.parent) : [];
+    if (sameReceiver.length === 1) return { ...sameReceiver[0], id: sameReceiver[0].id as string, type: "hotwater" };
+    if (!all.length) throw new HiveError("No hot water found on the Hive account.");
+    throw new HiveError(
+      `Couldn't tell which hot water goes with this heating. Add HIVE_HOT_WATER_ID in Vercel, set to the ID of one of: ${all.map(label).join(", ")}.`,
+    );
+  }
+
+  async status(): Promise<HiveStatus> {
+    const products = await this.products();
+    const h = this.heating(products);
+    const heating: HeatingStatus = {
+      id: h.id,
+      name: str(h.state?.name),
+      mode: str(h.state?.mode),
+      target: num(h.state?.target) ?? num(h.state?.heat),
+      temperature: num(h.props?.temperature),
+      schedule: parseHeatingSchedule(h.state?.schedule),
     };
+    try {
+      const w = this.hotWater(products, h);
+      const working = w.props?.working ?? w.state?.status;
+      return {
+        heating,
+        hotWater: {
+          id: w.id,
+          name: str(w.state?.name),
+          mode: str(w.state?.mode),
+          on: typeof working === "boolean" ? working : working === "ON" ? true : working === "OFF" ? false : null,
+          schedule: parseHotWaterSchedule(w.state?.schedule),
+        },
+        hotWaterError: null,
+      };
+    } catch (err) {
+      if (!(err instanceof HiveError)) throw err;
+      return { heating, hotWater: null, hotWaterError: err.message };
+    }
   }
 
-  private async update(body: Record<string, unknown>) {
-    const p = await this.product();
-    await this.request("POST", `/nodes/${p.type}/${encodeURIComponent(this.env.heatingId)}`, body);
+  private async update(p: Found, body: Record<string, unknown>) {
+    await this.request("POST", `/nodes/${p.type}/${encodeURIComponent(p.id)}`, body);
   }
 
-  async setSchedule(schedule: HeatingSchedule) {
+  async setHeatingSchedule(schedule: HeatingSchedule) {
     const clean = parseHeatingSchedule(schedule);
-    if (!clean) throw new HiveError("The saved schedule isn't valid, so it wasn't sent to Hive.");
-    await this.update({ schedule: clean });
+    if (!clean) throw new HiveError("The saved heating schedule isn't valid, so it wasn't sent to Hive.");
+    await this.update(this.heating(await this.products()), { schedule: clean });
   }
 
-  async setMode(mode: "SCHEDULE" | "OFF") {
-    await this.update({ mode });
+  async setHeatingMode(mode: "SCHEDULE" | "OFF") {
+    await this.update(this.heating(await this.products()), { mode });
+  }
+
+  async setHotWaterSchedule(schedule: HotWaterSchedule) {
+    const clean = parseHotWaterSchedule(schedule);
+    if (!clean) throw new HiveError("The saved hot water schedule isn't valid, so it wasn't sent to Hive.");
+    const products = await this.products();
+    await this.update(this.hotWater(products, this.heating(products)), { schedule: clean });
+  }
+
+  async setHotWaterMode(mode: "SCHEDULE" | "OFF") {
+    const products = await this.products();
+    await this.update(this.hotWater(products, this.heating(products)), { mode });
   }
 }

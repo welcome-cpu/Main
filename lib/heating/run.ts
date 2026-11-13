@@ -1,6 +1,6 @@
 import "server-only";
 
-// Keeps a property's heating in line with its bookings. Run hourly by the cron
+// Keeps a property's heating and hot water in line with its bookings. Run hourly by the cron
 // job, or from admin with "Check now".
 //
 // Each run works out the most recent change that has fallen due (see plan.ts)
@@ -16,8 +16,13 @@ import { db, type Sql } from "@/lib/db/client";
 import { escapeHtml } from "@/lib/email/templates";
 import { ownerMailbox } from "@/lib/email/graph";
 import { enqueueEmail } from "@/lib/email/outbox";
-import { HiveError, HiveHeating, isHiveConfigured, type HeatingStatus } from "@/lib/heating/hive";
-import { parseHeatingSchedule, type HeatingSchedule } from "@/lib/heating/hive-schedule";
+import { HiveError, HiveHeating, isHiveConfigured, type HiveStatus } from "@/lib/heating/hive";
+import {
+  parseHeatingSchedule,
+  parseHotWaterSchedule,
+  type HeatingSchedule,
+  type HotWaterSchedule,
+} from "@/lib/heating/hive-schedule";
 import { latestDue, planTransitions, upcoming, type Stay, type Transition } from "@/lib/heating/plan";
 import { logError } from "@/lib/log";
 
@@ -28,6 +33,7 @@ type Control = {
   checkOutTime: string;
   enabled: boolean;
   standardSchedule: unknown;
+  standardHotWaterSchedule: unknown;
   scheduleSavedAt: Date | null;
   scheduleSavedBy: string | null;
 };
@@ -56,7 +62,7 @@ const LOOK_AHEAD_DAYS = 120;
 async function loadControls(sql: Sql, propertyId?: string): Promise<Control[]> {
   return sql<Control[]>`
     SELECT c.property_id, p.name AS property_name, p.timezone, to_char(p.check_out_time, 'HH24:MI') AS check_out_time,
-           c.enabled, c.standard_schedule, c.schedule_saved_at, c.schedule_saved_by
+           c.enabled, c.standard_schedule, c.standard_hot_water_schedule, c.schedule_saved_at, c.schedule_saved_by
     FROM heating_controls c JOIN properties p ON p.id = c.property_id
     WHERE ${propertyId ? sql`c.property_id = ${propertyId}` : sql`true`}
     ORDER BY p.name
@@ -100,33 +106,52 @@ async function lastApplied(sql: Sql, propertyId: string) {
   return row?.transitionKey ?? null;
 }
 
-/** What the runner needs from the thermostat. Tests pass a fake. */
-export type HeatingDevice = Pick<HiveHeating, "setSchedule" | "setMode">;
+/** What the runner needs from Hive. Tests pass a fake. */
+export type HeatingDevice = Pick<HiveHeating, "setHeatingSchedule" | "setHeatingMode" | "setHotWaterSchedule" | "setHotWaterMode">;
 type Connect = () => Promise<HeatingDevice>;
 
-async function apply(t: Transition, schedule: HeatingSchedule | null, connect: Connect) {
+type Standards = { heating: HeatingSchedule | null; hotWater: HotWaterSchedule | null };
+
+const standardsOf = (c: Pick<Control, "standardSchedule" | "standardHotWaterSchedule">): Standards => ({
+  heating: parseHeatingSchedule(c.standardSchedule),
+  hotWater: parseHotWaterSchedule(c.standardHotWaterSchedule),
+});
+
+/**
+ * Makes one planned change to both the heating and the hot water. If any step
+ * fails the whole change is retried next run; every step is safe to repeat.
+ */
+async function apply(t: Transition, standards: Standards, connect: Connect) {
   const hive = await connect();
   if (t.action === "RESET") {
-    if (!schedule) throw new HiveError("No standard schedule is saved, so the heating wasn't changed.");
-    await hive.setSchedule(schedule);
-    await hive.setMode("SCHEDULE");
+    if (!standards.heating || !standards.hotWater) {
+      throw new HiveError("The standard schedules aren't both saved, so nothing was changed.");
+    }
+    await hive.setHeatingSchedule(standards.heating);
+    await hive.setHeatingMode("SCHEDULE");
+    await hive.setHotWaterSchedule(standards.hotWater);
+    await hive.setHotWaterMode("SCHEDULE");
   } else {
-    await hive.setMode("OFF");
+    await hive.setHeatingMode("OFF");
+    await hive.setHotWaterMode("OFF");
   }
 }
 
 async function alertOwner(sql: Sql, c: Control, t: Transition, error: string) {
   const to = ownerMailbox();
   if (!to) return;
-  const what = t.action === "RESET" ? "put the standard schedule back on for the next guest" : "turn the heating off after check-out";
-  const text = `The website couldn't ${what} at ${c.propertyName}. Please check the heating in the Hive app.\n\nError: ${error}\n\nIt will keep trying every hour. See Admin > Heating.`;
+  const what =
+    t.action === "RESET"
+      ? "put the standard heating and hot water schedules back on for the next guest"
+      : "turn the heating and hot water off after check-out";
+  const text = `The website couldn't ${what} at ${c.propertyName}. Please check them in the Hive app.\n\nError: ${error}\n\nIt will keep trying every hour. See Admin > Heating.`;
   await enqueueEmail(sql, {
     reservationId: null,
     kind: "OWNER_HEATING_PROBLEM",
     // One email per planned change, however many times it's retried.
     dedupeKey: `heating-failed:${c.propertyId}:${t.key}`,
     to,
-    subject: `Heating not changed at ${c.propertyName}`,
+    subject: `Heating and hot water not changed at ${c.propertyName}`,
     html: `<p>${escapeHtml(text).replaceAll("\n", "<br>")}</p>`,
     text,
   });
@@ -160,7 +185,7 @@ async function runOne(
   }
 
   try {
-    await apply(due, parseHeatingSchedule(c.standardSchedule), connect);
+    await apply(due, standardsOf(c), connect);
     await sql`
       INSERT INTO heating_actions (property_id, transition_key, action, due_at, status, trigger, actor)
       VALUES (${c.propertyId}, ${due.key}, ${due.action}, ${due.at}, 'DONE', ${trigger}, ${actor})
@@ -178,7 +203,7 @@ async function runOne(
   }
 }
 
-/** Brings every property's heating up to date. Overlapping runs wait for each other. */
+/** Brings every property's heating and hot water up to date. Overlapping runs wait for each other. */
 export async function runHeating(options: {
   trigger: "SCHEDULED" | "MANUAL";
   actor?: string | null;
@@ -209,9 +234,10 @@ export type HeatingOverview = {
     propertyName: string;
     enabled: boolean;
     standardSchedule: HeatingSchedule | null;
+    standardHotWaterSchedule: HotWaterSchedule | null;
     scheduleSavedAt: Date | null;
     scheduleSavedBy: string | null;
-    live: HeatingStatus | null;
+    live: HiveStatus | null;
     liveError: string | null;
     current: Transition | null;
     lastApplied: string | null;
@@ -225,7 +251,7 @@ export async function getHeatingOverview(now = new Date()): Promise<HeatingOverv
   const configured = isHiveConfigured();
   const controls = await loadControls(sql);
 
-  let live: HeatingStatus | null = null;
+  let live: HiveStatus | null = null;
   let liveError: string | null = null;
   if (configured && controls.length) {
     try {
@@ -243,11 +269,13 @@ export async function getHeatingOverview(now = new Date()): Promise<HeatingOverv
       FROM heating_actions WHERE property_id = ${c.propertyId}
       ORDER BY created_at DESC LIMIT 20
     `;
+    const standards = standardsOf(c);
     properties.push({
       propertyId: c.propertyId,
       propertyName: c.propertyName,
       enabled: c.enabled,
-      standardSchedule: parseHeatingSchedule(c.standardSchedule),
+      standardSchedule: standards.heating,
+      standardHotWaterSchedule: standards.hotWater,
       scheduleSavedAt: c.scheduleSavedAt,
       scheduleSavedBy: c.scheduleSavedBy,
       live,
@@ -261,21 +289,26 @@ export async function getHeatingOverview(now = new Date()): Promise<HeatingOverv
   return { configured, properties };
 }
 
-/** Saves the heating's current Hive schedule as the one every guest starts with. */
+/** Saves the current Hive heating and hot water schedules as the ones every guest starts with. */
 export async function saveCurrentSchedule(admin: AdminUser, propertyId: string): Promise<{ ok: true } | { error: string }> {
-  let schedule: HeatingSchedule | null;
+  let status: HiveStatus;
   try {
-    schedule = (await (await HiveHeating.connect()).status()).schedule;
+    status = await (await HiveHeating.connect()).status();
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) };
   }
-  if (!schedule) return { error: "Hive didn't return a schedule in the format expected, so nothing was saved." };
+  const heating = status.heating.schedule;
+  const hotWater = status.hotWater?.schedule ?? null;
+  if (!status.hotWater) return { error: `Nothing was saved. ${status.hotWaterError ?? "The hot water wasn't found."}` };
+  if (!heating) return { error: "Hive didn't return the heating schedule in the format expected, so nothing was saved." };
+  if (!hotWater) return { error: "Hive didn't return the hot water schedule in the format expected, so nothing was saved." };
 
   const sql = db();
   await sql.begin(async (tx) => {
     const updated = await tx`
       UPDATE heating_controls
-      SET standard_schedule = ${tx.json(schedule)}, schedule_saved_at = now(), schedule_saved_by = ${admin.email}, updated_at = now()
+      SET standard_schedule = ${tx.json(heating)}, standard_hot_water_schedule = ${tx.json(hotWater)},
+          schedule_saved_at = now(), schedule_saved_by = ${admin.email}, updated_at = now()
       WHERE property_id = ${propertyId}
     `;
     if (updated.count === 0) throw new Error("No heating control for that property");
@@ -286,7 +319,7 @@ export async function saveCurrentSchedule(admin: AdminUser, propertyId: string):
       entityType: "heating_control",
       entityId: propertyId,
       propertyId,
-      details: { schedule },
+      details: { heating, hotWater },
     });
   });
   return { ok: true };
@@ -295,11 +328,12 @@ export async function saveCurrentSchedule(admin: AdminUser, propertyId: string):
 export async function setHeatingEnabled(admin: AdminUser, propertyId: string, enabled: boolean): Promise<{ ok: true } | { error: string }> {
   const sql = db();
   return sql.begin(async (tx) => {
-    const [row] = await tx<{ standardSchedule: unknown }[]>`
-      SELECT standard_schedule FROM heating_controls WHERE property_id = ${propertyId} FOR UPDATE
+    const [row] = await tx<Pick<Control, "standardSchedule" | "standardHotWaterSchedule">[]>`
+      SELECT standard_schedule, standard_hot_water_schedule FROM heating_controls WHERE property_id = ${propertyId} FOR UPDATE
     `;
     if (!row) return { error: "No heating control for that property." };
-    if (enabled && !parseHeatingSchedule(row.standardSchedule)) return { error: "Save the standard schedule first." };
+    const standards = standardsOf(row);
+    if (enabled && (!standards.heating || !standards.hotWater)) return { error: "Save the standard schedules first." };
     // Switching on (again) starts afresh from the heating as it is now: only
     // changes made after enabled_at count as "last applied".
     await tx`
