@@ -37,8 +37,8 @@ export default async function AdminHeatingPage({ searchParams }: PageProps<"/adm
           The website controls the Hive heating and hot water from the bookings. At 6pm the evening before each guest arrives,
           it puts the standard heating and hot water schedules back on, so every guest starts the same whatever the last guest
           changed. Back-to-back guests get them at check-out time on changeover day. When a guest leaves and nobody arrives for
-          more than 3 days, it turns both off at check-out time. Shorter gaps keep the schedules running. Every unavailable date
-          counts as a stay, including owner blocks. Changes you make in the Hive app are left alone until the next planned
+          more than 3 days, it turns both off at check-out time. Shorter gaps keep the schedules running. Bookings, owner blocks and
+          other closed dates count as stays; Lodgify&apos;s preparation nights either side of a booking don&apos;t. Changes you make in the Hive app are left alone until the next planned
           change.
         </p>
       </section>

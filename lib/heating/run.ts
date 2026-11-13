@@ -24,6 +24,7 @@ import {
   type HotWaterSchedule,
 } from "@/lib/heating/hive-schedule";
 import { latestDue, planTransitions, upcoming, type Stay, type Transition } from "@/lib/heating/plan";
+import { guestStays, type UnavailableRow } from "@/lib/heating/stays";
 import { logError } from "@/lib/log";
 
 type Control = {
@@ -70,24 +71,24 @@ async function loadControls(sql: Sql, propertyId?: string): Promise<Control[]> {
 }
 
 /**
- * Every date the property is unavailable: bookings taken here, everything
- * imported from Lodgify and other calendars, and manual blocks. Owner blocks
- * count as occupied too, because imported calendars can't always tell them
- * apart from guests, and a cold cottage for a guest is worse than heating an
- * empty one.
+ * The stays the heating follows: bookings taken here, bookings imported from
+ * Lodgify and other calendars, and manual blocks, but not Lodgify's
+ * preparation nights either side of a booking (see stays.ts). Owner blocks
+ * and unexplained closed dates count as stays, because a cold cottage for a
+ * guest is worse than heating an empty one.
  */
 export async function loadStays(sql: Sql, propertyId: string, from: string, to: string): Promise<Stay[]> {
-  const rows = await sql<{ start: string; end: string }[]>`
-    SELECT check_in::text AS start, check_out::text AS end FROM reservations
+  const rows = await sql<UnavailableRow[]>`
+    SELECT 'RESERVATION' AS source, check_in::text AS start, check_out::text AS end, NULL AS uid, NULL AS summary FROM reservations
       WHERE property_id = ${propertyId} AND status = 'CONFIRMED' AND check_out >= ${from} AND check_in <= ${to}
     UNION ALL
-    SELECT start_date::text, end_date::text FROM external_events
+    SELECT 'EXTERNAL', start_date::text, end_date::text, uid, summary FROM external_events
       WHERE property_id = ${propertyId} AND status = 'ACTIVE' AND end_date >= ${from} AND start_date <= ${to}
     UNION ALL
-    SELECT start_date::text, end_date::text FROM manual_blocks
+    SELECT 'MANUAL_BLOCK', start_date::text, end_date::text, NULL, NULL FROM manual_blocks
       WHERE property_id = ${propertyId} AND end_date >= ${from} AND start_date <= ${to}
   `;
-  return rows.map((r) => ({ start: r.start, end: r.end }));
+  return guestStays([...rows]);
 }
 
 async function transitionsFor(sql: Sql, c: Control, now: Date): Promise<Transition[]> {
