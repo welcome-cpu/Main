@@ -28,6 +28,10 @@
     {
       "path": "/api/cron/send-to-lodgify",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/heating",
+      "schedule": "5 * * * *"
     }
   ]
 }

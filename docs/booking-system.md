@@ -73,6 +73,17 @@ never touch dev or production data.
 | `/api/cron/import-lodgify-bookings` | 04:30 daily | Copies Lodgify's bookings (guest name, party size, country from the phone's dialling code; no contact details) for the admin bookings list |
 | `/api/cron/charge-balances` | 09:00 daily | Charges balances due, to the saved card |
 | `/api/cron/send-to-lodgify` | every 5 min | Sends paid direct bookings to Lodgify and newsletter sign-ups to EmailOctopus that weren't sent straight after payment, and compares upcoming bookings with Lodgify |
+| `/api/cron/heating` | hourly at :05 | Murray Cottage's Hive heating: standard schedule back on before each guest, off when empty for more than 3 days (see Heating) |
+
+## Heating (Hive, Murray Cottage)
+
+Admin > Heating. Off until the owner saves the standard schedule and switches it on.
+
+- **Rules** (`lib/heating/plan.ts`): at 18:00 the evening before each arrival, the saved standard schedule is written to the thermostat and it's set to Schedule. Back-to-back guests get this at check-out time on changeover day. After check-out, if nobody arrives for more than 3 days, the heating is set to Off. Every unavailable date counts as a stay (bookings, imported calendars, manual blocks), because imported closed dates can't always be told apart from guests.
+- **Runs** (`lib/heating/run.ts`): each run applies the most recent change that's due if it differs from the last change made. Missed runs catch up, a cancelled booking puts the heating back to off, and changes made in the Hive app are left until the next planned change. When switched on, the first due change is only recorded as the starting point, so a guest who's in isn't reset. Failures are logged, retried hourly and emailed to the owner once per change.
+- **Hive** (`lib/heating/hive.ts`): Hive has no official API; this uses the unofficial one the Hive app uses (as documented by the open-source Pyhive library), so it can break if Hive changes it. Sign-in is Amazon Cognito with the owner's Hive login plus a remembered device, so no SMS code is needed. Pool settings are read from sso.hivehome.com.
+- **Setup**: the owner runs `node scripts/hive-setup.mjs` in their own terminal (password and SMS code typed there), then adds the HIVE_* values it gives to Vercel as Sensitive: `HIVE_USERNAME`, `HIVE_PASSWORD`, `HIVE_DEVICE_KEY`, `HIVE_DEVICE_GROUP_KEY`, `HIVE_DEVICE_PASSWORD`, `HIVE_HEATING_ID`, `HIVE_API_BASE`. If Hive starts asking for an SMS code again, re-run the script.
+- Scheduled jobs only run on production. On the dev preview, use **Check now** in admin.
 
 ## Gift vouchers
 
